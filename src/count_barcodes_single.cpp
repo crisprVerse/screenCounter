@@ -24,21 +24,31 @@ SEXP count_barcodes_single(SEXP seqs, SEXP guides) {
             if (curlen > len) { break; }
 
             auto curstr=hash_sequence(sptr, curlen);
-            auto it=curhash.find(curstr);
-            if (it!=curhash.end()) {
-                output[i]=it->second;
-                break;
-            }
-
-            size_t j=0;
-            while (j + curlen < len) {
-                shift_sequence(curstr, curlen, sptr[j+curlen]);
-                auto it=curhash.find(curstr);
-                if (it!=curhash.end()) {
+            int nvalid=is_valid(sptr, curlen);
+            if (nvalid) {
+                auto it=reference.find(curstr);
+                if (it!=reference.end()) {
                     output[i]=it->second;
                     break;
                 }
-                ++j;
+            }
+
+            size_t start=0, end=curlen;
+            while (end < len) {
+                nvalid-=is_valid(sptr[start]);
+                shift_sequence(curstr, curlen, sptr[end]);
+                nvalid+=is_valid(sptr[end]);
+
+                if (nvalid) {
+                    auto it=reference.find(curstr);
+                    if (it!=reference.end()) {
+                        output[i]=it->second;
+                        break;
+                    }
+                }
+
+                ++end;
+                ++start;
             }
         }
     }

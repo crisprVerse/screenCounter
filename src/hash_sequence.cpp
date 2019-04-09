@@ -1,4 +1,4 @@
-#include "hash_string.h"
+#include "hash_sequence.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -61,7 +61,7 @@ std::u32string hash_sequence(const char* p, const size_t n) {
  * Pops off the base at the 3' end.
  */
 
-void shift_string(std::u32string& in, const size_t n, char new5) {
+void shift_sequence(std::u32string& in, const size_t n, char new3) {
     if (in.size()==0) {
         throw std::runtime_error("empty string cannot be shifted");
     }
@@ -85,9 +85,29 @@ void shift_string(std::u32string& in, const size_t n, char new5) {
     }
 
     // Adding 2 most significant bits (based on 'n', not the integer width).
-    current += (bitify(new5) << ((n - 1) % WIDTH_IN_BASES) * BITS_PER_BASE);
+    current += (bitify(new3) << ((n - 1) % WIDTH_IN_BASES) * BITS_PER_BASE);
     in[x] = static_cast<char32_t>(current);
 
     return;
 }
 
+
+/* Utility functions to check that a string or character is valid,
+ * i.e., contains only ACTG (or lower case) bases.
+ */
+
+bool is_valid(char base) {
+    switch (base) {
+        case 'A': case 'a': case 'C': case 'c': case 'G': case 'g': case 'T': case 't':
+            return true;
+    };
+    return false;
+}
+
+int is_valid(const char* ptr, size_t n) {
+    int valid=0;
+    for (size_t i=0; i<n; ++i) {
+        valid+=is_valid(ptr[i]);
+    }
+    return valid;
+}

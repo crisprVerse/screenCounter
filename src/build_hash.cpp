@@ -3,6 +3,8 @@
 
 /* Builds a hash index, returning it alongside a vector of lengths.
  * The latter is necessary to accommodate variable length barcodes.
+ * It is okay to assume that there are no N's here, as any N's 
+ * should have been eliminated by barcode construction at the R level.
  */
 
 std::pair<seqhash, std::vector<int> > build_hash (Rcpp::StringVector guides) {
