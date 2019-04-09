@@ -17,7 +17,7 @@ std::pair<seqhash, std::vector<int> > build_hash (Rcpp::StringVector guides) {
 
         // Checking that the length exists.
         if (len >= valid_lengths.size()) {
-            valid_lengths.resize(len, false);
+            valid_lengths.resize(len+1, false);
         }
         valid_lengths[len]=true;
 
