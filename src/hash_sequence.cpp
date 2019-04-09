@@ -24,7 +24,7 @@ int bitify (char base) {
         case 'T': case 't':
             return 3;
     };
-    return -1;
+    return 0; // N's and other weird crap goes here.
 }
 
 /* Converts a C-style string into a compressed string, 
