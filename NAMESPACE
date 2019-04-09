@@ -2,6 +2,7 @@
 
 export(runVoomScreen)
 export(tmmOnSubset)
+importFrom(Rcpp,sourceCpp)
 importFrom(edgeR,calcNormFactors)
 importFrom(gp.sa.core,knitAndWrite)
 importFrom(gp.sa.core,makeFrontMatter)
@@ -10,3 +11,4 @@ importFrom(gp.sa.core,pathFromRoot)
 importFrom(gp.sa.diff,createContrasts)
 importFrom(gp.sa.diff,createDesignMatrix)
 importFrom(gp.sa.diff,runVoomCore)
+useDynLib(gp.sa.screen)
