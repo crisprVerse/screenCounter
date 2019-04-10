@@ -32,6 +32,7 @@
 #' @importFrom ShortRead FastqStreamer yield sread
 countSingleBarcodes <- function(fastq, choices, template="N") {
     barcodes <- createBarcodes(template, choices)
+    ptr <- setup_barcodes_single(barcodes)
 
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
@@ -39,8 +40,8 @@ countSingleBarcodes <- function(fastq, choices, template="N") {
 
     while (length(fq <- yield(incoming))) {
         seqs <- as.character(sread(fq))
-        output <- count_barcodes_single(seqs, barcodes)
-        output <- output[output >= 0L] + 1L
+        output <- count_barcodes_single(seqs, ptr)
+        output <- output[output >= 0L] 
         all.available <- all.available + tabulate(output, length(all.available))
     }
 
