@@ -57,8 +57,9 @@ std::u32string hash_sequence(const char* p, const size_t n) {
     return output;
 }
 
-/* Shifts the string along given a new 5' base.
- * Pops off the base at the 3' end.
+/* Shifts the string along given a new 3' base.
+ * Pops off the base at the 5' end, allowing for
+ * efficient scanning of a string for our sequence.
  */
 
 void shift_sequence(std::u32string& in, const size_t n, char new3) {
@@ -91,7 +92,6 @@ void shift_sequence(std::u32string& in, const size_t n, char new3) {
     return;
 }
 
-
 /* Utility functions to check that a string or character is valid,
  * i.e., contains only ACTG (or lower case) bases.
  */
@@ -111,3 +111,24 @@ int is_valid(const char* ptr, size_t n) {
     }
     return valid;
 }
+
+/* Class that combines shift_sequence and is_valid to iterate across a
+ * string and produce the hash at each position (or die trying).
+ */
+
+hash_scanner::hash_scanner(const char* p, size_t n) : ptr(p), len(n), 
+    hashed(hash_sequence(ptr, len)), nvalid(is_valid(ptr, len)) {}
+
+void hash_scanner::advance() {
+    nvalid-=is_valid(*ptr);
+    ++ptr;
+    const char next=*(ptr+len);
+    shift_sequence(hashed, len, next);
+    nvalid+=is_valid(next);
+    return;
+}
+
+const std::u32string& hash_scanner::hash() const { return hashed; }
+
+bool hash_scanner::valid() const { return nvalid==len; }
+
