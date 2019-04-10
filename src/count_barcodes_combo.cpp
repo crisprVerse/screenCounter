@@ -4,9 +4,24 @@
 #include "build_hash.h"
 #include <stdexcept>
 #include <vector>
+#include <sstream>
+#include <map>
 
 /* Combination guide parser. */
 
+template<size_t nvariable>
+struct combination {
+    combination() {};
+    bool operator<(const combination& other) const {
+        for (size_t i=0; i<nvariable; ++i) {
+            if (indices[i] < other.indices[i]) { return true; }
+        }
+        return false;
+    }
+    int indices[nvariable];
+};
+
+template<size_t nvariable>
 struct se_combo_info {
     se_combo_info(Rcpp::List, Rcpp::StringVector);
     std::vector<seqhash> variable_hashes;
@@ -14,11 +29,18 @@ struct se_combo_info {
     std::vector<int> constant_lengths, variable_lengths;
     std::vector<size_t> constant_starts, variable_starts;
     size_t total_len;
+
+    std::map<combination<nvariable>, int> out_store;
 };
 
-se_combo_info::se_combo_info(Rcpp::List Guides, Rcpp::StringVector Constants) {
+template<size_t nvariable>
+se_combo_info<nvariable>::se_combo_info(Rcpp::List Guides, Rcpp::StringVector Constants) {
     // Setting up the guides.
-    size_t nvariable=Guides.size();
+    if (nvariable!=Guides.size()) {
+        std::stringstream err;
+        err << "expecting " << nvariable << " variable regions";
+        throw std::runtime_error(err.str());
+    }
     variable_hashes.reserve(nvariable);
     variable_lengths.reserve(nvariable);
 
@@ -34,8 +56,8 @@ se_combo_info::se_combo_info(Rcpp::List Guides, Rcpp::StringVector Constants) {
     }
 
     // Setting up the constnt regions.
-    size_t nconstant=Constants.size();
-    if (nconstant!=nvariable+1) {
+    const size_t nconstant=nvariable+1;
+    if (Constants.size()!=nvariable+1) {
         throw std::runtime_error("number of constant regions should be 1 more than variable regions");
     }
 
@@ -65,15 +87,15 @@ se_combo_info::se_combo_info(Rcpp::List Guides, Rcpp::StringVector Constants) {
     return;
 }
 
-// [[Rcpp::export(rng=false)]]
+template<size_t nvariable>
 SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list) {
-    se_combo_info * ptr = new se_combo_info(guide_list, constants);
-    return Rcpp::XPtr<se_combo_info>(ptr, true);
+    se_combo_info<nvariable> * ptr = new se_combo_info<nvariable>(guide_list, constants);
+    return Rcpp::XPtr<se_combo_info<nvariable> >(ptr, true);
 }
 
-// [[Rcpp::export(rng=false)]]
+template<size_t nvariable>
 SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
-    Rcpp::XPtr<se_combo_info> ptr(xptr);
+    Rcpp::XPtr<se_combo_info<nvariable> > ptr(xptr);
     const auto& variable_hashes=ptr->variable_hashes;
     const auto& constant_hash=ptr->constant_hash;
     const auto& variable_lengths=ptr->variable_lengths;
@@ -82,13 +104,11 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
     const auto& constant_starts=ptr->constant_starts;
 
     const size_t total_len=ptr->total_len;
-    const size_t nconstant=constant_hash.size();
-    const size_t nvariable=variable_hashes.size();
+    const size_t nconstant=nvariable+1; // see above.
+    auto& out_store=ptr->out_store;
 
     // Running through the sequences and matching it to the guides.
     Rcpp::StringVector Seqs(seqs);
-    std::vector<Rcpp::IntegerVector> output;
-    for (size_t i=0; i<nvariable; ++i) { output[i]=Rcpp::IntegerVector(Seqs.size(), -1); }
 
     for (size_t i=0; i<Seqs.size(); ++i) {
         Rcpp::String s=Seqs[i];
@@ -124,12 +144,24 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
                 }
 
                 if (is_equal) {
+                    bool has_match=true;
+                    combination<nvariable> tmp;
+
                     for (size_t j=0; j<nvariable; ++j) {
                         const auto& curhash=variable_hashes[j];
                         auto it=curhash.find(variable_scan[j].hash());
                         if (it!=curhash.end()) {
-                            output[j][i]=it->second;
+                            tmp.indices[j]=it->second;
+                        } else {
+                            has_match=false;
+                            break;
                         }
+                    }
+
+                    if (has_match) { 
+                        // Int values in map get value initialized to zero.
+                        ++out_store[tmp];
+                        break; 
                     }
                 }
             }
@@ -144,5 +176,45 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
         } while (1);
     }
 
-    return Rcpp::List(output.begin(), output.end());
+    return R_NilValue;
+}
+
+template<size_t nvariable>
+SEXP report_barcodes_combo(SEXP xptr) {
+    Rcpp::XPtr<se_combo_info<nvariable> > ptr(xptr);
+    const auto& out_store=ptr->out_store;
+
+    std::vector<Rcpp::IntegerVector> keys(nvariable);
+    for (auto& k : keys) { k = Rcpp::IntegerVector(out_store.size()); }
+    Rcpp::IntegerVector counts(out_store.size());
+
+    size_t i=0;
+    for (const auto& pairing : out_store) {
+        const auto& key=pairing.first;
+        for (size_t j=0; j<nvariable; ++j) {
+            keys[j][i]=key.indices[j];
+        }
+        counts[i]=pairing.second; 
+        ++i;
+    }
+
+    Rcpp::List output(2);
+    output[0]=counts;
+    output[1]=Rcpp::List(keys.begin(), keys.end());
+    return output;
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list) {
+    return setup_barcodes_combo<2>(constants, guide_list);
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr) {
+    return count_barcodes_combo<2>(seqs, xptr);
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP report_barcodes_combo_dual(SEXP xptr) {
+    return report_barcodes_combo<2>(xptr);
 }
