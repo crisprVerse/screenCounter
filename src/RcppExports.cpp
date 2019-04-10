@@ -5,25 +5,35 @@
 
 using namespace Rcpp;
 
-// setup_barcodes_combo
-SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list);
-RcppExport SEXP _gp_sa_screen_setup_barcodes_combo(SEXP constantsSEXP, SEXP guide_listSEXP) {
+// setup_barcodes_combo_dual
+SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list);
+RcppExport SEXP _gp_sa_screen_setup_barcodes_combo_dual(SEXP constantsSEXP, SEXP guide_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type constants(constantsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type guide_list(guide_listSEXP);
-    rcpp_result_gen = Rcpp::wrap(setup_barcodes_combo(constants, guide_list));
+    rcpp_result_gen = Rcpp::wrap(setup_barcodes_combo_dual(constants, guide_list));
     return rcpp_result_gen;
 END_RCPP
 }
-// count_barcodes_combo
-SEXP count_barcodes_combo(SEXP seqs, SEXP xptr);
-RcppExport SEXP _gp_sa_screen_count_barcodes_combo(SEXP seqsSEXP, SEXP xptrSEXP) {
+// count_barcodes_combo_dual
+SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr);
+RcppExport SEXP _gp_sa_screen_count_barcodes_combo_dual(SEXP seqsSEXP, SEXP xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(count_barcodes_combo(seqs, xptr));
+    rcpp_result_gen = Rcpp::wrap(count_barcodes_combo_dual(seqs, xptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// report_barcodes_combo_dual
+SEXP report_barcodes_combo_dual(SEXP xptr);
+RcppExport SEXP _gp_sa_screen_report_barcodes_combo_dual(SEXP xptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(report_barcodes_combo_dual(xptr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -50,8 +60,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gp_sa_screen_setup_barcodes_combo", (DL_FUNC) &_gp_sa_screen_setup_barcodes_combo, 2},
-    {"_gp_sa_screen_count_barcodes_combo", (DL_FUNC) &_gp_sa_screen_count_barcodes_combo, 2},
+    {"_gp_sa_screen_setup_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_setup_barcodes_combo_dual, 2},
+    {"_gp_sa_screen_count_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_count_barcodes_combo_dual, 2},
+    {"_gp_sa_screen_report_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_report_barcodes_combo_dual, 1},
     {"_gp_sa_screen_setup_barcodes_single", (DL_FUNC) &_gp_sa_screen_setup_barcodes_single, 1},
     {"_gp_sa_screen_count_barcodes_single", (DL_FUNC) &_gp_sa_screen_count_barcodes_single, 2},
     {NULL, NULL, 0}
