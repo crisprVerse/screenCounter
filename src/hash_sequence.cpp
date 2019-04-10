@@ -117,7 +117,7 @@ int is_valid(const char* ptr, size_t n) {
  */
 
 hash_scanner::hash_scanner(const char* p, size_t n) : ptr(p), len(n), 
-    hashed(hash_sequence(ptr, len)), nvalid(is_valid(ptr, len)) {}
+    hashed(hash_sequence(p, n)), nvalid(is_valid(p, n)) {}
 
 void hash_scanner::advance() {
     nvalid-=is_valid(*ptr);

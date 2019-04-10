@@ -16,7 +16,6 @@ public:
     bool valid() const;
 private:
     const char* ptr;
-
     size_t len;
     std::u32string hashed;
     size_t nvalid;

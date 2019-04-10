@@ -73,8 +73,8 @@ se_combo_info<nvariable>::se_combo_info(Rcpp::List Guides, Rcpp::StringVector Co
     }
 
     // Setting up search parameters.
-    constant_starts.reserve(nconstant);
-    variable_starts.reserve(nvariable);
+    constant_starts.resize(nconstant);
+    variable_starts.resize(nvariable);
     total_len=constant_lengths[0];
 
     for (size_t i=0; i<nvariable; ++i) {
@@ -114,17 +114,17 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
         Rcpp::String s=Seqs[i];
         const char* sptr=s.get_cstring();
         const size_t len=Rf_length(s.get_sexp());
-        if (len > total_len) { break; }
+        if (len < total_len) { break; }
 
         // Setting up the scanners.
         std::vector<hash_scanner> constant_scan, variable_scan;
         constant_scan.reserve(nconstant);
-        for (size_t i=0; i<nconstant; ++i) {
-            constant_scan.push_back(hash_scanner(sptr+constant_starts[i], constant_lengths[i]));
+        for (size_t j=0; j<nconstant; ++j) {
+            constant_scan.push_back(hash_scanner(sptr+constant_starts[j], constant_lengths[j]));
         }
         variable_scan.reserve(nvariable);
-        for (size_t i=0; i<nvariable; ++i) {
-            variable_scan.push_back(hash_scanner(sptr+variable_starts[i], variable_lengths[i]));
+        for (size_t j=0; j<nvariable; ++j) {
+            variable_scan.push_back(hash_scanner(sptr+variable_starts[j], variable_lengths[j]));
         }
 
         // Traversing through the sequence.
@@ -137,7 +137,7 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
             if (is_valid) {
                 bool is_equal=true;
                 for (size_t j=0; j<nconstant; ++j) {
-                    if (constant_hash[i]!=constant_scan[i].hash()) {
+                    if (constant_hash[j]!=constant_scan[j].hash()) {
                         is_equal=false;
                         break;
                     }
@@ -203,6 +203,10 @@ SEXP report_barcodes_combo(SEXP xptr) {
     output[1]=Rcpp::List(keys.begin(), keys.end());
     return output;
 }
+
+/****************************************************
+ * Realizations of template functions for 2 guides. *
+ ****************************************************/
 
 // [[Rcpp::export(rng=false)]]
 SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list) {
