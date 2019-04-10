@@ -3,17 +3,26 @@
 #include "hash_sequence.h"
 #include "build_hash.h"
 #include <stdexcept>
+#include <vector>
 
 /* Combination guide parser. */
 
-// [[Rcpp::export(rng=false)]]
-SEXP count_barcodes_combo(SEXP seqs, SEXP constants, SEXP guide_list) {
-    // Setting up the guides.
-    Rcpp::List Guides(guide_list);
-    std::deque<seqhash> variable_hashes;
-    std::deque<int> variable_lengths;
+struct se_combo_info {
+    se_combo_info(Rcpp::List, Rcpp::StringVector);
+    std::vector<seqhash> variable_hashes;
+    std::vector<std::u32string> constant_hash;
+    std::vector<int> constant_lengths, variable_lengths;
+    std::vector<size_t> constant_starts, variable_starts;
+    size_t total_len;
+};
 
-    for (size_t g=0; g<Guides.size(); ++g) {
+se_combo_info::se_combo_info(Rcpp::List Guides, Rcpp::StringVector Constants) {
+    // Setting up the guides.
+    size_t nvariable=Guides.size();
+    variable_hashes.reserve(nvariable);
+    variable_lengths.reserve(nvariable);
+
+    for (size_t g=0; g<nvariable; ++g) {
         Rcpp::StringVector guides(Guides[g]);
         auto hash=build_hash(guides);
         variable_hashes.push_back(std::move(hash.first));
@@ -25,11 +34,15 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP constants, SEXP guide_list) {
     }
 
     // Setting up the constnt regions.
-    Rcpp::StringVector Constants(constants);
-    std::deque<std::u32string> constant_hash;
-    std::deque<int> constant_lengths;
+    size_t nconstant=Constants.size();
+    if (nconstant!=nvariable+1) {
+        throw std::runtime_error("number of constant regions should be 1 more than variable regions");
+    }
 
-    for (size_t s=0; s<Constants.size(); ++s) {
+    constant_hash.reserve(nconstant);
+    constant_lengths.reserve(nconstant);
+
+    for (size_t s=0; s<nconstant; ++s) {
         Rcpp::String con(Constants[s]);
         const size_t len=Rf_length(con.get_sexp());
         const char* ptr=con.get_cstring();
@@ -38,20 +51,39 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP constants, SEXP guide_list) {
     }
 
     // Setting up search parameters.
-    const size_t nvariable=variable_hashes.size(), 
-        nconstant=constant_hash.size();
-    if (nconstant!=nvariable+1) {
-        throw std::runtime_error("number of constant regions should be 1 more than variable regions");
-    }
+    constant_starts.reserve(nconstant);
+    variable_starts.reserve(nvariable);
+    total_len=constant_lengths[0];
 
-    std::vector<size_t> constant_starts(nconstant), variable_starts(nvariable);
-    size_t total_len=constant_lengths[0];
     for (size_t i=0; i<nvariable; ++i) {
         variable_starts[i]=total_len;
         total_len+=variable_lengths[i];
         constant_starts[i+1]=total_len;
         total_len+=constant_lengths[i+1];
     }
+
+    return;
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list) {
+    se_combo_info * ptr = new se_combo_info(guide_list, constants);
+    return Rcpp::XPtr<se_combo_info>(ptr, true);
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
+    Rcpp::XPtr<se_combo_info> ptr(xptr);
+    const auto& variable_hashes=ptr->variable_hashes;
+    const auto& constant_hash=ptr->constant_hash;
+    const auto& variable_lengths=ptr->variable_lengths;
+    const auto& constant_lengths=ptr->constant_lengths;
+    const auto& variable_starts=ptr->variable_starts;
+    const auto& constant_starts=ptr->constant_starts;
+
+    const size_t total_len=ptr->total_len;
+    const size_t nconstant=constant_hash.size();
+    const size_t nvariable=variable_hashes.size();
 
     // Running through the sequences and matching it to the guides.
     Rcpp::StringVector Seqs(seqs);

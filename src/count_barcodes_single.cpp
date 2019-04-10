@@ -5,15 +5,23 @@
 
 /* Single-end guide parser. */
 
+typedef std::pair<seqhash, std::vector<int> > hashinfo;
+
 // [[Rcpp::export(rng=false)]]
-SEXP count_barcodes_single(SEXP seqs, SEXP guides) {
-    auto hash=build_hash(guides);
-    const auto& reference=hash.first;
-    const auto& all_lens=hash.second;
+SEXP setup_barcodes_single(SEXP guides) {
+    hashinfo* ptr = new hashinfo(build_hash(guides));
+    return Rcpp::XPtr<hashinfo>(ptr, true);
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP count_barcodes_single(SEXP seqs, SEXP xptr) {
+    Rcpp::XPtr<hashinfo> ptr(xptr);
+    const auto& reference=ptr->first;
+    const auto& all_lens=ptr->second;
 
     // Running through the sequences and matching it to the guides.
     Rcpp::StringVector Seqs(seqs);
-    Rcpp::IntegerVector output(Seqs.size(), -1);
+    Rcpp::IntegerVector output(Seqs.size());
 
     for (size_t i=0; i<Seqs.size(); ++i) {
         Rcpp::String s=Seqs[i];
@@ -25,7 +33,7 @@ SEXP count_barcodes_single(SEXP seqs, SEXP guides) {
 
             auto curstr=hash_sequence(sptr, curlen);
             int nvalid=is_valid(sptr, curlen);
-            if (nvalid) {
+            if (nvalid==curlen) {
                 auto it=reference.find(curstr);
                 if (it!=reference.end()) {
                     output[i]=it->second;
@@ -39,10 +47,10 @@ SEXP count_barcodes_single(SEXP seqs, SEXP guides) {
                 shift_sequence(curstr, curlen, sptr[end]);
                 nvalid+=is_valid(sptr[end]);
 
-                if (nvalid) {
+                if (nvalid==curlen) {
                     auto it=reference.find(curstr);
                     if (it!=reference.end()) {
-                        output[i]=it->second;
+                        output[i]=it->second+1; // Get back to 1-indexed.
                         break;
                     }
                 }

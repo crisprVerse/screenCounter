@@ -5,19 +5,54 @@
 
 using namespace Rcpp;
 
-// count_barcodes_single
-SEXP count_barcodes_single(SEXP seqs, SEXP guides);
-RcppExport SEXP _gp_sa_screen_count_barcodes_single(SEXP seqsSEXP, SEXP guidesSEXP) {
+// setup_barcodes_combo
+SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list);
+RcppExport SEXP _gp_sa_screen_setup_barcodes_combo(SEXP constantsSEXP, SEXP guide_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type constants(constantsSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type guide_list(guide_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(setup_barcodes_combo(constants, guide_list));
+    return rcpp_result_gen;
+END_RCPP
+}
+// count_barcodes_combo
+SEXP count_barcodes_combo(SEXP seqs, SEXP xptr);
+RcppExport SEXP _gp_sa_screen_count_barcodes_combo(SEXP seqsSEXP, SEXP xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_barcodes_combo(seqs, xptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// setup_barcodes_single
+SEXP setup_barcodes_single(SEXP guides);
+RcppExport SEXP _gp_sa_screen_setup_barcodes_single(SEXP guidesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type guides(guidesSEXP);
-    rcpp_result_gen = Rcpp::wrap(count_barcodes_single(seqs, guides));
+    rcpp_result_gen = Rcpp::wrap(setup_barcodes_single(guides));
+    return rcpp_result_gen;
+END_RCPP
+}
+// count_barcodes_single
+SEXP count_barcodes_single(SEXP seqs, SEXP xptr);
+RcppExport SEXP _gp_sa_screen_count_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_barcodes_single(seqs, xptr));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_gp_sa_screen_setup_barcodes_combo", (DL_FUNC) &_gp_sa_screen_setup_barcodes_combo, 2},
+    {"_gp_sa_screen_count_barcodes_combo", (DL_FUNC) &_gp_sa_screen_count_barcodes_combo, 2},
+    {"_gp_sa_screen_setup_barcodes_single", (DL_FUNC) &_gp_sa_screen_setup_barcodes_single, 1},
     {"_gp_sa_screen_count_barcodes_single", (DL_FUNC) &_gp_sa_screen_count_barcodes_single, 2},
     {NULL, NULL, 0}
 };
