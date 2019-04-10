@@ -11,14 +11,14 @@
 
 template<size_t nvariable>
 struct combination {
-    combination() {};
-    bool operator<(const combination& other) const {
+    int indices[nvariable];
+    bool operator<(const combination<nvariable>& other) const {
         for (size_t i=0; i<nvariable; ++i) {
             if (indices[i] < other.indices[i]) { return true; }
+            if (indices[i] > other.indices[i]) { return false; }
         }
         return false;
     }
-    int indices[nvariable];
 };
 
 template<size_t nvariable>
@@ -192,7 +192,7 @@ SEXP report_barcodes_combo(SEXP xptr) {
     for (const auto& pairing : out_store) {
         const auto& key=pairing.first;
         for (size_t j=0; j<nvariable; ++j) {
-            keys[j][i]=key.indices[j];
+            keys[j][i]=key.indices[j]+1; // get back to 1-based indexing.
         }
         counts[i]=pairing.second; 
         ++i;

@@ -37,8 +37,8 @@
 #' output <- countComboBarcodes(tmp,
 #'     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
 #'     choices=list(first=known.pool, second=known.pool))
-#' output$keys
-#' head(output$counts)
+#' output$combination
+#' head(output$count)
 #'
 #' @export
 #' @importFrom S4Vectors DataFrame
