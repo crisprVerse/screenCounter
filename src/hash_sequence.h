@@ -4,20 +4,24 @@ std::u32string hash_sequence(const char*, const size_t);
 
 void shift_sequence(std::u32string&, const size_t, char);
 
-bool is_valid (char);
-
-int is_valid (const char*, size_t);
-
-class hash_scanner {
+struct rolling_substitution {
 public:
-    hash_scanner(const char*, size_t);
-    void advance ();
-    const std::u32string& hash() const;
-    bool valid() const;
+    rolling_substitution(const std::u32string&, size_t);
+    bool advance();
+    const std::u32string& get() const;
 private:
-    const char* ptr;
-    size_t len;
-    std::u32string hashed;
-    size_t nvalid;
+    std::u32string hash;
+    size_t len, word, pos;
+    uint32_t current, original;
 };
 
+struct rolling_deletion {
+public:
+    rolling_deletion(const std::u32string&, size_t);
+    bool advance();
+    const std::u32string& get() const;
+private:
+    std::u32string hash;
+    size_t len, word, pos;
+    uint32_t current, discarded;
+};

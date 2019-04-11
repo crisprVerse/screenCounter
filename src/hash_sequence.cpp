@@ -62,6 +62,8 @@ std::u32string hash_sequence(const char* p, const size_t n) {
  * efficient scanning of a string for our sequence.
  */
 
+constexpr uint32_t LEAST_SIG=(1 << BITS_PER_BASE) - 1;
+
 void shift_sequence(std::u32string& in, const size_t n, char new3) {
     if (in.size()==0) {
         throw std::runtime_error("empty string cannot be shifted");
@@ -73,7 +75,7 @@ void shift_sequence(std::u32string& in, const size_t n, char new3) {
 
     while (x+1 < in.size()) {
         uint32_t next=static_cast<uint32_t>(in[x+1]);
-        uint32_t popped=next & 0x3; // Get least significant 2 bits.
+        uint32_t popped=next & LEAST_SIG; // Get least significant 2 bits.
         next >>= BITS_PER_BASE; // Remove least significant 2 bits.
 
         // Add 2 most significant bits.
@@ -92,43 +94,101 @@ void shift_sequence(std::u32string& in, const size_t n, char new3) {
     return;
 }
 
-/* Utility functions to check that a string or character is valid,
- * i.e., contains only ACTG (or lower case) bases.
- */
+/* Substitutes a base in the current hash string. */ 
 
-bool is_valid(char base) {
-    switch (base) {
-        case 'A': case 'a': case 'C': case 'c': case 'G': case 'g': case 'T': case 't':
-            return true;
-    };
-    return false;
-}
+rolling_substitution::rolling_substitution(const std::u32string& in, size_t n) :
+    hash(in), len(n), word(0), pos(0), state(0), current(0), original(0)
+{
+    if (in.size()==0) { return; }
 
-int is_valid(const char* ptr, size_t n) {
-    int valid=0;
-    for (size_t i=0; i<n; ++i) {
-        valid+=is_valid(ptr[i]);
+    // Starting off by replacing the first base with 'A'.
+    current=static_cast<uint32_t>(in[word]);
+    original=current & LEAST_SIG;
+    hash[word]=static_cast<char32_t>(current);
+    if (original==state) {
+        advance();
     }
-    return valid;
+    return; 
 }
 
-/* Class that combines shift_sequence and is_valid to iterate across a
- * string and produce the hash at each position (or die trying).
- */
+bool rolling_substitution::advance() {
+    ++state;
+    if (state==4) {
+        // Restoring original if we're moving along.
+        current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
+        current |= (original << pos * BITS_PER_BASE);
+        state=0;
+        ++pos;
 
-hash_scanner::hash_scanner(const char* p, size_t n) : ptr(p), len(n), 
-    hashed(hash_sequence(p, n)), nvalid(is_valid(p, n)) {}
+        if (pos==WIDTH_IN_BASES) {
+            pos=0;
+            hash[word]=static_cast<char32_t>(current);
+            ++word;
+            if (word==in.size()) {
+                return false;
+            }
+            current=static_cast<uint32_t>(hash[word]);
+        }
 
-void hash_scanner::advance() {
-    nvalid-=is_valid(*ptr);
-    ++ptr;
-    const char next=*(ptr+len);
-    shift_sequence(hashed, len, next);
-    nvalid+=is_valid(next);
-    return;
+        // Updating original.
+        original=current & (LEAST_SIG << pos * BITS_PER_BASE);
+        original >>= pos * BITS_PER_BASE;
+    } else if (state==original) {
+        return advance();
+    } 
+    
+    // Replacing with next state.
+    current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
+    current |= (state << pos * BITS_PER_BASE);
+    hash[word]=static_cast<char32_t>(current);
+    return true;
 }
 
-const std::u32string& hash_scanner::hash() const { return hashed; }
+const std::u32string& rolling_substitution::get() const { return hash; }
 
-bool hash_scanner::valid() const { return nvalid==len; }
+/* Deletes a base in the current hash string. */ 
 
+rolling_deletion::rolling_deletion(const std::u32string& in, size_t n) :
+    hash(in), len(n), word((n+WIDTH_IN_BASES-1)/WIDTH_IN_BASES), 
+    pos((n-1)%WIDTH_IN_BASES), state(0), current(0), discarded(0)
+{
+    if (in.size()==0) { return; }
+
+    // Starting off by deleting the last base.
+    current=static_cast<uint32_t>(in[word]);
+    discarded=current & (LEAST_SIG << pos * BITS_PER_BASE);
+    current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
+
+    if (pos==0) {
+        hash.pop_back();
+    } else {
+        hash[word]=static_cast<char32_t>(current);
+    }
+    return; 
+}
+
+bool rolling_deletion::advance() {
+    if (pos==0) {
+        if (word==0) {
+            return false;
+        }
+
+        discarded <<= (WIDTH_IN_BASES - 1) * BITS_PER_BASE;
+        pos=WIDTH_IN_BASES-1;
+        --word;
+        current=static_cast<uint32_t>(in[word]);
+    } else {
+        --pos;
+        discarded >>= BITS_PER_BASE;
+    }
+
+    // Restoring the discarded at its original position - 1.
+    uint32_t tmp=current & (LEAST_SIG << pos * BITS_PER_BASE);
+    current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
+    current |= discarded;
+    discarded=tmp;
+    hash[word]=static_cast<char32_t>(current);
+    return true;
+}
+
+const std::u32string& rolling_deletion::get() const { return hash; }
