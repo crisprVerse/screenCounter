@@ -7,11 +7,19 @@
 #' @param template A template for the barcode structure, see \code{\link{?createBarcodes}} for details.
 #' @param choices A \linkS4class{List} of potential sequences for each variable region in \code{template}.
 #' Each row should correspond to a barcode and each column should contain a character vector of sequences.
+#' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
+#' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
 #' 
 #' @details
 #' Certain screen sequencing experiments take advantage of combinatorial complexity to generate a very large pool of unique barcode sequences.
 #' Only a subset of all possible combinatorial barcodes will be used in any given experiment.
 #' This function only counts the combinations that are actually observed, improving efficiency over a more conventional approach (i.e., to generate all possible combinations and use \code{\link{countSingleBarcodes}} to count their frequency).
+#'
+#' If \code{substitutions=TRUE}, only one mismatch is allowed across all variable regions,
+#' \emph{not} per variable region.
+#' Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
+#' If both are set, only one deletion or mismatch is allowed across all variable regions,
+#' i.e., there is a maximum edit distance of 1 from any possible reference combination.
 #' 
 #' @return A \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
 #' It contains \code{keys}, a nested \linkS4class{DataFrame} where each column corresponds to an element of \code{choices} and contains the indices of the sequences in each combinatorial barcode;
@@ -20,7 +28,6 @@
 #' @author Aaron Lun
 #' @examples
 #' # Creating an example dual barcode sequencing experiment.
-#' library(Biostrings)
 #' known.pool <- c("AGAGAGAGA", "CTCTCTCTC",
 #'     "GTGTGTGTG", "CACACACAC")
 #' 
@@ -30,6 +37,7 @@
 #'    sample(known.pool, N, replace=TRUE))
 #' names(barcodes) <- seq_len(N)
 #' 
+#' library(Biostrings)
 #' tmp <- tempfile(fileext=".fastq")
 #' writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 #'
@@ -43,7 +51,7 @@
 #' @export
 #' @importFrom S4Vectors DataFrame
 #' @importFrom ShortRead FastqStreamer
-countComboBarcodes <- function(fastq, template, choices) {
+countComboBarcodes <- function(fastq, template, choices, substitutions=TRUE, deletions=TRUE) {
     positions <- .split_template(template)
     n.pos <- positions$pos
     n.len <- positions$len
@@ -78,7 +86,7 @@ countComboBarcodes <- function(fastq, template, choices) {
     }
 
     # Counting all pairs of barcodes. 
-    ptr <- setupfun(constants, as.list(choices))
+    ptr <- setupfun(constants, as.list(choices), substitutions, deletions)
 
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
@@ -89,6 +97,8 @@ countComboBarcodes <- function(fastq, template, choices) {
 
     output <- reportfun(ptr)
     keys <- do.call(DataFrame, output[[2]])
-    colnames(keys) <- names(choices)
+    if (!is.null(names(choices))) {
+        colnames(keys) <- names(choices)
+    }
     DataFrame(combination=I(keys), count=output[[1]])
 }
