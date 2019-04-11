@@ -1,4 +1,5 @@
 #include "hash_sequence.h"
+#include <stdexcept>
 
 #ifdef DEBUG
 #include <iostream>
@@ -94,19 +95,26 @@ void shift_sequence(std::u32string& in, const size_t n, char new3) {
     return;
 }
 
-/* Substitutes a base in the current hash string. */ 
+/* Substitutes a base in the current hash string. 
+ * This is done in a rolling manner, where the next base
+ * is substituted upon the user calling advance().
+ */ 
 
 rolling_substitution::rolling_substitution(const std::u32string& in, size_t n) :
     hash(in), len(n), word(0), pos(0), state(0), current(0), original(0)
 {
-    if (in.size()==0) { return; }
+    if (len==0) { 
+        throw std::runtime_error("hashed string must have positive length");
+    }
 
     // Starting off by replacing the first base with 'A'.
     current=static_cast<uint32_t>(in[word]);
     original=current & LEAST_SIG;
-    hash[word]=static_cast<char32_t>(current);
-    if (original==state) {
+    if (original==0) {
         advance();
+    } else {
+        current &= ~LEAST_SIG;
+        hash[word]=static_cast<char32_t>(current);
     }
     return; 
 }
@@ -120,20 +128,21 @@ bool rolling_substitution::advance() {
         state=0;
         ++pos;
 
-        if (pos==WIDTH_IN_BASES) {
+        if (pos+WIDTH_IN_BASES*word==len) {
+            return false;
+        } else if (pos==WIDTH_IN_BASES) {
             pos=0;
             hash[word]=static_cast<char32_t>(current);
             ++word;
-            if (word==hash.size()) {
-                return false;
-            }
             current=static_cast<uint32_t>(hash[word]);
         }
 
         // Updating original.
         original=current & (LEAST_SIG << pos * BITS_PER_BASE);
         original >>= pos * BITS_PER_BASE;
-    } else if (state==original) {
+    } 
+
+    if (state==original) {
         return advance();
     } 
     
@@ -146,13 +155,17 @@ bool rolling_substitution::advance() {
 
 const std::u32string& rolling_substitution::get() const { return hash; }
 
-/* Deletes a base in the current hash string. */ 
+/* Deletes a base in the current hash string. 
+ * This starts from the last base and rolls towards
+ * the first base (simply because it's more convenient).
+ */ 
 
 rolling_deletion::rolling_deletion(const std::u32string& in, size_t n) :
-    hash(in), len(n), word((n+WIDTH_IN_BASES-1)/WIDTH_IN_BASES), 
-    pos((n-1)%WIDTH_IN_BASES), current(0), discarded(0)
+    hash(in), word((n-1)/WIDTH_IN_BASES), pos((n-1)%WIDTH_IN_BASES), current(0), discarded(0)
 {
-    if (in.size()==0) { return; }
+    if (n==0) { 
+        throw std::runtime_error("hashed string must have positive length");
+    }
 
     // Starting off by deleting the last base.
     current=static_cast<uint32_t>(in[word]);
@@ -182,7 +195,7 @@ bool rolling_deletion::advance() {
         discarded >>= BITS_PER_BASE;
     }
 
-    // Restoring the discarded at its original position - 1.
+    // Restoring the discarded at its original position minus one.
     uint32_t tmp=current & (LEAST_SIG << pos * BITS_PER_BASE);
     current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
     current |= discarded;
