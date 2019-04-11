@@ -28,7 +28,7 @@ sequence_dictionary build_dictionary (Rcpp::StringVector guides, bool allowSub) 
         auto curhash=hash_sequence(ptr, len);
 
         auto it=mapping.find(curhash);
-        if (it!=mapping.end() && (it->second.first)==0) {
+        if (it!=mapping.end() && (it->second).second==0) {
             throw std::runtime_error("duplicated barcode sequences");
         } else {
             mapping[curhash]=std::make_pair(i, 0);

@@ -1,5 +1,6 @@
 #include "Rcpp.h"
 #include "hash_sequence.h"
+#include "build_dictionary.h"
 
 /* Test code to check that the hashing works correctly. */
 
@@ -70,3 +71,34 @@ SEXP delete_hash(Rcpp::StringVector input) {
 
     return output;
 }
+
+// [[Rcpp::export(rng=false)]]
+SEXP build_dict(Rcpp::StringVector guides, bool allowS, bool allowD) {
+    sequence_dictionary dict;
+    if (allowD) {
+        dict=build_deleted_dictionary(guides);
+    } else {
+        dict=build_dictionary(guides, allowS);
+    }
+
+    const auto& mapping=dict.mapping;
+    Rcpp::List keys(mapping.size());
+    Rcpp::IntegerVector idx(mapping.size()), priority(mapping.size());
+
+    size_t i=0;
+    for (const auto& KV : mapping) {
+        keys[i]=hash2double(KV.first);
+        idx[i]=KV.second.first+1; // get back to 1-based indices.
+        priority[i]=KV.second.second;
+        ++i;
+    }
+
+    return Rcpp::List::create(
+        Rcpp::List::create(
+            keys,
+            Rcpp::List::create(idx, priority)
+        ),
+        Rcpp::IntegerVector::create(dict.len)
+    );
+}
+
