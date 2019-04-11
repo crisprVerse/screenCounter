@@ -1,3 +1,6 @@
+#ifndef SEQUENCE_DICTIONARY_H
+#define SEQUENCE_DICTIONARY_H
+
 #include "Rcpp.h"
 #include <string>
 #include <unordered_map>
@@ -12,3 +15,4 @@ sequence_dictionary build_dictionary(Rcpp::StringVector, bool);
 
 sequence_dictionary build_deleted_dictionary(Rcpp::StringVector);
 
+#endif

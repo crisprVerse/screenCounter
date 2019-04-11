@@ -1,4 +1,4 @@
-#include "search_hash.h"
+#include "search_sequence.h"
 
 /* Utility functions to check that a string or character is valid,
  * i.e., contains only ACTG (or lower case) bases.

@@ -7,10 +7,10 @@
  * should have been eliminated by barcode construction at the R level.
  */
 
-sequence_dictionary build_hash (Rcpp::StringVector guides, bool allowSub) {
+sequence_dictionary build_dictionary (Rcpp::StringVector guides, bool allowSub) {
     sequence_dictionary reference;
-    auto& mapping=sequence_dictionary.mapping;
-    size_t& reflen=sequence_dictionary.len;
+    auto& mapping=reference.mapping;
+    size_t& reflen=reference.len;
 
     for (size_t i=0; i<guides.size(); ++i) {
         Rcpp::String g=guides[i];
@@ -37,7 +37,7 @@ sequence_dictionary build_hash (Rcpp::StringVector guides, bool allowSub) {
         // Adding a sequence with one substitution, which is lower priority (1).
         if (allowSub) {
             rolling_substitution Subber(curhash, len);
-            while (Subber.advance()) {
+            do {
                 const auto& subhash=Subber.get();
                 auto it=mapping.find(subhash);
                 if (it!=mapping.end()) {
@@ -47,7 +47,7 @@ sequence_dictionary build_hash (Rcpp::StringVector guides, bool allowSub) {
                 } else {
                     mapping[subhash]=std::make_pair(i, 1);
                 }
-            }
+            } while (Subber.advance());
         }
     }
 
@@ -59,10 +59,10 @@ sequence_dictionary build_hash (Rcpp::StringVector guides, bool allowSub) {
  * sequence because that's of a different length anyway and will never clash.
  */
 
-sequence_dictionary build_deleted_hash (Rcpp::StringVector guides) {
+sequence_dictionary build_deleted_dictionary (Rcpp::StringVector guides) {
     sequence_dictionary reference;
-    auto& mapping=sequence_dictionary.mapping;
-    size_t& reflen=sequence_dictionary.len;
+    auto& mapping=reference.mapping;
+    size_t& reflen=reference.len;
 
     for (size_t i=0; i<guides.size(); ++i) {
         Rcpp::String g=guides[i];
@@ -80,7 +80,7 @@ sequence_dictionary build_deleted_hash (Rcpp::StringVector guides) {
         auto curhash=hash_sequence(ptr, len);
         rolling_deletion Del(curhash, len);
 
-        while (!Del.finished()) {
+        do {
             const auto& subhash=Del.get();
             auto it=mapping.find(subhash);
             if (it!=mapping.end()) {
@@ -90,9 +90,7 @@ sequence_dictionary build_deleted_hash (Rcpp::StringVector guides) {
             } else {
                 mapping[subhash]=std::make_pair(i, 1);
             }
-
-            Del.advance();
-        }
+        } while(Del.advance());
     }
 
     --reflen;

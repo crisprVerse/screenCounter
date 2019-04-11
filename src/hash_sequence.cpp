@@ -124,7 +124,7 @@ bool rolling_substitution::advance() {
             pos=0;
             hash[word]=static_cast<char32_t>(current);
             ++word;
-            if (word==in.size()) {
+            if (word==hash.size()) {
                 return false;
             }
             current=static_cast<uint32_t>(hash[word]);
@@ -150,7 +150,7 @@ const std::u32string& rolling_substitution::get() const { return hash; }
 
 rolling_deletion::rolling_deletion(const std::u32string& in, size_t n) :
     hash(in), len(n), word((n+WIDTH_IN_BASES-1)/WIDTH_IN_BASES), 
-    pos((n-1)%WIDTH_IN_BASES), state(0), current(0), discarded(0)
+    pos((n-1)%WIDTH_IN_BASES), current(0), discarded(0)
 {
     if (in.size()==0) { return; }
 
@@ -176,7 +176,7 @@ bool rolling_deletion::advance() {
         discarded <<= (WIDTH_IN_BASES - 1) * BITS_PER_BASE;
         pos=WIDTH_IN_BASES-1;
         --word;
-        current=static_cast<uint32_t>(in[word]);
+        current=static_cast<uint32_t>(hash[word]);
     } else {
         --pos;
         discarded >>= BITS_PER_BASE;
