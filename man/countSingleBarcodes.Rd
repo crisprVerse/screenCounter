@@ -2,10 +2,13 @@
 % Please edit documentation in R/countSingleBarcodes.R
 \name{countSingleBarcodes}
 \alias{countSingleBarcodes}
+\alias{matrixOfSingleBarcodes}
 \title{Count single barcodes}
 \usage{
 countSingleBarcodes(fastq, choices, flank5, flank3, template = NULL,
   substitutions = TRUE, deletions = TRUE)
+
+matrixOfSingleBarcodes(files, ..., BPPARAM = SerialParam())
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,
@@ -22,11 +25,19 @@ or a connection object to such a file.}
 \item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
 
 \item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
+
+\item{files}{A character vector of paths to FASTQ files.}
+
+\item{...}{Further arguments to pass to \code{countSingleBarcodes}.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.}
 }
 \value{
-An integer vector of length equal to \code{nrow(choices)},
+\code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
 containing the frequency of each barcode.
 This is named with the row names of \code{choices}.
+
+\code{matrixOfSingleBarcodes} will return an integer matrix where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
 }
 \description{
 Count the frequency of barcodes in a FASTQ file containing data for a single-end sequencing screen.
@@ -64,6 +75,8 @@ countSingleBarcodes(tmp, choices=known.pool,
 countSingleBarcodes(tmp, choices=known.pool,
     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 
+matrixOfSingleBarcodes(c(tmp, tmp), choices=known.pool,
+    flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 }
 \author{
 Aaron Lun

@@ -2,10 +2,13 @@
 % Please edit documentation in R/countComboBarcodes.R
 \name{countComboBarcodes}
 \alias{countComboBarcodes}
+\alias{matrixOfComboBarcodes}
 \title{Count combinatorial barcodes}
 \usage{
 countComboBarcodes(fastq, template, choices, substitutions = TRUE,
   deletions = TRUE)
+
+matrixOfComboBarcodes(files, ..., BPPARAM = SerialParam())
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,
@@ -19,11 +22,20 @@ Each row should correspond to a barcode and each column should contain a charact
 \item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
 
 \item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
+
+\item{files}{A character vector of paths to FASTQ files.}
+
+\item{...}{Further arguments to pass to \code{countComboBarcodes}.}
+
+\item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.}
 }
 \value{
-A \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
+\code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
 It contains \code{keys}, a nested \linkS4class{DataFrame} where each column corresponds to an element of \code{choices} and contains the indices of the sequences in each combinatorial barcode;
 and \code{counts}, an integer vector containing the frequency of each barcode.
+
+\code{matrixOfComboBarcodes} returns the same output as \code{\link{combineComboCounts}},
+i.e., a list containing a count matrix of frequencies for each combinatorial barcode in each \code{files}.
 }
 \description{
 Count combinatorial barcodes for screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences.
@@ -61,6 +73,9 @@ output <- countComboBarcodes(tmp,
 output$combination
 head(output$count)
 
+matrixOfComboBarcodes(c(tmp, tmp),
+    template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
+    choices=list(first=known.pool, second=known.pool))
 }
 \author{
 Aaron Lun
