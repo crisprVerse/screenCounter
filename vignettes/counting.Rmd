@@ -1,0 +1,178 @@
+---
+title: Counting barcodes
+author:
+- name: Aaron Lun
+  affiliation: Genentech gRED B&CB
+  email: luna@gene.com
+output:
+  BiocStyle::html_document:
+    toc_float: yes
+package: gp.sa.screen
+vignette: >
+  %\VignetteIndexEntry{1. Counting barcodes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(error=FALSE, message=FALSE)
+library(BiocStyle)
+library(gp.sa.core)
+```
+
+# Overview
+
+The `r GRANpkg("gp.sa.screen")` package implements several methods to quantify the frequency of barcodes in a screen sequencing experiment.
+These operate on the raw FASTQ files, yielding a matrix of counts for each barcode in each sample for downstream analysis.
+Quantification can be performed for both single and combinatorial barcodes.
+Only single-end sequencing data are currently supported.
+
+# Counting single barcodes
+
+The "barcode" is considered to be the entire sequence structure that is used to label a particular molecular or biological entity.
+This obviously includes regions of variable sequence that distinguish one barcode from another,
+as well as constant sequences that flank or separate the variable regions.
+The most common barcode design uses only one variable region, which we refer to as a "single barcode".
+
+```
+# Example of a single barcode:
+
+CAGCAGCATGCTGNNNNNNNNNNNNNNCAGCATCGTGC
+-------------^^^^^^^^^^^^^^-----------
+constant     variable      constant
+flank        region        flank
+```
+
+To demonstrate, let's mock up a FASTQ file for some barcode data.
+For simplicity, we will assume that each read only contains the barcode.
+However, it is entirely permissible to have additional (unknown) flanking sequences in the read.
+
+```{r}
+# Our pool of known variable sequences, one per barcode:
+known <- c("AAAAAAAA", "CCCCCCCC", "GGGGGGGG", "TTTTTTTT")
+
+# Mocking up some sequence data, where each read randomly contains 
+# one of the variable sequences, flanked by constant regions. 
+library(Biostrings)
+chosen <- sample(known, 1000, replace=TRUE)
+reads <- sprintf("GTAC%sCATG", chosen)
+names(reads) <- sprintf("READ_%i", seq_along(reads))
+
+# Writing to a FASTQ file.
+single.fq <- tempfile(fileext=".fastq")
+writeXStringSet(DNAStringSet(reads), file=single.fq, format="fastq")
+```
+
+We quantify single barcodes across one or more files using the `matrixOfSingleBarcodes()` function.
+This produces a matrix of frequencies of each barcode (row) in each file (column).
+The order of rows corresponds to the order of variable regions in `known` that distinguishes each barcode.
+
+```{r}
+library(gp.sa.screen)
+out <- matrixOfSingleBarcodes(single.fq, 
+    flank5="GTAC", flank3="CATG", choices=known)
+out
+```
+
+We specify the constant sequences that immediately flank the variable region^[A template structure can also be specified in `template=`, which may be more convenient.].
+This improves stringency of barcode identification, as the barcode will not be recognized in the read sequence unless the constant sequences match perfectly.
+It also improves speed as the matching of the variable sequence is only performed at positions along the read where the flanking constant sequences have matched.
+
+Obviously, users should not supply the full length of the flanking sequence if that sequence is not captured in the read.
+For example, the 3' flanking sequence may be lost in experiments using short reads.
+In such cases, an empty string should be specified as `flank3=`.
+
+# Counting combinatorial barcodes
+
+A more complex experimental design involves combinatorial barcodes where multiple variable regions are randomly ligated to form a single sequence.
+This exploits combinatorial complexity to generate a large number of unique barcodes from a limited pool of known variable sequences.
+
+```
+# Example of a combinatorial barcode:
+
+CAGCTANNNNNNNNNNCACGNNNNNNNNNNCAGCT
+------^^^^^^^^^^----^^^^^^^^^^-----
+      variable      variable
+```
+
+To demonstrate, let's mock up another FASTQ file of single-end read data.
+Again, for simplicity, we will assume that each read sequence contains only the barcode.
+
+```{r}
+# Our pool of known variable sequences:
+known <- c(
+    "AAAA",
+    "CCCC",
+    "GGGG",
+    "TTTT"    
+)
+
+# Mocking up some sequence data, where each read randomly contains 
+# two of the variable sequences within a template structure.
+library(Biostrings)
+chosen1 <- sample(known, 1000, replace=TRUE)
+chosen2 <- sample(known, 1000, replace=TRUE)
+reads <- sprintf("GTAC%sCATG%sGTAC", chosen1, chosen2)
+names(reads) <- sprintf("READ_%i", seq_along(reads))
+
+# Writing to a FASTQ file.
+combo.fq <- tempfile(fileext=".fastq")
+writeXStringSet(DNAStringSet(reads), file=combo.fq, format="fastq")
+```
+
+We quantify combinatorial barcodes across one or more files using the `matrixOfComboBarcodes()` function.
+This requires a template for the barcode structure to specify how the variable sequences are used to construct the final barcode.
+It is permissible for each variable sequence to be sampled from a different known pool, though in this case, both regions are sampled from the same pool.
+
+```{r}
+out <- matrixOfComboBarcodes(combo.fq,
+    template="GTACNNNNCATGNNNNGTAC",
+    choices=list(known, known))    
+out$combination
+out$counts
+```
+
+This function produces a matrix of frequencies of each barcode (row) in each file (column).
+The identity of the variable regions in each combinatorial barcode is contained in the `combination` data frame, which contains integer indices to the variable sequences in `known.barcodes`.
+
+# Further options
+
+## Supporting mismatches and deletions
+
+Matching allows for _no more than_ one substitution or deletion within any variable region.
+If multiple variable regions are present in a combinatorial barcode, only one substitution or deletion can be present across all variable regions.
+This is equivalent to an edit distance threshold of one (across the variable regions).
+
+Allowing for mismatches or deletions improves recovery of the barcode in the presence of sequencing errors.
+While such errors are rare per base^[At least on Illumina machines.], they will be more likely to occur when considering the entire length of the barcode.
+Substitutions are most common, followed by deletions; insertions are extremely rare and are not supported.
+
+Mismatch tolerance is turned on by default in all counting functions.
+Users can disable these selectively by setting `substitutions=FALSE` or `deletions=FALSE`.
+This may be necessary to achieve high stringency for short barcodes.
+
+## Parallelization across files
+
+Counting functions are parallelized across files using the `r Biocpkg("BiocParallel")` framework.
+Each file is processed separately on a single worker to create the final matrix of counts.
+
+```{r}
+# Pretend that these are different samples:
+all.files <- c(single.fq, single.fq, single.fq)
+
+# Parallel execution:
+library(BiocParallel)
+out <- matrixOfSingleBarcodes(all.files, 
+    flank5="GTAC", flank3="CATG", choices=known,
+    BPPARAM=SnowParam(2))
+out
+```
+
+Users are advised to read the `r Biocpkg("BiocParallel", "Introduction_To_BiocParallel.pdf", "relevant documentation")` to determine the most effective parallelization approach for their system.
+For example, users working on a cluster should use `BatchJobsParam()`, while users on non-Windows machines may prefer to use `MulticoreParam()`.
+
+# Session information
+
+```{r}
+sessionInfo()
+```

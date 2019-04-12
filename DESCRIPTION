@@ -8,7 +8,7 @@ Description: Provides a standardized analysis pipeline for
 Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="luna@gene.com")
 Depends: S4Vectors
 Imports: gp.sa.core, gp.sa.diff, Rcpp, ShortRead
-Suggests: BiocStyle, knitr, rmarkdown, testthat, Biostrings
+Suggests: BiocStyle, knitr, rmarkdown, testthat, Biostrings, BiocStyle
 LinkingTo: Rcpp
 License: Genentech, Inc.
 VignetteBuilder: knitr
