@@ -4,17 +4,18 @@
 #'
 #' @param fastq String containing the path to a FASTQ file containing single-end data,
 #' or a connection object to such a file.
-#' @param choices A \linkS4class{DataFrame} of sequences for the variable regions.
-#' Each row should correspond to a barcode and each column should contain a character vector of sequences.
+#' @param choices A character vector of sequences for the variable regions, one per barcode.
+#' @param flank5 String containing the constant sequence on the 5' flank of the variable region.
+#' @param flank3 String containing the constant sequence on the 3' flank of the variable region.
 #' @param template A template for the barcode structure, see \code{\link{?createBarcodes}} for details.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
 #'
 #' @details
-#' In the simplest case, \code{choices} can be specified with a single column of variable sequences.
-#' If \code{template=NULL}, the function will then directly use each of those sequences as the barcode with no constant regions.
-#' More complex barcode structures are accommodated via \code{template}, e.g., with multiple variable regions and intervening and/or flanking constant spacers.
-#' See \code{\link{createBarcodes}} for more details.
+#' If \code{template} is specified, it will be used to define the flanking regions.
+#' Any user-supplied values of \code{flank5} and \code{flank3} will be ignored.
+#' Note that, for this function, the template should only contain a single variable region.
+#' See \code{\link{parseBarcodeTemplate}} for more details.
 #'
 #' If \code{substitutions=TRUE}, only one mismatch is allowed across all variable regions,
 #' \emph{not} per variable region.
@@ -42,57 +43,36 @@
 #' writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 #'
 #' # Counting the combinations.
-#' countSingleBarcodes(tmp, choices=DataFrame(known.pool))
+#' countSingleBarcodes(tmp, choices=known.pool,
+#'     template="CAGCTACGTACGNNNNNNNNNCCAGCTCGATCG")
+#'
+#' countSingleBarcodes(tmp, choices=known.pool,
+#'     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 #'
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
-countSingleBarcodes <- function(fastq, choices, template=NULL, substitutions=TRUE, deletions=TRUE) {
-    if (is.null(template)) {
-        if (ncol(choices) > 1L) {
-            stop("'template=NULL' only works with a single column of 'choices'")
+countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
+    template=NULL, substitutions=TRUE, deletions=TRUE) 
+{
+    if (!is.null(template)) {
+        parsed <- parseBarcodeTemplate(template)
+        constants <- parsed$constant
+        if (length(constants)!=2L) {
+            stop("template must contain exactly one variable region")
         }
-        template <- strrep("N", nchar(choices[1,1]))
-    }
-
-    parsed <- parseBarcodeTemplate(template)
-    n.pos <- parsed$variable$pos
-    n.len <- parsed$variable$len
-    constants <- parsed$constant
-
-    # Validating 'choices'.
-    nvariables <- length(n.pos)
-    if (nvariables!=length(choices)) {
-        stop("'length(choices)' is not equal to the number of stretches of N's")
-    }
-    for (i in seq_len(nvariables)) {
-        if (!all(nchar(choices[[i]])==n.len[i])) {
-            stop("each column of 'choices' must have same width as variable region in 'template'")
-        }
-    }
-
-    # Choosing the C++ functions to use.
-    if (nvariables==1L) {
-        setupfun <- setup_barcodes_fixed_solo
-        countfun <- count_barcodes_fixed_solo
-        reportfun <- report_barcodes_fixed_solo
-    } else if (nvariables==2L) {
-        setupfun <- setup_barcodes_fixed_dual
-        countfun <- count_barcodes_fixed_dual
-        reportfun <- report_barcodes_fixed_dual
     } else {
-        stop(sprintf("'ncol(choices)=%i' is not currently supported", nvariables))
+        constants <- as.character(c(flank5, flank3))
     }
 
-    ptr <- setupfun(constants, as.list(choices), substitutions, deletions)
-
+    ptr <- setup_barcodes_single(constants, list(choices), substitutions, deletions)
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
     while (length(fq <- yield(incoming))) {
         seqs <- as.character(sread(fq))
-        countfun(seqs, ptr)
+        count_barcodes_single(seqs, ptr)
     }
 
-    all.available <- reportfun(ptr)
+    all.available <- report_barcodes_single(ptr)
     names(all.available) <- rownames(choices)
     all.available
 }
