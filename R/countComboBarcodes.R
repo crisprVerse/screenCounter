@@ -52,9 +52,10 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom ShortRead FastqStreamer
 countComboBarcodes <- function(fastq, template, choices, substitutions=TRUE, deletions=TRUE) {
-    positions <- .split_template(template)
-    n.pos <- positions$pos
-    n.len <- positions$len
+    parsed <- parseBarcodeTemplate(template)
+    n.pos <- parsed$variable$pos
+    n.len <- parsed$variable$len
+    constants <- parsed$constant
 
     # Validating 'choices'.
     nvariables <- length(n.pos)
@@ -66,15 +67,6 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=TRUE, del
             stop("each column of 'choices' must have same width as variable region in 'template'")
         }
     }
-
-    # Extracting constant regions.
-    last.pos <- 1L
-    constants <- character(length(n.pos)+1L)
-    for (i in seq_along(n.pos)) {
-        constants[i] <- substring(template, last.pos, n.pos[i]-1)
-        last.pos <- n.pos[i] + n.len[i]
-    }
-    constants[length(n.pos)+1] <- substring(template, last.pos, nchar(template))
 
     # Choosing the C++ functions to use.
     if (nvariables==2L) {
