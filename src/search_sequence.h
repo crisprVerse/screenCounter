@@ -36,6 +36,7 @@ struct search_info {
     std::vector<std::u32string> constant_hash;
     std::vector<int> constant_lengths, variable_lengths;
     std::vector<size_t> constant_starts, variable_starts;
+    std::vector<size_t> nbarcodes;
     size_t total_len;
     bool allow_del;
 };
@@ -58,10 +59,12 @@ search_info<nvariable>::search_info(Rcpp::List Guides, Rcpp::StringVector Consta
     }
     perfect.reserve(nvariable);
     deleted.reserve(nvariable);
+    nbarcodes.reserve(nvariable);
     variable_lengths.reserve(nvariable);
 
     for (size_t g=0; g<nvariable; ++g) {
         Rcpp::StringVector guides(Guides[g]);
+        nbarcodes.push_back(guides.size());
         perfect.push_back(build_dictionary(guides, allow_sub));
         variable_lengths.push_back(perfect.back().len);
         if (allow_del) {

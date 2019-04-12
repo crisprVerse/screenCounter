@@ -67,7 +67,7 @@ constexpr uint32_t LEAST_SIG=(1 << BITS_PER_BASE) - 1;
 
 void shift_sequence(std::u32string& in, const size_t n, char new3) {
     if (in.size()==0) {
-        throw std::runtime_error("empty string cannot be shifted");
+        return;
     }
 
     size_t x=0;
