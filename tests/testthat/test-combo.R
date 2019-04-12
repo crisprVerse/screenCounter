@@ -98,7 +98,7 @@ test_that("countComboBarcodes works as expected with deletions", {
         "ACGTCCCCCCCCCACGTGGGGGGGACGT",  # not matched, error in both variable regions.
         "ACGTCCCCCCCCCCACGTGGGGGGGGAGT", # not matched, error in a constant region.
         "ACGTCCCCCCCCCCAGTGGGGGGGGACGT", # not matched, error in a constant region.
-        "CGTCCCCCCCCCCACGTGGGGGGGGACGT"  # not matched, error in a constant region.
+        "ACGCCCCCCCCCCACGTGGGGGGGGACGT"  # not matched, error in a constant region.
     )
     names(barcodes) <- seq_along(barcodes)
 
