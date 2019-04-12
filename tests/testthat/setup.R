@@ -23,4 +23,11 @@ MANUAL_HASH <- function(barcode, split=FALSE) {
     collected
 }
 
-
+ADD_FLANKS <- function(barcodes, fname, nleft=50, nright=50) {
+    N <- length(barcodes)
+    left <- vapply(sample(nleft, N, replace=TRUE), GENERATE_RANDOM_SEQ, FUN.VALUE="")
+    right <- vapply(sample(nright, N, replace=TRUE), GENERATE_RANDOM_SEQ, FUN.VALUE="")
+    barcodes2 <- paste0(left, barcodes, right)
+    names(barcodes2) <- seq_len(N)
+    writeXStringSet(DNAStringSet(barcodes2), filepath=fname, format="fastq")
+}

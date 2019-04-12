@@ -9,12 +9,7 @@ barcode.fmt <- "ACGT%sACGT%sACGT"
 template <- sprintf(barcode.fmt, strrep("N", nchar(POOL1[1])), strrep("N", nchar(POOL2[1])))
 
 STICKER <- function(barcodes, fname, out, ...) {
-    N <- length(barcodes)
-    left <- vapply(rep(50, N), GENERATE_RANDOM_SEQ, FUN.VALUE="")
-    right <- vapply(rep(30, N), GENERATE_RANDOM_SEQ, FUN.VALUE="")
-    barcodes2 <- paste0(left, barcodes, right)
-    names(barcodes2) <- seq_len(N)
-    writeXStringSet(DNAStringSet(barcodes2), filepath=fname, format="fastq")
+    ADD_FLANKS(barcodes, fname)
     out2 <- countComboBarcodes(fname, template, ...)
     expect_identical(out, out2)
 }
