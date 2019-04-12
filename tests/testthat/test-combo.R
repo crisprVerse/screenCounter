@@ -117,6 +117,27 @@ test_that("countComboBarcodes works as expected with deletions", {
     expect_identical(out$count, 3L)
 
     STICKER(barcodes, tmp, out, choices=choices, sub=FALSE)
+
+    # Handles conflicts correctly.
+    barcodes <- c(
+        "ACGTCCCCCCCCCCACGTGGGGGGGGACGT", 
+        "ACGTCCCCCCCCAACGTGGGGGGGGACGT", 
+        "ACGTCCCCCCCCCCACGTTGGGGGGACGT", 
+        "ACGTCCCCCCCCCACGTGGGGGGGGACGT", # ambiguous and removed.
+        "ACGTCCCCCCCCCCACGTGGGGGGGACGT"  # ambiguous and removed. 
+    )
+    names(barcodes) <- seq_along(barcodes)
+
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+
+    choices <- list(c("CCCCCCCCCC", "CCCCCCCCCA"), c("GGGGGGGG", "TGGGGGGG"))
+    out <- countComboBarcodes(tmp, template, choices=choices, sub=FALSE)
+    expect_identical(out$combination[,1], c(1L, 1L, 2L))
+    expect_identical(out$combination[,2], c(1L, 2L, 1L))
+    expect_identical(out$count, rep(1L, 3))
+
+    STICKER(barcodes, tmp, out, choices=choices, sub=FALSE)
 })
 
 
