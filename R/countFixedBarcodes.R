@@ -28,22 +28,30 @@
 #'
 #' @author Aaron Lun
 #' @examples
-#' # Re-using ShortRead's examples:
-#' library(ShortRead)
-#' sp <- SolexaPath(system.file('extdata', package='ShortRead'))
-#' fl <- file.path(analysisPath(sp), "s_1_sequence.txt")
+#' # Creating an example dual barcode sequencing experiment.
+#' known.pool <- c("AGAGAGAGA", "CTCTCTCTC",
+#'     "GTGTGTGTG", "CACACACAC")
+#' 
+#' N <- 1000
+#' barcodes <- sprintf("CAGCTACGTACG%sCCAGCTCGATCG",
+#'    sample(known.pool, N, replace=TRUE))
+#' names(barcodes) <- seq_len(N)
+#' 
+#' library(Biostrings)
+#' tmp <- tempfile(fileext=".fastq")
+#' writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 #'
-#' countSingleBarcodes(fl,
-#'    choices=DataFrame(c("AAA", "GGG", "CCC", "TTT")))
+#' # Counting the combinations.
+#' countFixedBarcodes(tmp, choices=DataFrame(known.pool))
 #'
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
-countSingleBarcodes <- function(fastq, choices, template=NULL, substitutions=TRUE, deletions=TRUE) {
+countFixedBarcodes <- function(fastq, choices, template=NULL, substitutions=TRUE, deletions=TRUE) {
     if (is.null(template)) {
         if (ncol(choices) > 1L) {
             stop("'template=NULL' only works with a single column of 'choices'")
         }
-        template <- strrep("N", nchar(choices[,1]))
+        template <- strrep("N", nchar(choices[1,1]))
     }
 
     parsed <- parseBarcodeTemplate(template)
@@ -64,30 +72,27 @@ countSingleBarcodes <- function(fastq, choices, template=NULL, substitutions=TRU
 
     # Choosing the C++ functions to use.
     if (nvariables==1L) {
-        setupfun <- setup_barcodes_combo_solo
-        countfun <- count_barcodes_combo_solo
-        reportfun <- report_barcodes_combo_solo
+        setupfun <- setup_barcodes_fixed_solo
+        countfun <- count_barcodes_fixed_solo
+        reportfun <- report_barcodes_fixed_solo
     } else if (nvariables==2L) {
-        setupfun <- setup_barcodes_combo_dual
-        countfun <- count_barcodes_combo_dual
-        reportfun <- report_barcodes_combo_dual
+        setupfun <- setup_barcodes_fixed_dual
+        countfun <- count_barcodes_fixed_dual
+        reportfun <- report_barcodes_fixed_dual
     } else {
         stop(sprintf("'ncol(choices)=%i' is not currently supported", nvariables))
     }
 
-    ptr <- setup_barcodes_single(constants, as.list(barcodes)), substitutions, deletions)
+    ptr <- setupfun(constants, as.list(choices), substitutions, deletions)
 
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
-    all.available <- integer(length(barcodes))
-
     while (length(fq <- yield(incoming))) {
         seqs <- as.character(sread(fq))
-        output <- count_barcodes_single(seqs, ptr)
-        output <- output[output >= 0L] 
-        all.available <- all.available + tabulate(output, length(all.available))
+        countfun(seqs, ptr)
     }
 
-    names(all.available) <- names(barcodes)
+    all.available <- reportfun(ptr)
+    names(all.available) <- rownames(choices)
     all.available
 }
