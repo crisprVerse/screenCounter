@@ -10,6 +10,9 @@
 #' @param template A template for the barcode structure, see \code{\link{?createBarcodes}} for details.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
+#' @param files A character vector of paths to FASTQ files.
+#' @param ... Further arguments to pass to \code{countSingleBarcodes}.
+#' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.
 #'
 #' @details
 #' If \code{template} is specified, it will be used to define the flanking regions.
@@ -23,9 +26,12 @@
 #' If both are set, only one deletion or mismatch is allowed across all variable regions,
 #' i.e., there is a maximum edit distance of 1 from any possible reference combination.
 #'
-#' @return An integer vector of length equal to \code{nrow(choices)},
+#' @return 
+#' \code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
 #' containing the frequency of each barcode.
 #' This is named with the row names of \code{choices}.
+#' 
+#' \code{matrixOfSingleBarcodes} will return an integer matrix where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -49,6 +55,8 @@
 #' countSingleBarcodes(tmp, choices=known.pool,
 #'     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 #'
+#' matrixOfSingleBarcodes(c(tmp, tmp), choices=known.pool,
+#'     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
@@ -75,4 +83,12 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
     all.available <- report_barcodes_single(ptr)
     names(all.available) <- rownames(choices)
     all.available
+}
+
+#' @rdname countSingleBarcodes
+#' @export
+#' @importFrom BiocParallel bplapply SerialParam
+matrixOfSingleBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
+    out <- bplapply(files, FUN=countSingleBarcodes, ..., BPPARAM=BPPARAM)
+    do.call(cbind, out)
 }
