@@ -1,5 +1,5 @@
 ---
-title: Counting barcodes
+title: Counting barcodes in sequencing screens.
 author:
 - name: Aaron Lun
   affiliation: Genentech gRED B&CB
@@ -25,10 +25,9 @@ library(gp.sa.core)
 
 # Overview
 
-The `r GRANpkg("gp.sa.screen")` package implements several methods to quantify the frequency of barcodes in a screen sequencing experiment.
+The `r GRANpkg("gp.sa.screen")` package implements several methods to quantify the frequency of barcodes in a sequencing screen experiment.
 These operate on the raw FASTQ files, yielding a matrix of counts for each barcode in each sample for downstream analysis.
-Quantification can be performed for both single and combinatorial barcodes.
-Only single-end sequencing data are currently supported.
+Quantification can be performed for both single and combinatorial barcodes, though only single-end sequencing data are currently supported.
 
 # Counting single barcodes
 
@@ -46,7 +45,7 @@ constant     variable      constant
 flank        region        flank
 ```
 
-To demonstrate, let's mock up a FASTQ file for some barcode data.
+To demonstrate, let's mock up a FASTQ file from a single-end sequencing screen.
 For simplicity, we will assume that each read only contains the barcode.
 However, it is entirely permissible to have additional (unknown) flanking sequences in the read.
 
@@ -103,18 +102,14 @@ Again, for simplicity, we will assume that each read sequence contains only the 
 
 ```{r}
 # Our pool of known variable sequences:
-known <- c(
-    "AAAA",
-    "CCCC",
-    "GGGG",
-    "TTTT"    
-)
+known1 <- c("AAAA", "CCCC", "GGGG", "TTTT")
+known2 <- c("ATTA", "CGGC", "GCCG", "TAAT")
 
 # Mocking up some sequence data, where each read randomly contains 
 # two of the variable sequences within a template structure.
 library(Biostrings)
-chosen1 <- sample(known, 1000, replace=TRUE)
-chosen2 <- sample(known, 1000, replace=TRUE)
+chosen1 <- sample(known1, 1000, replace=TRUE)
+chosen2 <- sample(known2, 1000, replace=TRUE)
 reads <- sprintf("GTAC%sCATG%sGTAC", chosen1, chosen2)
 names(reads) <- sprintf("READ_%i", seq_along(reads))
 
@@ -125,18 +120,18 @@ writeXStringSet(DNAStringSet(reads), file=combo.fq, format="fastq")
 
 We quantify combinatorial barcodes across one or more files using the `matrixOfComboBarcodes()` function.
 This requires a template for the barcode structure to specify how the variable sequences are used to construct the final barcode.
-It is permissible for each variable sequence to be sampled from a different known pool, though in this case, both regions are sampled from the same pool.
+It is permissible for each variable sequence to be sampled from a different known pool.
 
 ```{r}
 out <- matrixOfComboBarcodes(combo.fq,
     template="GTACNNNNCATGNNNNGTAC",
-    choices=list(first=known, second=known))    
+    choices=list(first=known1, second=known2))
 out$combination
 out$counts
 ```
 
 This function produces a matrix of frequencies of each barcode (row) in each file (column).
-The identities of the variable regions in each combinatorial barcode are specified in the `combination` data frame, which contains integer indices to the variable sequences in `known`.
+The identities of the variable regions in each combinatorial barcode are specified in the `combination` data frame, which contains integer indices to the variable sequences in `known1` and `known2`.
 
 # Further options
 
@@ -172,7 +167,7 @@ out
 ```
 
 Users are advised to read the `r Biocpkg("BiocParallel", "Introduction_To_BiocParallel.pdf", "relevant documentation")` to determine the most effective parallelization approach for their system.
-For example, users working on a cluster should use `BatchJobsParam()`, while users on non-Windows machines may prefer to use `MulticoreParam()`.
+For example, users working on a cluster should use `BatchJobsParam()`, while users on a local non-Windows machines may prefer to use `MulticoreParam()`.
 
 # Session information
 
