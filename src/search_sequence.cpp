@@ -29,8 +29,9 @@ hash_scanner::hash_scanner(const char* p, size_t n) : ptr(p), len(n),
 
 void hash_scanner::advance() {
     nvalid-=is_valid(*ptr);
-    ++ptr;
     const char next=*(ptr+len);
+    ++ptr;
+
     shift_sequence(hashed, len, next);
     nvalid+=is_valid(next);
     return;
