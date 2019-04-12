@@ -16,6 +16,9 @@ vignette: >
 
 ```{r, echo=FALSE, results="hide"}
 knitr::opts_chunk$set(error=FALSE, message=FALSE)
+```
+
+```{r, echo=FALSE, results="hide"}
 library(BiocStyle)
 library(gp.sa.core)
 ```
@@ -127,13 +130,13 @@ It is permissible for each variable sequence to be sampled from a different know
 ```{r}
 out <- matrixOfComboBarcodes(combo.fq,
     template="GTACNNNNCATGNNNNGTAC",
-    choices=list(known, known))    
+    choices=list(first=known, second=known))    
 out$combination
 out$counts
 ```
 
 This function produces a matrix of frequencies of each barcode (row) in each file (column).
-The identity of the variable regions in each combinatorial barcode is contained in the `combination` data frame, which contains integer indices to the variable sequences in `known.barcodes`.
+The identities of the variable regions in each combinatorial barcode are specified in the `combination` data frame, which contains integer indices to the variable sequences in `known`.
 
 # Further options
 
