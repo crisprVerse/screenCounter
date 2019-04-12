@@ -42,11 +42,11 @@
 #' writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 #'
 #' # Counting the combinations.
-#' countFixedBarcodes(tmp, choices=DataFrame(known.pool))
+#' countSingleBarcodes(tmp, choices=DataFrame(known.pool))
 #'
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
-countFixedBarcodes <- function(fastq, choices, template=NULL, substitutions=TRUE, deletions=TRUE) {
+countSingleBarcodes <- function(fastq, choices, template=NULL, substitutions=TRUE, deletions=TRUE) {
     if (is.null(template)) {
         if (ncol(choices) > 1L) {
             stop("'template=NULL' only works with a single column of 'choices'")
