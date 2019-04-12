@@ -4,7 +4,8 @@
 \alias{countComboBarcodes}
 \title{Count combinatorial barcodes}
 \usage{
-countComboBarcodes(fastq, template, choices)
+countComboBarcodes(fastq, template, choices, substitutions = TRUE,
+  deletions = TRUE)
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,
@@ -14,6 +15,10 @@ or a connection object to such a file.}
 
 \item{choices}{A \linkS4class{List} of potential sequences for each variable region in \code{template}.
 Each row should correspond to a barcode and each column should contain a character vector of sequences.}
+
+\item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
+
+\item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
 }
 \value{
 A \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
@@ -27,10 +32,15 @@ Count combinatorial barcodes for screen sequencing experiments where entities ar
 Certain screen sequencing experiments take advantage of combinatorial complexity to generate a very large pool of unique barcode sequences.
 Only a subset of all possible combinatorial barcodes will be used in any given experiment.
 This function only counts the combinations that are actually observed, improving efficiency over a more conventional approach (i.e., to generate all possible combinations and use \code{\link{countSingleBarcodes}} to count their frequency).
+
+If \code{substitutions=TRUE}, only one mismatch is allowed across all variable regions,
+\emph{not} per variable region.
+Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
+If both are set, only one deletion or mismatch is allowed across all variable regions,
+i.e., there is a maximum edit distance of 1 from any possible reference combination.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.
-library(Biostrings)
 known.pool <- c("AGAGAGAGA", "CTCTCTCTC",
     "GTGTGTGTG", "CACACACAC")
 
@@ -40,6 +50,7 @@ barcodes <- sprintf("ACGT\%sACGT\%sACGT",
    sample(known.pool, N, replace=TRUE))
 names(barcodes) <- seq_len(N)
 
+library(Biostrings)
 tmp <- tempfile(fileext=".fastq")
 writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
@@ -47,8 +58,8 @@ writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 output <- countComboBarcodes(tmp,
     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
     choices=list(first=known.pool, second=known.pool))
-output$keys
-head(output$counts)
+output$combination
+head(output$count)
 
 }
 \author{
