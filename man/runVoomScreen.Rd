@@ -5,8 +5,8 @@
 \title{Use \code{voom} to analyze a screen}
 \usage{
 runVoomScreen(se, groups, comparisons, covariates = NULL, block = NULL,
-  ..., type.field = "XXX", norm.types = NULL, design.fun = NULL,
-  contrasts.fun = NULL, fname = NULL)
+  ..., reference.field, reference.level, norm.type.field, norm.type.level,
+  gene.field, design.fun = NULL, contrasts.fun = NULL, fname = NULL)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.
@@ -22,9 +22,15 @@ Alternatively, a string containing a file path to a serialized instance of a Sum
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
-\item{type.field}{String specifying the field of \code{rowData} specifying the gene type for each barcode.}
+\item{reference.field}{String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).}
 
-\item{norm.types}{Character vector specifying the gene types on which to perform normalization.}
+\item{reference.level}{Character vector specifying the reference levels of the column named by \code{reference.field}.}
+
+\item{norm.type.field}{String specifying the field of \code{rowData(se)} containing the gene type for each barcode.}
+
+\item{norm.type.level}{Character vector specifying the gene types on which to perform normalization.}
+
+\item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
 \item{design.fun}{A function to create a custom design matrix, see \code{?\link{createDesignMatrix}}.}
 
@@ -41,11 +47,14 @@ A list containing \code{objects} and \code{results}.
 Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
 }
 \details{
-This function is largely a wrapper around \code{\link{runVoom}}, with two additional features:
+This function is largely a wrapper around \code{\link{runVoom}}, with three additional features:
 \itemize{
-\item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs).
-These are negative controls that may yield more accurate normalization factors when the majority of other genes are DE.
-\item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene.
+\item Filtering based on reference samples; see \code{\link{filterReference}}.
+If \code{reference.field=NULL}, default edgeR filtering is used instead; see \code{\link{defaultEdgeRFilter}}.
+\item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs); see \code{\link{normalizeControls}}.
+If \code{norm.type.field=NULL}, default edgeR normalization is used instead; see \code{\link{defaultEdgeRNormalize}}.
+\item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consoliateGenes}}.
+If \code{gene.field=NULL}, no consolidation is performed.
 }
 }
 \examples{
@@ -58,12 +67,17 @@ g <- gl(2, 3)
 library(SummarizedExperiment)
 se <- SummarizedExperiment(y)
 rowData(se)$type <- sample(c("endog", "NTG", "NEG"), N, replace=TRUE)
+rowData(se)$gene <- paste0("GENE_", sample(100, N, replace=TRUE))
 colData(se)$group <- g
 
 out <- runVoomScreen(se, groups="group",
     comparisons=list(c("2", "1")),
-    type.field="type", norm.types="NEG")
-head(out$results$`2-1`)
+    norm.type.field="type", norm.type.level="NEG",
+    reference.field="group", reference.level="1",
+    gene.field="gene")
+
+head(out$results$`2-1_barcode`)
+head(out$results$`2-1_gene`)
 
 }
 \author{
