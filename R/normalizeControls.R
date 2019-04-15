@@ -11,15 +11,12 @@
 #' 
 #' @details
 #' The output commands assume that there is a \linkS4class{SummarizedExperiment} object named \code{se} and a DGEList object named \code{y} in the evaluation environment.
-#' Normalization factors will be computed using a median-based approach and assigned back to \code{y} for downstream analysis.
+#' Normalization factors are computed using TMM normalization on the subset of control barcodes,
+#' and assigned back to \code{y} for downstream analysis.
 #'
-#' Here, we use a custom normalization approach that is, unlike conventional methods for RNA-seq data, \emph{not} based on ratios.
-#' Rather, the median is directly computed from the counts of the (control) barcodes in each sample.
-#' This is a simpler approach that can be more precise than the use of ratios, under the assumption that the barcodes specified by \code{to.use} are present in equimolar amounts.
-#' 
-#' (In the presence of a large proportion of differential features, the error of the median will be proportional to the variance of the distribution.
-#' Equal molarity means that the variance of the counts is smaller than that of the ratios, as the latter effectively involves adding the variance of the log-counts.
-#' On the other hand, our approach will be more inaccurate than ratios when the abundance distribution has large variance, e.g., for bulk RNA-seq data.)
+#' We only use control barcodes to weaken the assumption of a non-DE majority of barcodes.
+#' We use TMM normalization (i.e., robust average of a ratio) rather than methods based on a robust average of expression within each sample.
+#' This avoids inflated errors due to the greater variance of the distribution of expression values compared to the ratio.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -37,11 +34,9 @@ normalizeControls <- function(type.field, to.use) {
 This avoids composition biases due to genuine changes in abundance for barcodes associated with relevant biological processes.
 
 ```{r}
-norm.use <- rowData(se)[[%s]][y$origin] %%in%% %s
-to.use <- y$counts[norm.use,,drop=FALSE]
-scaling <- apply(to.use, 2, median)
-new.nf <- scaling / y$samples$lib.size
-y$samples$norm.factors <- new.nf/mean(new.nf)", deparse(type.field), deparse(to.use))
+norm.use <- rowData(se)[[%s]][y$genes$origin] %%in%% %s
+ysub <- calcNormFactors(y[norm.use,])
+y$samples$norm.factors <- ysub$samples$norm.factors", deparse(type.field))
 
     normalize <- c(normalize, "head(y$samples, 10)
 summary(y$samples$norm.factors)
