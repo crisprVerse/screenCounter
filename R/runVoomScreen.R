@@ -9,8 +9,11 @@
 #' @param covariates Character vector specifying the columns of \code{colData(se)} containing continuous covariates of interest,  see \code{\link{createDesignMatrix}}.
 #' @param block Character vector specifying additional blocking factors or covariates that are \emph{not} of interest, see \code{\link{createDesignMatrix}}.
 #' @param ... Further arguments to pass to \code{\link{runVoom}}. 
-#' @param type.field String specifying the field of \code{rowData} specifying the gene type for each barcode.
-#' @param norm.types Character vector specifying the gene types on which to perform normalization.
+#' @param reference.field String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).
+#' @param reference.level Character vector specifying the reference levels of the column named by \code{reference.field}.
+#' @param norm.type.field String specifying the field of \code{rowData(se)} containing the gene type for each barcode.
+#' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
+#' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param design.fun A function to create a custom design matrix, see \code{?\link{createDesignMatrix}}.
 #' @param contrasts.fun A list of custom contrasts information, including contrast-generating functions; see \code{?\link{createContrasts}}.
 #' @param fname String containing the path to an output Rmarkdown file.
@@ -20,11 +23,14 @@
 #' \code{results} is a named list containing \linkS4class{DataFrame}s of result tables from all contrasts.
 #'
 #' @details
-#' This function is largely a wrapper around \code{\link{runVoom}}, with two additional features:
+#' This function is largely a wrapper around \code{\link{runVoom}}, with three additional features:
 #' \itemize{
-#' \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs).
-#' These are negative controls that may yield more accurate normalization factors when the majority of other genes are DE.
-#' \item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene.
+#' \item Filtering based on reference samples; see \code{\link{filterReference}}.
+#' If \code{reference.field=NULL}, default edgeR filtering is used instead; see \code{\link{defaultEdgeRFilter}}.
+#' \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs); see \code{\link{normalizeControls}}.
+#' If \code{norm.type.field=NULL}, default edgeR normalization is used instead; see \code{\link{defaultEdgeRNormalize}}.
+#' \item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consoliateGenes}}.
+#' If \code{gene.field=NULL}, no consolidation is performed.
 #' }
 #'
 #' @author Aaron Lun
@@ -39,18 +45,24 @@
 #' library(SummarizedExperiment)
 #' se <- SummarizedExperiment(y)
 #' rowData(se)$type <- sample(c("endog", "NTG", "NEG"), N, replace=TRUE)
+#' rowData(se)$gene <- paste0("GENE_", sample(100, N, replace=TRUE))
 #' colData(se)$group <- g
 #'
 #' out <- runVoomScreen(se, groups="group",
 #'     comparisons=list(c("2", "1")),
-#'     type.field="type", norm.types="NEG")
-#' head(out$results$`2-1`)
+#'     norm.type.field="type", norm.type.level="NEG",
+#'     reference.field="group", reference.level="1",
+#'     gene.field="gene")
+#'
+#' head(out$results$`2-1_barcode`)
+#' head(out$results$`2-1_gene`)
 #'
 #' @export
 #' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts
+#' defaultEdgeRFilter defaultEdgeRNormalize
 #' @importFrom gp.sa.core makeFrontMatter pathFromRoot knitAndWrite newDirectoryPath
-runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, 
-    ..., type.field="XXX", norm.types=NULL,
+runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, ..., 
+    reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
     design.fun=NULL, contrasts.fun=NULL, fname=NULL)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
@@ -64,10 +76,8 @@ runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL,
         se <- pathFromRoot(se)
     }
     contrast.cmds <- createContrasts(comparisons, contrasts.fun)
-    by.barcodes <- paste0(contrast.cmds$name, "_barcode")
-    by.genes <- paste0(contrast.cmds$name, "_gene")
-    all.results <- c(by.barcodes, by.genes)
-    contrast.cmds$name <- by.barcodes
+    all.results <- paste0(contrast.cmds$name, "_barcode")
+    contrast.cmds$title <- paste0(contrast.cmds$title, "\n\n### By barcode")
 
     # Define the output file and temporarily change directory to it.
     # Note that CD'ing is done *after* defining input paths.
@@ -100,10 +110,30 @@ This describes the experimental design to be used for the analysis.
 colnames(design)
 ```', design.cmds)
 
+    # Setting up all the parts of the analysis that are screen-specific.
+    if (is.null(reference.field)) {
+        filt <- defaultEdgeRFilter("barcodes")
+    } else {
+        filt <- filterReference(reference.field, reference.level)
+    }
+
+    if (is.null(norm.type.field)) {
+        norm <- defaultEdgeRNormalize("barcodes")
+    } else {
+        norm <- normalizeControls(norm.type.field, norm.type.level)
+    }
+
+    if (is.null(gene.field)) {
+        postcon <- NULL
+    } else {
+        postcon <- consolidateGenes(gene.field)
+        all.results <- c(all.results, paste0(contrast.cmds$name, "_gene"))
+    }
+
     env <- runVoomCore(se, design.cmds, contrast.cmds, ..., fname=fname,
-        filter=gp.sa.diff:::.default_edgeR_filter("genes"), 
-        normalize=tmmOnSubset(type.field=type.field, to.use=norm.types),
-        out.format=file.path("results", "%s"))
+        filter=filt, normalize=norm, post.contrast=postcon,
+        out.format=file.path("results", "%s_barcode")
+    )
 
     # Cleaning up.
     knitAndWrite(fname, env, "# Wrapping up
