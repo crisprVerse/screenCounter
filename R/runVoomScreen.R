@@ -27,10 +27,12 @@
 #' \itemize{
 #' \item Filtering based on reference samples; see \code{\link{filterReference}}.
 #' If \code{reference.field=NULL}, default edgeR filtering is used instead; see \code{\link{defaultEdgeRFilter}}.
+#' If \code{reference.field=NA}, no filtering is performed.
 #' \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs); see \code{\link{normalizeControls}}.
 #' If \code{norm.type.field=NULL}, default edgeR normalization is used instead; see \code{\link{defaultEdgeRNormalize}}.
+#' If \code{norm.type.field=NA}, no normalization is performed beyond library size normalization.
 #' \item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consoliateGenes}}.
-#' If \code{gene.field=NULL}, no consolidation is performed.
+#' If \code{gene.field=NA}, no consolidation is performed.
 #' }
 #'
 #' @author Aaron Lun
@@ -76,8 +78,18 @@ runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, 
         se <- pathFromRoot(se)
     }
     contrast.cmds <- createContrasts(comparisons, contrasts.fun)
-    all.results <- paste0(contrast.cmds$name, "_barcode")
-    contrast.cmds$title <- paste0(contrast.cmds$title, "\n\n### By barcode")
+
+    # Choosing whether to output just barcode results, or to consolidate.
+    if (is.na(gene.field)) {
+        postcon <- NULL
+        all.results <- contrast.cmds$name
+        res.fmt <- "%s"
+    } else {
+        postcon <- consolidateGenes(gene.field)
+        contrast.cmds$title <- paste0(contrast.cmds$title, "\n\n### By barcode")
+        all.results <- as.vector(outer(contrast.cmds$name, c("_barcode", "_gene"), paste0))
+        res.fmt <- "%s_barcode"
+    }
 
     # Define the output file and temporarily change directory to it.
     # Note that CD'ing is done *after* defining input paths.
@@ -113,26 +125,23 @@ colnames(design)
     # Setting up all the parts of the analysis that are screen-specific.
     if (is.null(reference.field)) {
         filt <- defaultEdgeRFilter("barcodes")
+    } else if (is.na(reference.field)) {
+        filt <- ""
     } else {
         filt <- filterReference(reference.field, reference.level)
     }
 
     if (is.null(norm.type.field)) {
         norm <- defaultEdgeRNormalize("barcodes")
+    } else if (is.na(norm.type.field)) {
+        norm <- ""
     } else {
         norm <- normalizeControls(norm.type.field, norm.type.level)
     }
 
-    if (is.null(gene.field)) {
-        postcon <- NULL
-    } else {
-        postcon <- consolidateGenes(gene.field)
-        all.results <- c(all.results, paste0(contrast.cmds$name, "_gene"))
-    }
-
     env <- runVoomCore(se, design.cmds, contrast.cmds, ..., fname=fname,
         filter=filt, normalize=norm, post.contrast=postcon,
-        out.format=file.path("results", "%s_barcode")
+        out.format=file.path("results", res.fmt)
     )
 
     # Cleaning up.
