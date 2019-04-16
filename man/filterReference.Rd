@@ -7,9 +7,9 @@
 filterReference(ref.field, to.use)
 }
 \arguments{
-\item{to.use}{Character vector containing the types of samples that are references.}
+\item{ref.field}{String containing the name of the column of \code{colData} specifying the type of each sample.}
 
-\item{type.field}{String containing the name of the column of \code{colData} specifying the type of each sample.}
+\item{to.use}{Character vector containing the types of samples that are references.}
 }
 \value{
 A string containing commands to filter barcodes based on their abundances in the reference samples.

@@ -55,7 +55,7 @@ If \code{reference.field=NA}, no filtering is performed.
 \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs); see \code{\link{normalizeControls}}.
 If \code{norm.type.field=NULL}, default edgeR normalization is used instead; see \code{\link{defaultEdgeRNormalize}}.
 If \code{norm.type.field=NA}, no normalization is performed beyond library size normalization.
-\item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consoliateGenes}}.
+\item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consolidateGenes}}.
 If \code{gene.field=NA}, no consolidation is performed.
 }
 }
