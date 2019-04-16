@@ -1,0 +1,159 @@
+---
+title: Detecting differentially abundant barcodes
+author:
+- name: Aaron Lun
+  affiliation: Genentech gRED B&CB
+  email: luna@gene.com
+output:
+  BiocStyle::html_document:
+    toc_float: yes
+package: gp.sa.screen
+vignette: >
+  %\VignetteIndexEntry{2. Differential abundance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(error=FALSE, message=FALSE)
+```
+
+```{r, echo=FALSE, results="hide"}
+library(BiocStyle)
+library(gp.sa.core)
+```
+
+# Overview
+
+The `r GRANpkg("gp.sa.screen")` package implements a pipeline function to detect differentially abundant barcodes in a sequencing screen experiment.
+This is based on the `voom` method in the `r Biocpkg("limma")` package, operating on a matrix of barcode-by-sample counts.
+The basic philosophy is the same as that described in the documentation for the `r GRANpkg("gp.sa.diff")` package - thus, we will mainly focus on the screen-specific parameters in this vignette.
+
+# Setting up
+
+## The project
+
+First, we need to set up an analysis project, as defined by the `r GRANpkg("gp.sa.core")` package.
+
+```{r}
+library(gp.sa.core)
+
+# Change the directory location as needed:
+proj.dir <- file.path(tempdir(), "Screen")
+
+newProject(proj.dir, title="Screening for barcodes",
+    description="I'm testing for differences!")           
+```
+
+We change our working directory to this location.
+
+```{r, eval=FALSE}
+setwd(proj.dir)
+```
+
+```{r, echo=FALSE, results="hide"}
+# Because knitr fights changes to the wd.
+knitr::opts_knit$set(root.dir=proj.dir)
+```
+
+## The data
+
+We will mock up an example data set for demonstration purposes.
+This will contain three replicate screens with three time points per sample.
+
+```{r}
+run <- gl(3, 3)
+time <- rep(0:2, 3)
+data.frame(run, time)
+```
+
+We assume we have 1000 barcodes with random assignments to genes, of which a small fraction are control genes that should not exhibit any change over time.
+
+```{r}
+# Generating a random count matrix, assuming barcodes
+# were added in equimolar quantities.
+N <- 1000
+y <- matrix(rnbinom(N * length(run), mu=100, size=10), ncol=length(run))
+
+# Generating random assignments of barcodes to genes.
+gene.id <- sample(paste0("GENE_", seq_len(100)), N, replace=TRUE)
+
+# First 10 genes are non-essential controls.
+gene.type <- ifelse(gene.id %in% paste0("GENE_", seq_len(10)), "NEG", ".")
+```
+
+We use this information to construct a `SummarizedExperiment` object for input to our pipeline function.
+
+```{r}
+library(SummarizedExperiment)
+se <- SummarizedExperiment(list(counts=y),
+    rowData=DataFrame(ID=gene.id, Type=gene.type),
+    colData=DataFrame(time=time, run=run))
+se
+```
+
+# Running the pipeline
+
+The `runVoomScreen()` function will, as its name suggests, run `voom` on the sequencing screen count matrix to identify barcodes that change in abundance across a contrast of interest.
+In our application, we want to identify barcodes that change in abundance over time.
+Assuming a linear response in the log-abundance over time, we can do:
+
+```{r, fig.show="hide"}
+library(gp.sa.screen)
+out <- runVoomScreen(se, covariates="time", comparisons=list("time"),
+    block="run", reference.field="time", reference.level=0,
+    norm.type.field="Type", norm.type.level="NEG", gene.field="ID")   
+```
+
+In addition to the standard differential analysis arguments passed to `runVoom()`,
+we require several screen-specific arguemnts:
+
+- `reference.field` and `reference.level`, which specifies the samples that belong to the reference group (i.e., prior to any barcode selection).
+This information is used for filtering out low-abundance barcodes that were not generated in the same quantities as the other barcodes during library manufacture.
+In this case, our reference samples are those that are at zero in the `time` column metadata field.
+- `norm.type.field` and `norm.type.level`, which specifies the negative control barcodes.
+These barcodes should not change during the course of an experiment and thus can be used for normalization.
+In this case, our negative controls are specified as `NEG`s (i.e., non-essential genes) in the `Type` row metadata field.
+- `gene.field`, which specifies the barcode-to-gene mappings.
+In this case, the relevant column metadata field is `ID`.
+
+The `runVoomScreen()` function will produce two result tables per comparison.
+One table refers to the barcode-level results, while the other table contains gene-level results from consolidating the statistics across barcodes for each gene.
+We combine $p$-values across barcodes using Simes' method, and report statistics for the best barcode (i.e., with the lowest $p$-value) in each gene's pool of barcodes.
+
+```{r}
+out$results$time_barcode
+out$results$time_gene
+```
+
+As with `runVoom()`, the `runVoomScreen()` function will produce a Rmarkdown report describing the exact steps that were performed.
+We recommend tracking this file using Git as described `r GRANpkg("gp.sa.diff", "userguide.html", "here")` and `r GRANpkg("gp.sa.core", "users.html", "here")`.
+
+# Further options
+
+Any option that is supported by `runVoom()` can also be used here.
+For example, we might prefer to analyze our data by treating `run` as a random effect:
+
+```{r, fig.show="hide"}
+out.dc <- runVoomScreen(se, covariates="time", comparisons=list('time'),
+    dup.cor="run", reference.field="time", reference.level=0,
+    norm.type.field="Type", norm.type.level="NEG", gene.field="ID")                        
+out.dc$results$time_gene
+```
+
+The screen-specific options can also be fine-tuned:
+
+- If `reference.field=NULL`, we default to `r Biocpkg("edgeR")`'s default filtering (see `?filterByExpr`). 
+If `reference.field=NA`, no filtering is performed, which may be useful for debugging purposes.
+- If `norm.type.field=NULL`, we default to TMM normalization across all barcodes (see `?calcNormFactors`). 
+If `norm.type.field=NA`, no normalization is performed beyond library size normalization - this may be the "least worst" option in experiments with large systematic changes in abundance and no negative controls.
+- If `gene.field=NA`, no post-contrast consoliation of the barcode-level statistics is performed.
+
+Further customization can take place by directly modifying the Rmarkdown report.
+Be sure to track any changes using Git!
+
+# Session information
+
+```{r}
+sessionInfo()
+```
