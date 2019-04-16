@@ -50,11 +50,13 @@
 #' rowData(se)$gene <- paste0("GENE_", sample(100, N, replace=TRUE))
 #' colData(se)$group <- g
 #'
+#' tmp <- tempfile(fileext=".Rmd")
 #' out <- runVoomScreen(se, groups="group",
 #'     comparisons=list(c("2", "1")),
 #'     norm.type.field="type", norm.type.level="NEG",
 #'     reference.field="group", reference.level="1",
-#'     gene.field="gene")
+#'     gene.field="gene", fname=tmp)
+#' file.exists(tmp)
 #'
 #' head(out$results$`2-1_barcode`)
 #' head(out$results$`2-1_gene`)
@@ -140,8 +142,10 @@ colnames(design)
     }
 
     env <- runVoomCore(se, design.cmds, contrast.cmds, ..., fname=fname,
-        filter=filt, normalize=norm, post.contrast=postcon,
-        out.format=file.path("results", res.fmt)
+        filter=filt, normalize=norm, 
+        diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
+        out.format=file.path("results", res.fmt),
+        post.contrast=postcon
     )
 
     # Cleaning up.
@@ -165,4 +169,30 @@ sessionInfo()
     res <- lapply(all.results, function(x) readRDS(file.path("results", paste0(x, ".rds"))))
     names(res) <- all.results
     list(objects=list(fit=fit), results=res)
+}
+
+#' @importFrom gp.sa.diff defaultEdgeRMDS defaultEdgeRMD
+.screen_edgeR_diag_plots <- function(norm.type.field, norm.type.level) {
+    if (!is.null(norm.type.field)) {
+        md.code <- sprintf("We examine the performance of normalization by creating MD (mean-difference) plots.
+Most control genes should have a log-fold change of zero between samples if normalization was successful.
+
+```{r, fig.wide=TRUE, fig.asp=ceiling(ncol(y)/3)/3}
+norm.use <- rowData(se)[[%s]][y$genes$origin] %%in%% %s
+lcpm <- cpm(y, log=TRUE, prior.count=3)
+n <- ncol(lcpm)
+par(mfrow=c(ceiling(n/3), 3))
+for (i in seq_len(n)) {
+    plotMD(lcpm, column=i, status=norm.use)
+    abline(h=0, col='red', lty=2)
+}
+```", deparse(norm.type.field), deparse(norm.type.level))
+    } else {
+        md.code <- defaultEdgeRMD("genes")
+    }
+
+    paste("# Making diagnostic plots",
+        md.code,
+        defaultEdgeRMDS("barcodes"),
+        sep="\n\n")
 }
