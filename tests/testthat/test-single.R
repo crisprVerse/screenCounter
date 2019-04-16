@@ -76,7 +76,7 @@ test_that("countSingleBarcodes works as expected with deletions", {
         "ACGTCCCCCCCCCACGT",
         "ACGTCCCCCCCCACGT",  # not matched, two deletions.
         "ACGTCCCCCCCCCCAGT", # not matched, error in a constant region.
-        "CGTCCCCCCCCCCACGT"  # not matched, error in a constant region.
+        "ACTCCCCCCCCCCACGT"  # not matched, error in a constant region.
     )
     names(barcodes) <- seq_along(barcodes)
 
