@@ -174,9 +174,13 @@ sessionInfo()
 
 #' @importFrom gp.sa.diff defaultEdgeRMDS defaultEdgeRMD
 .screen_edgeR_diag_plots <- function(norm.type.field, norm.type.level) {
-    if (!is.null(norm.type.field)) {
+    if (is.null(norm.type.field)) {
+        md.code <- defaultEdgeRMD("barcodes")
+    } else if (is.na(norm.type.field)) {
+        md.code <- ""
+    } else {
         md.code <- sprintf("We examine the performance of normalization by creating MD (mean-difference) plots.
-Most control genes should have a log-fold change of zero between samples if normalization was successful.
+Most of the negative control barcodes should have a log-fold change of zero between samples if normalization was successful.
 
 ```{r, fig.wide=TRUE, fig.asp=ceiling(ncol(y)/3)/3}
 norm.use <- rowData(se)[[%s]][y$genes$origin] %%in%% %s
@@ -188,8 +192,6 @@ for (i in seq_len(n)) {
     abline(h=0, col='red', lty=2)
 }
 ```", deparse(norm.type.field), deparse(norm.type.level))
-    } else {
-        md.code <- defaultEdgeRMD("genes")
     }
 
     paste("# Making diagnostic plots",
