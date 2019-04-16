@@ -36,7 +36,7 @@ This avoids composition biases due to genuine changes in abundance for barcodes 
 ```{r}
 norm.use <- rowData(se)[[%s]][y$genes$origin] %%in%% %s
 ysub <- calcNormFactors(y[norm.use,])
-y$samples$norm.factors <- ysub$samples$norm.factors", deparse(type.field))
+y$samples$norm.factors <- ysub$samples$norm.factors", deparse(type.field), deparse(to.use))
 
     normalize <- c(normalize, "head(y$samples, 10)
 summary(y$samples$norm.factors)
