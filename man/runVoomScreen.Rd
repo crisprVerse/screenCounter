@@ -72,11 +72,13 @@ rowData(se)$type <- sample(c("endog", "NTG", "NEG"), N, replace=TRUE)
 rowData(se)$gene <- paste0("GENE_", sample(100, N, replace=TRUE))
 colData(se)$group <- g
 
+tmp <- tempfile(fileext=".Rmd")
 out <- runVoomScreen(se, groups="group",
     comparisons=list(c("2", "1")),
     norm.type.field="type", norm.type.level="NEG",
     reference.field="group", reference.level="1",
-    gene.field="gene")
+    gene.field="gene", fname=tmp)
+file.exists(tmp)
 
 head(out$results$`2-1_barcode`)
 head(out$results$`2-1_gene`)
