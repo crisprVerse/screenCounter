@@ -4,7 +4,7 @@
 #' 
 #' @param fastq String containing the path to a FASTQ file containing single-end data,
 #' or a connection object to such a file.
-#' @param template A template for the barcode structure, see \code{\link{?createBarcodes}} for details.
+#' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
 #' @param choices A \linkS4class{List} of potential sequences for each variable region in \code{template}.
 #' Each row should correspond to a barcode and each column should contain a character vector of sequences.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.

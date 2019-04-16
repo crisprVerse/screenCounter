@@ -3,7 +3,7 @@
 #' Generate code to compute a filter threshold for removing low-abundance barcodes,
 #' based on the average log-abundance of all barcodes in the reference samples.
 #'
-#' @param type.field String containing the name of the column of \code{colData} specifying the type of each sample.
+#' @param ref.field String containing the name of the column of \code{colData} specifying the type of each sample.
 #' @param to.use Character vector containing the types of samples that are references.
 #'
 #' @return 

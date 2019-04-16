@@ -7,7 +7,7 @@
 #' @param choices A character vector of sequences for the variable regions, one per barcode.
 #' @param flank5 String containing the constant sequence on the 5' flank of the variable region.
 #' @param flank3 String containing the constant sequence on the 3' flank of the variable region.
-#' @param template A template for the barcode structure, see \code{\link{?createBarcodes}} for details.
+#' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
 #' @param files A character vector of paths to FASTQ files.

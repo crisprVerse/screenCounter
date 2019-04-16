@@ -31,7 +31,7 @@
 #' \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs); see \code{\link{normalizeControls}}.
 #' If \code{norm.type.field=NULL}, default edgeR normalization is used instead; see \code{\link{defaultEdgeRNormalize}}.
 #' If \code{norm.type.field=NA}, no normalization is performed beyond library size normalization.
-#' \item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consoliateGenes}}.
+#' \item Consolidation of per-barcode results into per-gene results, in experiments where multiple barcodes (i.e., guides, shRNAs) target the same gene; see \code{\link{consolidateGenes}}.
 #' If \code{gene.field=NA}, no consolidation is performed.
 #' }
 #'
@@ -65,6 +65,7 @@
 #' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts
 #' defaultEdgeRFilter defaultEdgeRNormalize
 #' @importFrom gp.sa.core makeFrontMatter pathFromRoot knitAndWrite newDirectoryPath
+#' @importFrom grDevices pdf dev.list dev.off
 runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
     design.fun=NULL, contrasts.fun=NULL, fname=NULL)
