@@ -10,9 +10,9 @@
 #' @param norm.type.field String specifying the field of \code{rowData(se)} containing the gene type for each barcode.
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
-#' @param design.fun A function to create a custom design matrix, see \code{?\link{createDesignMatrix}}.
-#' @param contrasts.fun A list of custom contrasts information, including contrast-generating functions; see \code{?\link{createContrasts}}.
 #' @param fname String containing the path to an output Rmarkdown file.
+#' @param res.dir String containing the name of the directory for result files.
+#' @param obj.dir String containing the name of the directory for object files.
 #'
 #' @return A list containing \code{objects} and \code{results}.
 #' \code{objects} is a list containing the \code{fit} object, the MArrayLM object produced by \code{eBayes}.
@@ -60,7 +60,7 @@
 #' @export
 #' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts
 #' defaultEdgeRFilter defaultEdgeRNormalize
-#' @importFrom gp.sa.core makeFrontMatter pathFromRoot knitAndWrite newDirectoryPath
+#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newDirectoryPath
 #' @importFrom grDevices pdf dev.list dev.off
 runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
@@ -73,16 +73,14 @@ runVoomScreen <- function(se, ...,
     }
 
     # Do this before changing wd.
-    if (is.character(se)) {
-        se <- pathFromRoot(se)
-    }
+    if (is.character(se)) se <- normalizePath(se) 
 
     # Choosing whether to output just barcode results, or to consolidate.
     if (is.na(gene.field)) {
         postcon <- NULL
         res.fmt <- "%s"
     } else {
-        postcon <- consolidateGenes(res.dir, gene.field)
+        postcon <- consolidateGenes(gene.field, res.dir)
         res.fmt <- "%s:barcode"
     }
 

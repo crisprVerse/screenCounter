@@ -3,6 +3,7 @@
 #' Consolidate barcode-level statistics to gene-level statistics.
 #'
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
+#' @param res.dir String specifying the directory in which results are to be saved.
 #'
 #' @return
 #' A function that takes a machine-readable name of the contrast (see \code{\link{createContrasts}}),
@@ -24,12 +25,14 @@
 #' The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
 #' 
 #' @examples
-#' FUN <- consolidateGenes("gene.type")
-#' cat(FUN(DataFrame(name="A-B")))
+#' FUN <- consolidateGenes("gene.type", "reuslts")
+#' cat(FUN("A-B"))
 #' @export
 #' @importFrom csaw combineTests
-consolidateGenes <- function (res.dir, gene.field) {
+consolidateGenes <- function (gene.field, res.dir) {
     to.add <- deparse(gene.field)
+    force(res.dir)
+
     function(vname) {
         vname <- file.path(res.dir, vname)
 
