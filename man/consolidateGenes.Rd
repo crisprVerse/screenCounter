@@ -4,10 +4,12 @@
 \alias{consolidateGenes}
 \title{Consolidate to genes}
 \usage{
-consolidateGenes(res.dir, gene.field)
+consolidateGenes(gene.field, res.dir)
 }
 \arguments{
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
+
+\item{res.dir}{String specifying the directory in which results are to be saved.}
 }
 \value{
 A function that takes a machine-readable name of the contrast (see \code{\link{createContrasts}}),
@@ -32,6 +34,6 @@ This is used to determine the name of the output files to which to save results.
 The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
 }
 \examples{
-FUN <- consolidateGenes("gene.type")
-cat(FUN(DataFrame(name="A-B")))
+FUN <- consolidateGenes("gene.type", "reuslts")
+cat(FUN("A-B"))
 }

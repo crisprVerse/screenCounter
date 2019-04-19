@@ -26,9 +26,9 @@ Alternatively, a string containing a file path to a serialized instance of a Sum
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
 
-\item{design.fun}{A function to create a custom design matrix, see \code{?\link{createDesignMatrix}}.}
+\item{res.dir}{String containing the name of the directory for result files.}
 
-\item{contrasts.fun}{A list of custom contrasts information, including contrast-generating functions; see \code{?\link{createContrasts}}.}
+\item{obj.dir}{String containing the name of the directory for object files.}
 }
 \value{
 A list containing \code{objects} and \code{results}.
