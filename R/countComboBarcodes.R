@@ -61,7 +61,7 @@
 #' @export
 #' @importFrom S4Vectors DataFrame
 #' @importFrom ShortRead FastqStreamer
-countComboBarcodes <- function(fastq, template, choices, substitutions=TRUE, deletions=TRUE) {
+countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE) {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
     n.len <- parsed$variable$len

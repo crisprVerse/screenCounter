@@ -23,12 +23,12 @@ test_that("countSingleBarcodes works as expected in basic mode", {
         tmp <- tempfile(fileext=".fastq")
         writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
-        out <- countSingleBarcodes(tmp, POOL, template=template, sub=FALSE, del=FALSE)
+        out <- countSingleBarcodes(tmp, POOL, template=template)
         tab <- tabulate(i, nbins=nbarcodes)
         expect_identical(tab, out)
 
         # Same results when you stick a bunch of random crap to the start and end.
-        STICKER(barcodes, tmp, out, sub=FALSE, choices=POOL, del=FALSE)
+        STICKER(barcodes, tmp, out, choices=POOL)
     }
 })
 
@@ -46,10 +46,10 @@ test_that("countSingleBarcodes works as expected with substitutions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- strrep(BASES, 10)
-    out <- countSingleBarcodes(tmp, choices, template=template, del=FALSE)
+    out <- countSingleBarcodes(tmp, choices, template=template, sub=TRUE)
     expect_identical(out, c(0L, 0L, 2L, 0L))
 
-    STICKER(barcodes, tmp, out, choices=choices, del=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 
     # Handles conflicts correctly.
     barcodes <- c(
@@ -64,10 +64,10 @@ test_that("countSingleBarcodes works as expected with substitutions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- c("CCCCCCCCCC", "CCCCCCCCCA")
-    out <- countSingleBarcodes(tmp, choices, template=template, del=FALSE)
+    out <- countSingleBarcodes(tmp, choices, template=template, sub=TRUE)
     expect_identical(out, c(1L, 1L))
 
-    STICKER(barcodes, tmp, out, choices=choices, del=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 })
 
 test_that("countSingleBarcodes works as expected with deletions", {
@@ -84,10 +84,10 @@ test_that("countSingleBarcodes works as expected with deletions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- strrep(BASES, 10)
-    out <- countSingleBarcodes(tmp, choices, template=template, sub=FALSE)
+    out <- countSingleBarcodes(tmp, choices, template=template, del=TRUE)
     expect_identical(out, c(0L, 2L, 0L, 0L))
 
-    STICKER(barcodes, tmp, out, choices=choices, sub=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 
     # Handles conflicts correctly.
     barcodes <- c(
@@ -102,10 +102,8 @@ test_that("countSingleBarcodes works as expected with deletions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- c("CCCCCCCCCC", "CCCCCCCCCA")
-    out <- countSingleBarcodes(tmp, choices, template=template, sub=FALSE)
+    out <- countSingleBarcodes(tmp, choices, template=template, del=TRUE)
     expect_identical(out, c(1L, 2L))
 
-    STICKER(barcodes, tmp, out, choices=choices, sub=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 })
-
-

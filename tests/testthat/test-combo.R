@@ -24,7 +24,7 @@ test_that("countComboBarcodes works as expected in basic mode", {
         tmp <- tempfile(fileext=".fastq")
         writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
-        out <- countComboBarcodes(tmp, template, list(POOL1, POOL2), sub=FALSE, del=FALSE)
+        out <- countComboBarcodes(tmp, template, list(POOL1, POOL2))
 
         tab <- table(factor(i1, seq_along(POOL1)), factor(i2, seq_along(POOL2)))
         ref <- list(as.vector(row(tab)), as.vector(col(tab)), as.vector(tab)) 
@@ -38,7 +38,7 @@ test_that("countComboBarcodes works as expected in basic mode", {
         expect_identical(out$count, ref[[3]])
 
         # Same results when you stick a bunch of random crap to the start and end.
-        STICKER(barcodes, tmp, out, sub=FALSE, choices=list(POOL1, POOL2), del=FALSE)
+        STICKER(barcodes, tmp, out, choices=list(POOL1, POOL2))
     }
 })
 
@@ -58,12 +58,12 @@ test_that("countComboBarcodes works as expected with substitutions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(strrep(BASES, 10), strrep(BASES, 8))
-    out <- countComboBarcodes(tmp, template, choices, del=FALSE)
+    out <- countComboBarcodes(tmp, template, choices, sub=TRUE)
     expect_identical(out$combination[,1], 2L)
     expect_identical(out$combination[,2], 3L)
     expect_identical(out$count, 3L)
 
-    STICKER(barcodes, tmp, out, choices=choices, del=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 
     # Handles conflicts correctly.
     barcodes <- c(
@@ -82,12 +82,12 @@ test_that("countComboBarcodes works as expected with substitutions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(c("CCCCCCCCCC", "CCCCCCCCCA"), c("GGGGGGGG", "TGGGGGGG"))
-    out <- countComboBarcodes(tmp, template, choices=choices, del=FALSE)
+    out <- countComboBarcodes(tmp, template, choices=choices, sub=TRUE)
     expect_identical(out$combination[,1], rep(1:2, each=2))
     expect_identical(out$combination[,2], rep(1:2, 2))
     expect_identical(out$count, rep(1L, 4))
 
-    STICKER(barcodes, tmp, out, choices=choices, del=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 })
 
 test_that("countComboBarcodes works as expected with deletions", {
@@ -106,12 +106,12 @@ test_that("countComboBarcodes works as expected with deletions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(strrep(BASES, 10), strrep(BASES, 8))
-    out <- countComboBarcodes(tmp, template, choices, sub=FALSE)
+    out <- countComboBarcodes(tmp, template, choices, del=TRUE)
     expect_identical(out$combination[,1], 2L)
     expect_identical(out$combination[,2], 3L)
     expect_identical(out$count, 3L)
 
-    STICKER(barcodes, tmp, out, choices=choices, sub=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 
     # Handles conflicts correctly.
     barcodes <- c(
@@ -127,12 +127,10 @@ test_that("countComboBarcodes works as expected with deletions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(c("CCCCCCCCCC", "CCCCCCCCCA"), c("GGGGGGGG", "TGGGGGGG"))
-    out <- countComboBarcodes(tmp, template, choices=choices, sub=FALSE)
+    out <- countComboBarcodes(tmp, template, choices=choices, del=TRUE)
     expect_identical(out$combination[,1], c(1L, 1L, 2L))
     expect_identical(out$combination[,2], c(1L, 2L, 1L))
     expect_identical(out$count, rep(1L, 3))
 
-    STICKER(barcodes, tmp, out, choices=choices, sub=FALSE)
+    STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 })
-
-

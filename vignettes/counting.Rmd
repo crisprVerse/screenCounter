@@ -137,17 +137,19 @@ The identities of the variable regions in each combinatorial barcode are specifi
 
 ## Supporting mismatches and deletions
 
-Matching allows for _no more than_ one substitution or deletion within any variable region.
-If multiple variable regions are present in a combinatorial barcode, only one substitution or deletion can be present across all variable regions.
-This is equivalent to an edit distance threshold of one (across the variable regions).
-
-Allowing for mismatches or deletions improves recovery of the barcode in the presence of sequencing errors.
+Mismatch tolerance can be enabled by setting `substitutions=TRUE` and/or `deletions=TRUE`.
+Allowing for mismatches or deletions improves barcode recovery in the presence of sequencing errors.
 While such errors are rare per base^[At least on Illumina machines.], they will be more likely to occur when considering the entire length of the barcode.
 Substitutions are most common, followed by deletions; insertions are extremely rare and are not supported.
 
-Mismatch tolerance is turned on by default in all counting functions.
-Users can disable these selectively by setting `substitutions=FALSE` or `deletions=FALSE`.
-This may be necessary to achieve high stringency for short barcodes.
+With mismatch tolerance, we allow _no more than_ one substitution or deletion within any variable region.
+If multiple variable regions are present in a combinatorial barcode, only one substitution or deletion can be present across all variable regions.
+This is equivalent to an edit distance threshold of one (across the variable regions).
+
+In practice, mismatch tolerance is turned off by default in all counting functions.
+This is because many errors are introduced during barcode synthesis, more than those due to library preparation or sequencing.
+Synthesis errors result in genuinely different barcodes (e.g., guides targeting different regions, or different molecular tags) that should not be counted together.
+Nonetheless, this setting may be useful for debugging experiments with low mapping rates.
 
 ## Parallelization across files
 

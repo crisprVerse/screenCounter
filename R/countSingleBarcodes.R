@@ -60,7 +60,7 @@
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
-    template=NULL, substitutions=TRUE, deletions=TRUE) 
+    template=NULL, substitutions=FALSE, deletions=FALSE) 
 {
     if (!is.null(template)) {
         parsed <- parseBarcodeTemplate(template)
