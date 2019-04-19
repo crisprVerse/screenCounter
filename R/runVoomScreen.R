@@ -4,10 +4,6 @@
 #'
 #' @param se A \linkS4class{SummarizedExperiment} object.
 #' Alternatively, a string containing a file path to a serialized instance of a SummarizedExperiment.
-#' @param groups String specifying the column of \code{colData(se)} containing the grouping factor, see \code{\link{createDesignMatrix}}.
-#' @param comparisons A list of character vectors specifying the comparisons to perform between groups, see \code{\link{createContrasts}}.
-#' @param covariates Character vector specifying the columns of \code{colData(se)} containing continuous covariates of interest,  see \code{\link{createDesignMatrix}}.
-#' @param block Character vector specifying additional blocking factors or covariates that are \emph{not} of interest, see \code{\link{createDesignMatrix}}.
 #' @param ... Further arguments to pass to \code{\link{runVoom}}. 
 #' @param reference.field String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).
 #' @param reference.level Character vector specifying the reference levels of the column named by \code{reference.field}.
@@ -58,17 +54,17 @@
 #'     gene.field="gene", fname=tmp)
 #' file.exists(tmp)
 #'
-#' head(out$results$`2-1_barcode`)
-#' head(out$results$`2-1_gene`)
+#' head(out$results$`2-1:de:barcode`)
+#' head(out$results$`2-1:de:gene`)
 #'
 #' @export
 #' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts
 #' defaultEdgeRFilter defaultEdgeRNormalize
 #' @importFrom gp.sa.core makeFrontMatter pathFromRoot knitAndWrite newDirectoryPath
 #' @importFrom grDevices pdf dev.list dev.off
-runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, ..., 
+runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
-    design.fun=NULL, contrasts.fun=NULL, fname=NULL)
+    fname=NULL, res.dir="results", obj.dir="objects")
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
@@ -76,22 +72,18 @@ runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, 
         on.exit(dev.off())
     }
 
-    # Defining inputs and outputs.
+    # Do this before changing wd.
     if (is.character(se)) {
         se <- pathFromRoot(se)
     }
-    contrast.cmds <- createContrasts(comparisons, contrasts.fun)
 
     # Choosing whether to output just barcode results, or to consolidate.
     if (is.na(gene.field)) {
         postcon <- NULL
-        all.results <- contrast.cmds$name
         res.fmt <- "%s"
     } else {
-        postcon <- consolidateGenes(gene.field)
-        contrast.cmds$title <- paste0(contrast.cmds$title, "\n\n### By barcode")
-        all.results <- as.vector(outer(contrast.cmds$name, c("_barcode", "_gene"), paste0))
-        res.fmt <- "%s_barcode"
+        postcon <- consolidateGenes(res.dir, gene.field)
+        res.fmt <- "%s:barcode"
     }
 
     # Define the output file and temporarily change directory to it.
@@ -105,25 +97,10 @@ runVoomScreen <- function(se, groups, comparisons, covariates=NULL, block=NULL, 
     on.exit(setwd(old))
 
     # Using write() here to force overwrite!
-    write(file=fname,
-        c(makeFrontMatter(
-            title="Differential abundance analysis of barcode count data with `voom` and _limma_",
-            author=list(list(name="Aaron Lun", affiliation="Genentech gRED B&CB", email="luna@gene.com")),
-            dependencies=if (is.character(se)) se else NULL,
-            generated=c(file.path("results", outer(all.results, c(".csv", ".rds"), paste0)), "fit.rds")
-        ), "")
-    )
-
-    design.cmds <- createDesignMatrix(groups, covariates, block, design.fun)
-    design.cmds <- sprintf('## Creating the design matrix
-
-We construct a design matrix based on the sample-specific metadata in our `se` object.
-This describes the experimental design to be used for the analysis.
-
-```{r}
-%s
-colnames(design)
-```', design.cmds)
+    write(file=fname, c(makeFrontMatter(
+        title="Differential abundance analysis of barcode count data with `voom` and _limma_",
+        author=list(list(name="Aaron Lun", affiliation="Genentech gRED B&CB", email="luna@gene.com"))
+    ), ""))
 
     # Setting up all the parts of the analysis that are screen-specific.
     if (is.null(reference.field)) {
@@ -142,34 +119,40 @@ colnames(design)
         norm <- normalizeControls(norm.type.field, norm.type.level)
     }
 
-    env <- runVoomCore(se, design.cmds, contrast.cmds, ..., fname=fname,
+    env <- runVoomCore(fname, se, ..., 
         filter=filt, normalize=norm, 
+        feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
-        out.format=file.path("results", res.fmt),
-        post.contrast=postcon
+        post.contrast=postcon,
+        res.dir=res.dir, obj.dir=obj.dir
     )
 
     # Cleaning up.
-    knitAndWrite(fname, env, "# Wrapping up
+    fit.name <- file.path(obj.dir, "fit.rds")
+    knitAndWrite(fname, env, sprintf("# Wrapping up
 
 We save the `fit` object to file for later use.
 
 ```{r}
-saveRDS(fit, file='fit.rds')
+saveRDS(fit, file=%s)
 ```
+
+<!-- GPSA_OUTPUT
+- path: %s
+  class: MArrayLM
+-->
 
 We also report the session information for our records.
 
 ```{r}
 sessionInfo()
-```")
+```", deparse(fit.name), fit.name))
 
     # Reporting the results.
-    fit <- env$fit
-    base.dir <- dirname(fname)
-    res <- lapply(all.results, function(x) readRDS(file.path("results", paste0(x, ".rds"))))
-    names(res) <- all.results
-    list(objects=list(fit=fit), results=res)
+    all.res <- .retrieve_saved_results(fname)
+    res <- lapply(all.res, readRDS)
+    names(res) <- sub("\\.rds$", "", basename(all.res))
+    list(objects=env, results=res)
 }
 
 #' @importFrom gp.sa.diff defaultEdgeRMDS defaultEdgeRMD
@@ -198,4 +181,11 @@ for (i in seq_len(n)) {
         md.code,
         defaultEdgeRMDS("barcodes"),
         sep="\n\n")
+}
+
+# Copied verbatim from gp.sa.diff, couldn't be bothered to export this...
+.retrieve_saved_results <- function(fname, pattern="^saveRDS\\((res|stats), file=\"(.*)\"\\)$") {
+    read.back <- readLines(fname)
+    read.back <- read.back[grep(pattern, read.back)]
+    sub(pattern, "\\2", read.back)
 }
