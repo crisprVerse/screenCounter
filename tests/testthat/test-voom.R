@@ -20,13 +20,13 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA)
     expect_identical(as.character(class(out$objects$fit)), "MArrayLM")
-    expect_identical(names(out$results), "time")
+    expect_identical(names(out$results), "time:de")
 
-    expect_true("PValue" %in% colnames(out$results$time))
-    expect_true("FDR" %in% colnames(out$results$time))
-    expect_true("AverageAbundance" %in% colnames(out$results$time))
-    expect_true("LogFC" %in% colnames(out$results$time))
-    expect_identical(rownames(out$results$time), NULL) # no names in 'se'.
+    expect_true("PValue" %in% colnames(out$results$`time:de`))
+    expect_true("FDR" %in% colnames(out$results$`time:de`))
+    expect_true("AverageAbundance" %in% colnames(out$results$`time:de`))
+    expect_true("LogFC" %in% colnames(out$results$`time:de`))
+    expect_identical(rownames(out$results$`time:de`), NULL) # no names in 'se'.
 
     # All proper settings.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
@@ -35,21 +35,25 @@ test_that("runVoomScreen works correctly in basic scenarios", {
         gene.field="gene"
     )
     expect_identical(as.character(class(out$objects$fit)), "MArrayLM")
-    expect_identical(names(out$results), c("time_barcode", "time_gene"))
+    expect_identical(names(out$results), c("time:de:barcode", "time:de:gene"))
 
-    expect_true("PValue" %in% colnames(out$results$time_gene))
-    expect_true("FDR" %in% colnames(out$results$time_gene))
-    expect_true("BestAverageAbundance" %in% colnames(out$results$time_gene))
-    expect_true("BestLogFC" %in% colnames(out$results$time_gene))
-    expect_identical(rownames(out$results$time_gene), sort(unique(rowData(se)$gene)))
+    expect_true("PValue" %in% colnames(out$results$`time:de:gene`))
+    expect_true("FDR" %in% colnames(out$results$`time:de:gene`))
+    expect_true("BestAverageAbundance" %in% colnames(out$results$`time:de:gene`))
+    expect_true("BestLogFC" %in% colnames(out$results$`time:de:gene`))
+    expect_identical(rownames(out$results$`time:de:gene`), sort(unique(rowData(se)$gene)))
 
     # All default settings
     out2 <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NULL, norm.type.field=NULL, gene.field="gene")
     expect_identical(as.character(class(out2$objects$fit)), "MArrayLM")
-    expect_identical(names(out2$results), c("time_barcode", "time_gene"))
-    expect_false(isTRUE(all.equal(out2$results$time_barcode, out$results$time_barcode)))
-    expect_false(isTRUE(all.equal(out2$results$time_gene, out$results$time_gene)))
+    expect_identical(names(out2$results), c("time:de:barcode", "time:de:gene"))
+
+    expect_identical(nrow(out2$results$`time:de:barcode`), nrow(out$results$`time:de:barcode`))
+    expect_identical(rownames(out2$results$`time:de:gene`), rownames(out$results$`time:de:gene`))
+
+    expect_false(isTRUE(all.equal(out2$results$`time:de:barcode`, out$results$`time:de:barcode`)))
+    expect_false(isTRUE(all.equal(out2$results$`time:de:gene`, out$results$`time:de:gene`)))
 })
 
 test_that("runVoomScreen works correctly with expansion of per-gene results", {
@@ -63,10 +67,10 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
         gene.field="gene"
     )
     expect_identical(as.character(class(out$objects$fit)), "MArrayLM")
-    expect_identical(names(out$results), c("time_barcode", "time_gene"))
+    expect_identical(names(out$results), c("time:de:barcode", "time:de:gene"))
 
-    expect_identical(rownames(out$results$time_gene), sort(unique(rowData(se)$gene)))
-    expect_true(all(is.na(out$results$time_gene[discarded, "PValue"])))
+    expect_identical(rownames(out$results$`time:de:gene`), sort(unique(rowData(se)$gene)))
+    expect_true(all(is.na(out$results$`time:de:gene`[discarded, "PValue"])))
 })
 
 
