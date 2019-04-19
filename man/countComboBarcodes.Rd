@@ -5,8 +5,8 @@
 \alias{matrixOfComboBarcodes}
 \title{Count combinatorial barcodes}
 \usage{
-countComboBarcodes(fastq, template, choices, substitutions = TRUE,
-  deletions = TRUE)
+countComboBarcodes(fastq, template, choices, substitutions = FALSE,
+  deletions = FALSE)
 
 matrixOfComboBarcodes(files, ..., BPPARAM = SerialParam())
 }

@@ -4,21 +4,13 @@
 \alias{runVoomScreen}
 \title{Use \code{voom} to analyze a screen}
 \usage{
-runVoomScreen(se, groups, comparisons, covariates = NULL, block = NULL,
-  ..., reference.field, reference.level, norm.type.field, norm.type.level,
-  gene.field, design.fun = NULL, contrasts.fun = NULL, fname = NULL)
+runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
+  norm.type.level, gene.field, fname = NULL, res.dir = "results",
+  obj.dir = "objects")
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.
 Alternatively, a string containing a file path to a serialized instance of a SummarizedExperiment.}
-
-\item{groups}{String specifying the column of \code{colData(se)} containing the grouping factor, see \code{\link{createDesignMatrix}}.}
-
-\item{comparisons}{A list of character vectors specifying the comparisons to perform between groups, see \code{\link{createContrasts}}.}
-
-\item{covariates}{Character vector specifying the columns of \code{colData(se)} containing continuous covariates of interest,  see \code{\link{createDesignMatrix}}.}
-
-\item{block}{Character vector specifying additional blocking factors or covariates that are \emph{not} of interest, see \code{\link{createDesignMatrix}}.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
@@ -32,11 +24,11 @@ Alternatively, a string containing a file path to a serialized instance of a Sum
 
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
+\item{fname}{String containing the path to an output Rmarkdown file.}
+
 \item{design.fun}{A function to create a custom design matrix, see \code{?\link{createDesignMatrix}}.}
 
 \item{contrasts.fun}{A list of custom contrasts information, including contrast-generating functions; see \code{?\link{createContrasts}}.}
-
-\item{fname}{String containing the path to an output Rmarkdown file.}
 }
 \value{
 A list containing \code{objects} and \code{results}.
@@ -80,8 +72,8 @@ out <- runVoomScreen(se, groups="group",
     gene.field="gene", fname=tmp)
 file.exists(tmp)
 
-head(out$results$`2-1_barcode`)
-head(out$results$`2-1_gene`)
+head(out$results$`2-1:de:barcode`)
+head(out$results$`2-1:de:gene`)
 
 }
 \author{
