@@ -60,7 +60,7 @@
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
 #' @importFrom S4Vectors DataFrame
-#' @importFrom ShortRead FastqStreamer
+#' @importFrom ShortRead FastqStreamer sread yield
 countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE) {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
@@ -93,8 +93,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
     while (length(fq <- yield(incoming))) {
-        seqs <- as.character(sread(fq))
-        countfun(seqs, ptr)
+        countfun(sread(fq), ptr)
     }
 
     output <- reportfun(ptr)

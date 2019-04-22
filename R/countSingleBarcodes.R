@@ -76,8 +76,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
     while (length(fq <- yield(incoming))) {
-        seqs <- as.character(sread(fq))
-        count_barcodes_single(seqs, ptr)
+        count_barcodes_single(sread(fq), ptr)
     }
 
     all.available <- report_barcodes_single(ptr)
