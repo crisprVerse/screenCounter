@@ -7,10 +7,11 @@ Description: Provides a standardized analysis pipeline for
     involving shRNA silencing or various flavors of CRISPR.
 Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="luna@gene.com")
 Depends: S4Vectors
-Imports: gp.sa.core, gp.sa.diff, Rcpp, ShortRead, BiocParallel, edgeR, 
-    csaw, grDevices, SummarizedExperiment
-Suggests: BiocStyle, knitr, rmarkdown, testthat, Biostrings
-LinkingTo: Rcpp
+Imports: gp.sa.core, gp.sa.diff, Rcpp, IRanges, XVector, 
+    Biostrings, ShortRead, BiocParallel, edgeR, csaw, 
+    grDevices, SummarizedExperiment
+Suggests: BiocStyle, knitr, rmarkdown, testthat
+LinkingTo: Rcpp, IRanges, XVector, Biostrings, S4Vectors
 License: Genentech, Inc.
 VignetteBuilder: knitr
 SystemRequirements: C++11

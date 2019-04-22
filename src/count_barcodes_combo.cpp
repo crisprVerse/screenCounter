@@ -1,5 +1,11 @@
 #include "Rcpp.h"
 
+extern "C" {
+
+#include "Biostrings_interface.h"
+
+}
+
 #include "hash_sequence.h"
 #include "build_dictionary.h"
 #include "search_sequence.h"
@@ -57,12 +63,23 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
     const auto& search_info=ptr->info;
     auto& output=ptr->output;
 
-    Rcpp::StringVector Seqs(seqs);
-    for (size_t i=0; i<Seqs.size(); ++i) {
-        Rcpp::String s=Seqs[i];
-        const char* sptr=s.get_cstring();
-        const size_t len=Rf_length(s.get_sexp());
-        search_sequence(sptr, len, search_info, output);
+    auto Seqs=hold_XStringSet(seqs);
+    size_t nseqs=get_length_from_XStringSet_holder(&Seqs);
+    std::vector<char> curseq;
+
+    for (size_t i=0; i<nseqs; ++i) {
+        auto current=get_elt_from_XStringSet_holder(&Seqs, i);
+        const char* ptr=current.ptr;
+        const size_t len=current.length;
+
+        if (len > curseq.size()) {
+            curseq.resize(len+1);
+        }
+        for (size_t i=0; i<len; ++i) {
+            curseq[i]=DNAdecode(ptr[i]);
+        }
+
+        search_sequence(curseq.data(), len, search_info, output);
     }
 
     return R_NilValue;
