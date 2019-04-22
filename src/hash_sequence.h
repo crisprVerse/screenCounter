@@ -1,12 +1,14 @@
 #ifndef HASH_SEQUENCE_H
 #define HASH_SEQUENCE_H
-#include <string>
+
+#include <cstdint>
+#include <vector>
 
 /* OVERVIEW:
  *
  * This file contains methods to convert a DNA sequence into a hash.
- * Each base can be stored in 2 bits, and we use a u32string 
- * pack multiple bases into a 32-bit word. We use a string
+ * Each base can be stored in 2 bits, and we use a std::vector 
+ * pack multiple bases into a 64-bit word. We use a string
  * in order to take advantage of the C++ standard's 
  * in-built support for string hashing in an unordered_map.
  *
@@ -16,30 +18,50 @@
  * if we want to compute slight variations on a sequence.
  */
 
-std::u32string hash_sequence(const char*, const size_t);
+class seqhash {
+public:    
+    seqhash(size_t=0);
+    typedef std::uint32_t word;
+    bool operator==(const seqhash&) const;
+    bool operator!=(const seqhash&) const;
 
-void shift_sequence(std::u32string&, const size_t, char);
+    size_t size () const;
+    std::vector<word>::iterator begin();
+    std::vector<word>::iterator end();
+    std::vector<word>::const_iterator begin() const;
+    std::vector<word>::const_iterator end() const;
+
+    word& operator[](size_t);
+    const word& operator[](size_t) const;
+    void pop_back();
+private:    
+    std::vector<word> words;
+};
+
+seqhash hash_sequence(const char*, const size_t);
+
+void shift_sequence(seqhash&, const size_t, char);
 
 struct rolling_substitution {
 public:
-    rolling_substitution(const std::u32string&, size_t);
+    rolling_substitution(const seqhash&, size_t);
     bool advance();
-    const std::u32string& get() const;
+    const seqhash& get() const;
 private:
-    std::u32string hash;
+    seqhash hash;
     size_t len, word, pos;
-    uint32_t current, state, original;
+    seqhash::word current, state, original;
 };
 
 struct rolling_deletion {
 public:
-    rolling_deletion(const std::u32string&, size_t);
+    rolling_deletion(const seqhash&, size_t);
     bool advance();
-    const std::u32string& get() const;
+    const seqhash& get() const;
 private:
-    std::u32string hash;
+    seqhash hash;
     size_t word, pos;
-    uint32_t current, discarded;
+    seqhash::word current, discarded;
 };
 
 #endif

@@ -2,12 +2,30 @@
 #define SEQUENCE_DICTIONARY_H
 
 #include "Rcpp.h"
-#include <string>
+#include "hash_sequence.h"
+
 #include <unordered_map>
-#include <vector>
+#include <boost/functional/hash.hpp>
+
+/* Defines a hashing function for the seqhash,
+ * using Boost's hash_range function.
+ */
+
+namespace std {
+
+template <>
+struct hash<seqhash>{
+    size_t operator()(const seqhash& k) const {
+        return boost::hash_range(k.begin(), k.end());
+    }
+};
+
+}
+
+/* Defining the sequence dictionary class */
 
 struct sequence_dictionary {
-    std::unordered_map<std::u32string, std::pair<int, int> > mapping;
+    std::unordered_map<seqhash, std::pair<int, int> > mapping;
     size_t len=0;
 };
 

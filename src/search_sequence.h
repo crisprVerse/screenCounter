@@ -3,11 +3,12 @@
 
 #include "Rcpp.h"
 
-#include <string>
-#include <array>
-
 #include "build_dictionary.h"
 #include "hash_sequence.h"
+
+#include <array>
+#include <sstream>
+#include <stdexcept>
 
 bool is_valid (char);
 
@@ -18,12 +19,12 @@ public:
     hash_scanner() = default;
     hash_scanner(const char*, size_t);
     void advance ();
-    const std::u32string& hash() const;
+    const seqhash& hash() const;
     bool valid() const;
 private:
     const char* ptr = NULL;
     size_t len = 0;
-    std::u32string hashed;
+    seqhash hashed;
     size_t nvalid = 0;
 };
 
@@ -93,7 +94,7 @@ struct search_info {
     std::array<size_t, nvariable> variable_starts;
     std::array<size_t, nvariable> nbarcodes;
 
-    std::array<std::u32string, nconstant> constant_hash;
+    std::array<seqhash, nconstant> constant_hash;
     std::array<int, nconstant> constant_lengths;
     std::array<size_t, nconstant> constant_starts;
 
@@ -110,7 +111,7 @@ bool search_sequence_internal(const char* seq, size_t len,
     const std::array<int, nvariable>& variable_lengths,
     const std::array<size_t, nvariable>& variable_starts,
 
-    const std::array<std::u32string, nconstant>& constant_hash,
+    const std::array<seqhash, nconstant>& constant_hash,
     const std::array<int, nconstant>& constant_lengths,
     const std::array<size_t, nconstant>& constant_starts,
 

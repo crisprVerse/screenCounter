@@ -1,18 +1,60 @@
 #include "hash_sequence.h"
 #include <stdexcept>
+#include <limits>
+
+/*****************************
+ **** seqhash definitions ****
+ *****************************/
+
+seqhash::seqhash(size_t n) : words(n) {}
+
+size_t seqhash::size () const { return words.size(); }
+
+std::vector<seqhash::word>::const_iterator seqhash::begin() const { return words.begin(); }
+
+std::vector<seqhash::word>::iterator seqhash::begin() { return words.begin(); }
+
+std::vector<seqhash::word>::const_iterator seqhash::end() const { return words.end(); }
+
+std::vector<seqhash::word>::iterator seqhash::end() { return words.end(); }
+
+void seqhash::pop_back() {
+    words.pop_back();
+    return;
+}
+
+bool seqhash::operator==(const seqhash& other) const {
+    return words==other.words;
+}
+
+bool seqhash::operator!=(const seqhash& other) const {
+    return words!=other.words;
+}
+
+seqhash::word& seqhash::operator[](size_t i) {
+    return words[i];
+}
+
+const seqhash::word& seqhash::operator[](size_t i) const {
+    return words[i];
+}
 
 #ifdef DEBUG
 #include <iostream>
 
-void disgorge(const std::u32string& in) {
+void disgorge(const seqhash::word& in) {
     for (size_t i=0; i<in.size(); ++i) {
-        std::cout << static_cast<uint32_t>(in[i]) << ", ";
+        std::cout << in[i] << ", ";
     }
     std::cout << std::endl;
     return;
 }
 
 #endif
+
+/*********************************
+ **** basic hashing functions ****
+ *********************************/
 
 int bitify (char base) {
     switch (base) {
@@ -33,26 +75,23 @@ int bitify (char base) {
  * least significant bits hold the 5'-most base.
  */
 
-constexpr int WIDTH_IN_BASES=16; // 16 bases, 2 bits each => char32_t.
 constexpr int BITS_PER_BASE=2;
+constexpr int WIDTH_IN_BASES=std::numeric_limits<seqhash::word>::digits/BITS_PER_BASE;
 
-std::u32string hash_sequence(const char* p, const size_t n) { 
+seqhash hash_sequence(const char* p, const size_t n) { 
     int effective_length=(n + WIDTH_IN_BASES - 1)/WIDTH_IN_BASES;
-    std::u32string output;
-    output.reserve(effective_length);
+    seqhash output(effective_length);
 
-    size_t i=0;
+    size_t i=0, j=0;
     while (i < n) {
         size_t limit=std::min(n, i+WIDTH_IN_BASES);
 
-        uint32_t current=0;
+        seqhash::word& current=output[j++];
         int shift=0;
         for (; i<limit; ++i) {
             current+=(bitify(p[i]) << shift);
             shift+=BITS_PER_BASE;
         }
-
-        output.push_back(static_cast<char32_t>(current));
     }
 
     return output;
@@ -63,34 +102,34 @@ std::u32string hash_sequence(const char* p, const size_t n) {
  * efficient scanning of a string for our sequence.
  */
 
-constexpr uint32_t LEAST_SIG=(1 << BITS_PER_BASE) - 1;
+constexpr seqhash::word LEAST_SIG=(1 << BITS_PER_BASE) - 1;
 
-void shift_sequence(std::u32string& in, const size_t n, char new3) {
+void shift_sequence(seqhash& in, const size_t n, char new3) {
     if (in.size()==0) {
         return;
     }
 
     size_t x=0;
-    uint32_t current=static_cast<uint32_t>(in[x]);
+    auto current=in[x];
     current >>= BITS_PER_BASE; // Remove least significant bits.
 
     while (x+1 < in.size()) {
-        uint32_t next=static_cast<uint32_t>(in[x+1]);
-        uint32_t popped=next & LEAST_SIG; // Get least significant 2 bits.
+        auto next=in[x+1];
+        auto popped=next & LEAST_SIG; // Get least significant 2 bits.
         next >>= BITS_PER_BASE; // Remove least significant 2 bits.
 
         // Add 2 most significant bits.
         popped <<= (WIDTH_IN_BASES-1)*BITS_PER_BASE;
-        current += popped; 
-        in[x] = static_cast<char32_t>(current);
+        current |= popped; 
+        in[x] = current;
 
         current=next;
         ++x;
     }
 
     // Adding 2 most significant bits (based on 'n', not the integer width).
-    current += (bitify(new3) << ((n - 1) % WIDTH_IN_BASES) * BITS_PER_BASE);
-    in[x] = static_cast<char32_t>(current);
+    current |= (bitify(new3) << ((n - 1) % WIDTH_IN_BASES) * BITS_PER_BASE);
+    in[x] = current;
 
     return;
 }
@@ -100,7 +139,7 @@ void shift_sequence(std::u32string& in, const size_t n, char new3) {
  * is substituted upon the user calling advance().
  */ 
 
-rolling_substitution::rolling_substitution(const std::u32string& in, size_t n) :
+rolling_substitution::rolling_substitution(const seqhash& in, size_t n) :
     hash(in), len(n), word(0), pos(0), state(0), current(0), original(0)
 {
     if (len==0) { 
@@ -108,13 +147,13 @@ rolling_substitution::rolling_substitution(const std::u32string& in, size_t n) :
     }
 
     // Starting off by replacing the first base with 'A'.
-    current=static_cast<uint32_t>(in[word]);
+    current=in[word];
     original=current & LEAST_SIG;
     if (original==0) {
         advance();
     } else {
         current &= ~LEAST_SIG;
-        hash[word]=static_cast<char32_t>(current);
+        hash[word]=current;
     }
     return; 
 }
@@ -132,9 +171,8 @@ bool rolling_substitution::advance() {
             return false;
         } else if (pos==WIDTH_IN_BASES) {
             pos=0;
-            hash[word]=static_cast<char32_t>(current);
-            ++word;
-            current=static_cast<uint32_t>(hash[word]);
+            hash[word]=current;
+            current=hash[++word];
         }
 
         // Updating original.
@@ -149,18 +187,18 @@ bool rolling_substitution::advance() {
     // Replacing with next state.
     current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
     current |= (state << pos * BITS_PER_BASE);
-    hash[word]=static_cast<char32_t>(current);
+    hash[word]=current;
     return true;
 }
 
-const std::u32string& rolling_substitution::get() const { return hash; }
+const seqhash& rolling_substitution::get() const { return hash; }
 
 /* Deletes a base in the current hash string. 
  * This starts from the last base and rolls towards
  * the first base (simply because it's more convenient).
  */ 
 
-rolling_deletion::rolling_deletion(const std::u32string& in, size_t n) :
+rolling_deletion::rolling_deletion(const seqhash& in, size_t n) :
     hash(in), word((n-1)/WIDTH_IN_BASES), pos((n-1)%WIDTH_IN_BASES), current(0), discarded(0)
 {
     if (n==0) { 
@@ -168,14 +206,14 @@ rolling_deletion::rolling_deletion(const std::u32string& in, size_t n) :
     }
 
     // Starting off by deleting the last base.
-    current=static_cast<uint32_t>(in[word]);
+    current=in[word];
     discarded=current & (LEAST_SIG << pos * BITS_PER_BASE);
     current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
 
     if (pos==0) {
         hash.pop_back();
     } else {
-        hash[word]=static_cast<char32_t>(current);
+        hash[word]=current;
     }
     return; 
 }
@@ -189,19 +227,19 @@ bool rolling_deletion::advance() {
         discarded <<= (WIDTH_IN_BASES - 1) * BITS_PER_BASE;
         pos=WIDTH_IN_BASES-1;
         --word;
-        current=static_cast<uint32_t>(hash[word]);
+        current=hash[word];
     } else {
         --pos;
         discarded >>= BITS_PER_BASE;
     }
 
     // Restoring the discarded at its original position minus one.
-    uint32_t tmp=current & (LEAST_SIG << pos * BITS_PER_BASE);
+    seqhash::word tmp=current & (LEAST_SIG << pos * BITS_PER_BASE);
     current &= ~(LEAST_SIG << pos * BITS_PER_BASE);
     current |= discarded;
     discarded=tmp;
-    hash[word]=static_cast<char32_t>(current);
+    hash[word]=current;
     return true;
 }
 
-const std::u32string& rolling_deletion::get() const { return hash; }
+const seqhash& rolling_deletion::get() const { return hash; }

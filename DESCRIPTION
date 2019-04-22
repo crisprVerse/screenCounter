@@ -11,7 +11,7 @@ Imports: gp.sa.core, gp.sa.diff, Rcpp, IRanges, XVector,
     Biostrings, ShortRead, BiocParallel, edgeR, csaw, 
     grDevices, SummarizedExperiment
 Suggests: BiocStyle, knitr, rmarkdown, testthat
-LinkingTo: Rcpp, IRanges, XVector, Biostrings, S4Vectors
+LinkingTo: Rcpp, IRanges, XVector, Biostrings, S4Vectors, BH
 License: Genentech, Inc.
 VignetteBuilder: knitr
 SystemRequirements: C++11

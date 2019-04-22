@@ -37,6 +37,6 @@ void hash_scanner::advance() {
     return;
 }
 
-const std::u32string& hash_scanner::hash() const { return hashed; }
+const seqhash& hash_scanner::hash() const { return hashed; }
 
 bool hash_scanner::valid() const { return nvalid==len; }

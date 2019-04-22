@@ -4,7 +4,7 @@
 
 /* Test code to check that the hashing works correctly. */
 
-Rcpp::NumericVector hash2double(const std::u32string& input) {
+Rcpp::NumericVector hash2double(const seqhash& input) {
     Rcpp::NumericVector output(input.size());
     for (size_t i=0; i<input.size(); ++i) {
         output[i] = static_cast<double>(input[i]);
