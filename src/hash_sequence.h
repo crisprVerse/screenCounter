@@ -22,7 +22,7 @@
 class seqhash {
 public:    
     seqhash(size_t=0);
-    typedef std::uint32_t word;
+    typedef std::uint64_t word;
     bool operator==(const seqhash&) const;
     bool operator!=(const seqhash&) const;
 

@@ -41,10 +41,12 @@ const seqhash::word& seqhash::operator[](size_t i) const {
 
 #ifdef DEBUG
 #include <iostream>
+#include <bitset>
+void disgorge(const seqhash& in) {
+    typedef std::bitset<std::numeric_limits<seqhash::word>::digits> bitter;
 
-void disgorge(const seqhash::word& in) {
     for (size_t i=0; i<in.size(); ++i) {
-        std::cout << in[i] << ", ";
+        std::cout << bitter(in[i]) << ", ";
     }
     std::cout << std::endl;
     return;
@@ -56,7 +58,7 @@ void disgorge(const seqhash::word& in) {
  **** basic hashing functions ****
  *********************************/
 
-int bitify (char base) {
+seqhash::word bitify (char base) {
     switch (base) {
         case 'A': case 'a':
             return 0;
