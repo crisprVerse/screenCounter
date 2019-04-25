@@ -20,6 +20,11 @@ MANUAL_HASH <- function(barcode, split=FALSE) {
         collected <- c(collected, sum(as_num))
         B <- tail(B, -16)
     }
+
+    # Adding on the missing half of the 64-bit integer.
+    if (length(collected)%%2==1) {
+        collected <- c(collected, 0)
+    }
     collected
 }
 

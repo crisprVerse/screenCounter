@@ -8,7 +8,7 @@ test_that("basic hashing works correctly", {
         expect_identical(out, ref)
     }
 
-    for (n in 1:40) {
+    for (n in 1:70) {
         barcode <- GENERATE_RANDOM_SEQ(n)
         BASIC_COMPARE(barcode)
     }
@@ -28,7 +28,7 @@ test_that("shifted hashing works correctly", {
         expect_identical(collected, out)
     }
 
-    for (n1 in 1:40) {
+    for (n1 in 1:70) {
         for (n2 in c(1, 5, 20, 40)) {
             barcode <- GENERATE_RANDOM_SEQ(n1)
             ensuing <- GENERATE_RANDOM_SEQ(n2)
@@ -54,7 +54,7 @@ test_that("substituted hashing works correctly", {
         expect_identical(collected, out)
     }
 
-    for (n in 1:40) {
+    for (n in 1:70) {
         barcode <- GENERATE_RANDOM_SEQ(n)
         SUBSTITUTE_COMPARE(barcode)
     }
@@ -74,7 +74,7 @@ test_that("deleted hashing works correctly", {
         expect_identical(collected, out)
     }
 
-    for (n in 1:40) {
+    for (n in 1:70) {
         barcode <- GENERATE_RANDOM_SEQ(n)
         DELETE_COMPARE(barcode)
     }

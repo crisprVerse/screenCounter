@@ -76,8 +76,8 @@ test_that("dictionary building works correctly with substitutions", {
 
     for (i in seq_along(truseq)) {
         current <- MANUAL_HASH(truseq[i])
-        idx <- which(out[[1]][[1]] == current)
-        expect_identical(length(idx), 1L) 
+        idx <- which(vapply(out[[1]][[1]], FUN=function(x) identical(x, current), FUN.VALUE=TRUE))
+
         expect_identical(out[[1]][[2]][[1]][idx], i)
         expect_identical(out[[1]][[2]][[2]][idx], 0L)
     }
@@ -87,8 +87,10 @@ test_that("dictionary building works correctly with substitutions", {
     out <- gp.sa.screen:::build_dict(truseq, TRUE, FALSE)
 
     for (conflict in c("AAAAAAAA", "AAAAAACC")) {
-        chosen <- which(out[[1]][[1]]==MANUAL_HASH(conflict))
-        expect_identical(out[[1]][[2]][[1]][chosen], 0L) # -1 in C++, then +1 back into R.
+        conflictor <- MANUAL_HASH(conflict)
+        chosen <- which(vapply(out[[1]][[1]], FUN=function(x) identical(x, conflictor), FUN.VALUE=TRUE))
+
+        expect_identical(out[[1]][[2]][[1]][chosen], 0L) # Stored as -1 in C++, then +1 when moving back into R.
         expect_identical(out[[1]][[2]][[2]][chosen], 1L)
     }
 })
@@ -109,8 +111,9 @@ test_that("dictionary building works correctly with deletions", {
     out <- gp.sa.screen:::build_dict(truseq, FALSE, TRUE)
 
     for (conflict in c("AAAAAAA", "AAAAAAC")) {
-        chosen <- which(out[[1]][[1]]==MANUAL_HASH(conflict))
-        expect_identical(out[[1]][[2]][[1]][chosen], 0L) # -1 in C++, then +1 back into R.
+        conflictor <- MANUAL_HASH(conflict)
+        chosen <- which(vapply(out[[1]][[1]], FUN=function(x) identical(x, conflictor), FUN.VALUE=TRUE))
+        expect_identical(out[[1]][[2]][[1]][chosen], 0L) # Stored as -1 in C++, then +1 when moving back into R.
         expect_identical(out[[1]][[2]][[2]][chosen], 1L)
     }
 

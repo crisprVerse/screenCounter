@@ -1,13 +1,22 @@
 #include "Rcpp.h"
 #include "hash_sequence.h"
 #include "build_dictionary.h"
+#include <limits>
 
 /* Test code to check that the hashing works correctly. */
 
 Rcpp::NumericVector hash2double(const seqhash& input) {
-    Rcpp::NumericVector output(input.size());
+    Rcpp::NumericVector output(input.size()*2);
     for (size_t i=0; i<input.size(); ++i) {
-        output[i] = static_cast<double>(input[i]);
+        auto current=input[i];
+
+        // Get into a [0, 2^32) range to guarantee integer representation in a double.
+        int SHIFT=32;
+        auto upper_half = current >> SHIFT;
+        auto lower_half = current & ((static_cast<seqhash::word>(1) << SHIFT) - 1);
+
+        output[2*i] = static_cast<double>(lower_half);
+        output[2*i+1] = static_cast<double>(upper_half);
     }
     return output;
 }
