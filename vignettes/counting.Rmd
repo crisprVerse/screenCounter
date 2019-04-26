@@ -151,6 +151,33 @@ This is because many errors are introduced during barcode synthesis, more than t
 Synthesis errors result in genuinely different barcodes (e.g., guides targeting different regions, or different molecular tags) that should not be counted together.
 Nonetheless, this setting may be useful for debugging experiments with low mapping rates.
 
+## Searching the other strand
+
+By default, the counting functions will only search the read sequence on the original strand reported by the sequencer.
+It is possible to change this behaviour with the `strand=` argument, to search the reverse strand instead or to search both strands.
+The most appropriate setting requires knowledge of the sequencing protocol and the barcode design.
+For example:
+
+- Single-end sequencing of a construct where the barcode is only covered by a read sequenced from one of the ends.
+  This requires `strand="original"` if the barcode is on the forward strand of the reachable end, or `strand="reverse"` if it is on the reverse strand.
+  If the sequencing is performed from a randomly chosen end, only 50% of the reads will contain barcodes.
+- Single-end sequencing of a construct where the barcode can be covered by reads from either end.
+  This requires `strand="both"` to search both strands of each read.
+  Note that users should make sure that the constant regions are captured by reads from both ends.
+
+Paired-end sequencing requires some more consideration:
+
+- A construct where the barcode can only be covered by a read sequenced from one of the ends, where that end is known in advance.
+  In this case, the data can be treated as single-end.
+  Counting can be performed using the file containing reads from that end with `strand="original"` or `strand="reverse"`.
+- A construct where the barcode can only be covered by a read sequenced from one of the ends, where that end is randomly chosen.
+  Users can run the counting functions on each file separately with `strand="original"` or `strand="reverse"` and sum the counts.
+  (We assume that the chance of randomly encountering the barcode sequence and its flanking constant regions is negligible,
+  so each read pair will not contribute more than once to the final count.)
+- Paired-end sequencing of a construct where the barcode can be covered by both reads.
+  In this case, one of the files can be chosen for use with `strand="both"`.
+Alternatively, users can consolidate read pairs into a consensus read^[For example, see [_FLASh_](https://ccb.jhu.edu/software/FLASH/) or [_vsearch_](https://github.com/torognes/) with `--fastq_mergepairs`.] prior to using `strand="both"`.
+
 ## Parallelization across files
 
 Counting functions are parallelized across files using the `r Biocpkg("BiocParallel")` framework.
