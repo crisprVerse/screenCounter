@@ -6,7 +6,8 @@
 \title{Count single barcodes}
 \usage{
 countSingleBarcodes(fastq, choices, flank5, flank3, template = NULL,
-  substitutions = FALSE, deletions = FALSE)
+  substitutions = FALSE, deletions = FALSE, strand = c("original",
+  "reverse", "both"))
 
 matrixOfSingleBarcodes(files, ..., BPPARAM = SerialParam())
 }
@@ -25,6 +26,8 @@ or a connection object to such a file.}
 \item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
 
 \item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
+
+\item{strand}{String specifying which strand of the read to search.}
 
 \item{files}{A character vector of paths to FASTQ files.}
 
@@ -53,6 +56,11 @@ If \code{substitutions=TRUE}, only one mismatch is allowed across all variable r
 Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
 If both are set, only one deletion or mismatch is allowed across all variable regions,
 i.e., there is a maximum edit distance of 1 from any possible reference combination.
+
+If \code{strand="both"}, the original read sequence will be searched first.
+If no match is found, the sequence is reverse-complemented and searched again.
+Other settings of \code{strand} will only search one or the other sequence.
+The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.

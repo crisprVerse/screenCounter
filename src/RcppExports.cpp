@@ -19,13 +19,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // count_barcodes_combo_dual
-SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr);
-RcppExport SEXP _gp_sa_screen_count_barcodes_combo_dual(SEXP seqsSEXP, SEXP xptrSEXP) {
+SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
+RcppExport SEXP _gp_sa_screen_count_barcodes_combo_dual(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(count_barcodes_combo_dual(seqs, xptr));
+    Rcpp::traits::input_parameter< bool >::type use_forward(use_forwardSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_reverse(use_reverseSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_barcodes_combo_dual(seqs, xptr, use_forward, use_reverse));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -53,13 +55,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // count_barcodes_single
-SEXP count_barcodes_single(SEXP seqs, SEXP xptr);
-RcppExport SEXP _gp_sa_screen_count_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP) {
+SEXP count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
+RcppExport SEXP _gp_sa_screen_count_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(count_barcodes_single(seqs, xptr));
+    Rcpp::traits::input_parameter< bool >::type use_forward(use_forwardSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_reverse(use_reverseSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_barcodes_single(seqs, xptr, use_forward, use_reverse));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -129,10 +133,10 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_gp_sa_screen_setup_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_setup_barcodes_combo_dual, 4},
-    {"_gp_sa_screen_count_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_count_barcodes_combo_dual, 2},
+    {"_gp_sa_screen_count_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_count_barcodes_combo_dual, 4},
     {"_gp_sa_screen_report_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_report_barcodes_combo_dual, 1},
     {"_gp_sa_screen_setup_barcodes_single", (DL_FUNC) &_gp_sa_screen_setup_barcodes_single, 4},
-    {"_gp_sa_screen_count_barcodes_single", (DL_FUNC) &_gp_sa_screen_count_barcodes_single, 2},
+    {"_gp_sa_screen_count_barcodes_single", (DL_FUNC) &_gp_sa_screen_count_barcodes_single, 4},
     {"_gp_sa_screen_report_barcodes_single", (DL_FUNC) &_gp_sa_screen_report_barcodes_single, 1},
     {"_gp_sa_screen_basic_hash", (DL_FUNC) &_gp_sa_screen_basic_hash, 1},
     {"_gp_sa_screen_shift_hash", (DL_FUNC) &_gp_sa_screen_shift_hash, 2},

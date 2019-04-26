@@ -5,8 +5,8 @@ setup_barcodes_combo_dual <- function(constants, guide_list, allowSub, allowDel)
     .Call('_gp_sa_screen_setup_barcodes_combo_dual', PACKAGE = 'gp.sa.screen', constants, guide_list, allowSub, allowDel)
 }
 
-count_barcodes_combo_dual <- function(seqs, xptr) {
-    .Call('_gp_sa_screen_count_barcodes_combo_dual', PACKAGE = 'gp.sa.screen', seqs, xptr)
+count_barcodes_combo_dual <- function(seqs, xptr, use_forward, use_reverse) {
+    .Call('_gp_sa_screen_count_barcodes_combo_dual', PACKAGE = 'gp.sa.screen', seqs, xptr, use_forward, use_reverse)
 }
 
 report_barcodes_combo_dual <- function(xptr) {
@@ -17,8 +17,8 @@ setup_barcodes_single <- function(constants, guide_list, allowS, allowD) {
     .Call('_gp_sa_screen_setup_barcodes_single', PACKAGE = 'gp.sa.screen', constants, guide_list, allowS, allowD)
 }
 
-count_barcodes_single <- function(seqs, xptr) {
-    .Call('_gp_sa_screen_count_barcodes_single', PACKAGE = 'gp.sa.screen', seqs, xptr)
+count_barcodes_single <- function(seqs, xptr, use_forward, use_reverse) {
+    .Call('_gp_sa_screen_count_barcodes_single', PACKAGE = 'gp.sa.screen', seqs, xptr, use_forward, use_reverse)
 }
 
 report_barcodes_single <- function(xptr) {
