@@ -9,6 +9,7 @@
 #' Each row should correspond to a barcode and each column should contain a character vector of sequences.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
+#' @param strand String specifying which strand of the read to search.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countComboBarcodes}.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.
@@ -24,6 +25,11 @@
 #' If both are set, only one deletion or mismatch is allowed across all variable regions,
 #' i.e., there is a maximum edit distance of 1 from any possible reference combination.
 #' 
+#' If \code{strand="both"}, the original read sequence will be searched first.
+#' If no match is found, the sequence is reverse-complemented and searched again.
+#' Other settings of \code{strand} will only search one or the other sequence.
+#' The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
+#'
 #' @return 
 #' \code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
 #' It contains \code{keys}, a nested \linkS4class{DataFrame} where each column corresponds to an element of \code{choices} and contains the indices of the sequences in each combinatorial barcode;
@@ -61,7 +67,9 @@
 #' @export
 #' @importFrom S4Vectors DataFrame
 #' @importFrom ShortRead FastqStreamer sread yield
-countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE) {
+countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE,
+    strand=c("original", "reverse", "both"))                               
+{
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
     n.len <- parsed$variable$len
@@ -87,13 +95,17 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
         stop(sprintf("'ncol(choices)=%i' is not currently supported", nvariables))
     }
 
+    strand <- match.arg(strand)
+    use.forward <- strand %in% c("original", "both")
+    use.reverse <- strand %in% c("reverse", "both")
+
     # Counting all pairs of barcodes. 
     ptr <- setupfun(constants, as.list(choices), substitutions, deletions)
 
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
     while (length(fq <- yield(incoming))) {
-        countfun(sread(fq), ptr)
+        countfun(sread(fq), ptr, use.forward, use.reverse)
     }
 
     output <- reportfun(ptr)

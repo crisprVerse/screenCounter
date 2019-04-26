@@ -10,6 +10,7 @@
 #' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
+#' @param strand String specifying which strand of the read to search.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countSingleBarcodes}.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.
@@ -25,6 +26,11 @@
 #' Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
 #' If both are set, only one deletion or mismatch is allowed across all variable regions,
 #' i.e., there is a maximum edit distance of 1 from any possible reference combination.
+#'
+#' If \code{strand="both"}, the original read sequence will be searched first.
+#' If no match is found, the sequence is reverse-complemented and searched again.
+#' Other settings of \code{strand} will only search one or the other sequence.
+#' The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
 #'
 #' @return 
 #' \code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
@@ -60,7 +66,8 @@
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
-    template=NULL, substitutions=FALSE, deletions=FALSE) 
+    template=NULL, substitutions=FALSE, deletions=FALSE, 
+    strand=c("original", "reverse", "both"))
 {
     if (!is.null(template)) {
         parsed <- parseBarcodeTemplate(template)
@@ -72,11 +79,15 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
         constants <- as.character(c(flank5, flank3))
     }
 
+    strand <- match.arg(strand)
+    use.forward <- strand %in% c("original", "both")
+    use.reverse <- strand %in% c("reverse", "both")
+
     ptr <- setup_barcodes_single(constants, list(choices), substitutions, deletions)
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
     while (length(fq <- yield(incoming))) {
-        count_barcodes_single(sread(fq), ptr)
+        count_barcodes_single(sread(fq), ptr, use.forward, use.reverse)
     }
 
     all.available <- report_barcodes_single(ptr)
