@@ -9,6 +9,7 @@ extern "C" {
 #include "hash_sequence.h"
 #include "build_dictionary.h"
 #include "search_sequence.h"
+#include "utils.h"
 
 #include <stdexcept>
 #include <vector>
@@ -58,7 +59,7 @@ SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list, Rcpp::LogicalVector a
 }
 
 template<size_t nvariable>
-SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
+SEXP count_barcodes_combo(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
     Rcpp::XPtr<se_combo_info<nvariable> > ptr(xptr);
     const auto& search_info=ptr->info;
     auto& output=ptr->output;
@@ -79,7 +80,15 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr) {
             curseq[i]=DNAdecode(ptr[i]);
         }
 
-        search_sequence(curseq.data(), len, search_info, output);
+        // Searching one or both strands.
+        if (use_forward && search_sequence(curseq.data(), len, search_info, output)) {
+            continue;
+        }
+
+        reverse_complement(curseq.data(), len);
+        if (use_reverse && search_sequence(curseq.data(), len, search_info, output)) {
+            continue;
+        }
     }
 
     return R_NilValue;

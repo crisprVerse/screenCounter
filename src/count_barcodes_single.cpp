@@ -9,13 +9,14 @@ extern "C" {
 #include "hash_sequence.h"
 #include "build_dictionary.h"
 #include "search_sequence.h"
+#include "utils.h"
 
 #include <stdexcept>
 #include <vector>
 #include <sstream>
 #include <map>
 
-/* Combination guide parser. */
+/* Single guide parser. */
 
 struct result_store {
     std::vector<int> counts;
@@ -44,7 +45,7 @@ SEXP setup_barcodes_single(SEXP constants, SEXP guide_list, Rcpp::LogicalVector 
 }
 
 // [[Rcpp::export(rng=false)]]
-SEXP count_barcodes_single(SEXP seqs, SEXP xptr) {
+SEXP count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
     Rcpp::XPtr<se_single_info> ptr(xptr);
     const auto& search_info=ptr->info;
     auto& output=ptr->output;
@@ -65,7 +66,15 @@ SEXP count_barcodes_single(SEXP seqs, SEXP xptr) {
             curseq[i]=DNAdecode(ptr[i]);
         }
 
-        search_sequence<1>(curseq.data(), len, search_info, output);
+        // Searching one or both strands.
+        if (use_forward && search_sequence<1>(curseq.data(), len, search_info, output)) {
+            continue;
+        }
+
+        reverse_complement(curseq.data(), len);
+        if (use_reverse && search_sequence<1>(curseq.data(), len, search_info, output)) {
+            continue;
+        }
     }
 
     return R_NilValue;
