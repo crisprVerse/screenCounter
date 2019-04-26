@@ -81,13 +81,15 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr, bool use_forward, bool use_rever
         }
 
         // Searching one or both strands.
-        if (use_forward && search_sequence(curseq.data(), len, search_info, output)) {
-            continue;
+        if (use_forward) {
+            if (search_sequence(curseq.data(), len, search_info, output)) {
+                continue;
+            }
         }
 
-        reverse_complement(curseq.data(), len);
-        if (use_reverse && search_sequence(curseq.data(), len, search_info, output)) {
-            continue;
+        if (use_reverse) {
+            reverse_complement(curseq.data(), len);
+            search_sequence(curseq.data(), len, search_info, output);
         }
     }
 
@@ -130,8 +132,8 @@ SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list, Rcpp::LogicalVec
 }
 
 // [[Rcpp::export(rng=false)]]
-SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr) {
-    return count_barcodes_combo<2>(seqs, xptr);
+SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
+    return count_barcodes_combo<2>(seqs, xptr, use_forward, use_reverse);
 }
 
 // [[Rcpp::export(rng=false)]]

@@ -5,13 +5,13 @@ void reverse_complement (char* seq, size_t len) {
         char& current=seq[i];
         switch(current) {
             case 'A': case 'a':
-                current='T'; return;
+                current='T'; break;
             case 'C': case 'c':
-                current='G'; return;
+                current='G'; break;
             case 'G': case 'g':
-                current='C'; return;
+                current='C'; break;
             case 'T': case 't':
-                current='A'; return;
+                current='A'; break;
         }
     }
     std::reverse(seq, seq+len);
