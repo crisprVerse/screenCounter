@@ -8,8 +8,8 @@ POOL <- vapply(rep(10, nbarcodes), GENERATE_RANDOM_SEQ, FUN.VALUE="")
 barcode.fmt <- "ACGT%sACGT"
 template <- sprintf(barcode.fmt, strrep("N", nchar(POOL[1])))
 
-STICKER <- function(barcodes, fname, out, ...) {
-    ADD_FLANKS(barcodes, fname)
+STICKER <- function(barcodes, fname, out, ..., strandFUN=identity) {
+    ADD_FLANKS(barcodes, fname, strandFUN=strandFUN)
     out2 <- countSingleBarcodes(fname, template=template, ...)
     expect_identical(out, out2)
 }
@@ -106,4 +106,24 @@ test_that("countSingleBarcodes works as expected with deletions", {
     expect_identical(out, c(1L, 2L))
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
+})
+
+test_that("countSingleBarcodes works as expected with strands", {
+    for (strand in c("original", "reverse", "both")) {
+        i <- sample(nbarcodes, 1000, replace=TRUE)
+        barcodes <- sprintf(barcode.fmt, POOL[i])
+        names(barcodes) <- seq_along(i)
+
+        B <- DNAStringSet(barcodes)
+        strandFUN <- CHOOSE_STRAND_FUN(strand)
+        tmp <- tempfile(fileext=".fastq")
+        writeXStringSet(strandFUN(B), filepath=tmp, format="fastq")
+
+        out <- countSingleBarcodes(tmp, POOL, template=template, strand=strand)
+        tab <- tabulate(i, nbins=nbarcodes)
+        expect_identical(tab, out)
+
+        # Same results when you stick a bunch of random crap to the start and end.
+        STICKER(barcodes, tmp, out, choices=POOL, strand=strand, strandFUN=strandFUN)
+    }
 })
