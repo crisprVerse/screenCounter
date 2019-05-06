@@ -122,8 +122,8 @@ One table refers to the barcode-level results, while the other table contains ge
 We combine $p$-values across barcodes using Simes' method, and report statistics for the best barcode (i.e., with the lowest $p$-value) in each gene's pool of barcodes.
 
 ```{r}
-out$results$time_barcode
-out$results$time_gene
+out$results$`time:de:barcode`
+out$results$`time:de:gene`
 ```
 
 As with `runVoom()`, the `runVoomScreen()` function will produce a Rmarkdown report describing the exact steps that were performed.
@@ -138,7 +138,7 @@ For example, we might prefer to analyze our data by treating `run` as a random e
 out.dc <- runVoomScreen(se, covariates="time", comparisons=list('time'),
     dup.cor="run", reference.field="time", reference.level=0,
     norm.type.field="Type", norm.type.level="NEG", gene.field="ID")                        
-out.dc$results$time_gene
+out.dc$results$`time:de:gene`
 ```
 
 The screen-specific options can also be fine-tuned:
