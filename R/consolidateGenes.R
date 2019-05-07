@@ -47,13 +47,8 @@ saveRDS(res, file=%s)
 
 <!-- GPSA_OUTPUT
 - path: %s
-contains: table
-summary: &SUM differential abundance statistics
-description: &DESC <insert description here>
+  contains: differential barcode abundance results
 - path: %s
-contains: DataFrame
-summary: *SUM
-description: *DESC
 -->', deparse(cur.csv), deparse(cur.rds), cur.csv, cur.rds)
 
         new.csv <- paste0(vname, ":gene.csv")
@@ -95,13 +90,8 @@ saveRDS(stats, file=%s)
 
 <!-- GPSA_OUTPUT
 - path: %s
-  contains: table
-  summary: &SUM differential abundance statistics
-  description: &DESC <insert description here>
+  contains: differential gene abundance results
 - path: %s
-  contains: DataFrame
-  summary: *SUM
-  description: *DESC
 -->", to.add, to.add, deparse(new.csv), deparse(new.rds), new.csv, new.rds)
 
         paste0(per.barcode, "\n\n", per.gene)

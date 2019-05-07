@@ -126,25 +126,27 @@ runVoomScreen <- function(se, ...,
     )
 
     # Cleaning up.
+    y.name <- file.path(obj.dir, "y.rds")
     fit.name <- file.path(obj.dir, "fit.rds")
     knitAndWrite(fname, env, sprintf("# Wrapping up
 
-We save the `fit` object to file for later use.
+We save the `y` and `fit` objects to file for later use.
 
 ```{r}
+saveRDS(y, file=%s)
 saveRDS(fit, file=%s)
 ```
 
 <!-- GPSA_OUTPUT
 - path: %s
-  class: MArrayLM
+- path: %s
 -->
 
 We also report the session information for our records.
 
 ```{r}
 sessionInfo()
-```", deparse(fit.name), fit.name))
+```", deparse(y.name), deparse(fit.name), y.name, fit.name))
 
     # Reporting the results.
     all.res <- .retrieve_saved_results(fname)
