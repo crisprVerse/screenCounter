@@ -4,9 +4,9 @@
 #'
 #' @param ... Any number of \linkS4class{DataFrame}s produced by \code{\link{countComboBarcodes}}.
 #'
-#' @return A list containing:
+#' @return A \linkS4class{DataFrame} containing:
 #' \itemize{
-#' \item \code{combination}, a DataFrame containing all unique combinatorial barcodes observed in any \code{...}.
+#' \item \code{keys}, a DataFrame containing all unique combinatorial barcodes observed in any \code{...}.
 #' Each row corresponds to a barcode and each column contains an integer identifier for the sequence in the variable region.
 #' \item \code{counts}, a matrix with number of columns equal to number of objects in \code{...}. 
 #' Each row corresponds to a unique combinatorial barcode in \code{keys} and each column represents the count of that barcode in each file of \code{files}.
@@ -41,7 +41,8 @@ combineComboCounts <- function(...) {
     }
 
     out.counts <- matrix(0L, sum(is.unique), length(everything))
+    colnames(out.counts) <- names(everything)
     id <- cumsum(is.unique)
     out.counts[cbind(id, combined$origin)] <- combined$count
-    list(combination=combined$combination[is.unique,], counts=out.counts)
+    DataFrame(keys=I(combined$combination[is.unique,]), counts=I(out.counts))
 }
