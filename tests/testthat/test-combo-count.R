@@ -1,5 +1,5 @@
 # This tests countComboBarcodes().
-# library(testthat); library(gp.sa.screen); source("setup.R"); source("test-combo.R")
+# library(testthat); library(gp.sa.screen); source("setup.R"); source("test-combo-count.R")
 
 library(Biostrings)
 POOL1 <- vapply(rep(10, 20), GENERATE_RANDOM_SEQ, FUN.VALUE="")
