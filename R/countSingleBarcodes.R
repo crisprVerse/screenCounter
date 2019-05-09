@@ -35,9 +35,10 @@
 #' @return 
 #' \code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
 #' containing the frequency of each barcode.
-#' This is named with the row names of \code{choices}.
+#' This is named with the values of \code{choices}.
 #' 
 #' \code{matrixOfSingleBarcodes} will return an integer matrix where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
+#' Row names are \code{choices} while column names are \code{files}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -91,7 +92,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
     }
 
     all.available <- report_barcodes_single(ptr)
-    names(all.available) <- rownames(choices)
+    names(all.available) <- choices
     all.available
 }
 
@@ -100,5 +101,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
 #' @importFrom BiocParallel bplapply SerialParam
 matrixOfSingleBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countSingleBarcodes, ..., BPPARAM=BPPARAM)
-    do.call(cbind, out)
+    out <- do.call(cbind, out)
+    colnames(out) <- files
+    out
 }
