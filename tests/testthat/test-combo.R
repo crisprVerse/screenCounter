@@ -10,7 +10,7 @@ template <- sprintf(barcode.fmt, strrep("N", nchar(POOL1[1])), strrep("N", nchar
 
 STICKER <- function(barcodes, fname, out, ..., strandFUN=identity) {
     ADD_FLANKS(barcodes, fname, strandFUN=strandFUN)
-    out2 <- countComboBarcodes(fname, template, ...)
+    out2 <- countComboBarcodes(fname, template, ..., indices=TRUE)
     expect_identical(out, out2)
 }
 
@@ -24,7 +24,7 @@ test_that("countComboBarcodes works as expected in basic mode", {
         tmp <- tempfile(fileext=".fastq")
         writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
-        out <- countComboBarcodes(tmp, template, list(POOL1, POOL2))
+        out <- countComboBarcodes(tmp, template, list(POOL1, POOL2), indices=TRUE)
 
         tab <- table(factor(i1, seq_along(POOL1)), factor(i2, seq_along(POOL2)))
         ref <- list(as.vector(row(tab)), as.vector(col(tab)), as.vector(tab)) 
@@ -33,9 +33,9 @@ test_that("countComboBarcodes works as expected in basic mode", {
         o <- do.call(order, ref)
         ref <- lapply(ref, "[", o)
 
-        expect_identical(out$combination[,1], ref[[1]])
-        expect_identical(out$combination[,2], ref[[2]])
-        expect_identical(out$count, ref[[3]])
+        expect_identical(out$combinations[,1], ref[[1]])
+        expect_identical(out$combinations[,2], ref[[2]])
+        expect_identical(out$counts, ref[[3]])
 
         # Same results when you stick a bunch of random crap to the start and end.
         STICKER(barcodes, tmp, out, choices=list(POOL1, POOL2))
@@ -58,10 +58,10 @@ test_that("countComboBarcodes works as expected with substitutions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(strrep(BASES, 10), strrep(BASES, 8))
-    out <- countComboBarcodes(tmp, template, choices, sub=TRUE)
-    expect_identical(out$combination[,1], 2L)
-    expect_identical(out$combination[,2], 3L)
-    expect_identical(out$count, 3L)
+    out <- countComboBarcodes(tmp, template, choices, sub=TRUE, indices=TRUE)
+    expect_identical(out$combinations[,1], 2L)
+    expect_identical(out$combinations[,2], 3L)
+    expect_identical(out$counts, 3L)
 
     STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 
@@ -82,10 +82,10 @@ test_that("countComboBarcodes works as expected with substitutions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(c("CCCCCCCCCC", "CCCCCCCCCA"), c("GGGGGGGG", "TGGGGGGG"))
-    out <- countComboBarcodes(tmp, template, choices=choices, sub=TRUE)
-    expect_identical(out$combination[,1], rep(1:2, each=2))
-    expect_identical(out$combination[,2], rep(1:2, 2))
-    expect_identical(out$count, rep(1L, 4))
+    out <- countComboBarcodes(tmp, template, choices=choices, sub=TRUE, indices=TRUE)
+    expect_identical(out$combinations[,1], rep(1:2, each=2))
+    expect_identical(out$combinations[,2], rep(1:2, 2))
+    expect_identical(out$counts, rep(1L, 4))
 
     STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 })
@@ -106,10 +106,10 @@ test_that("countComboBarcodes works as expected with deletions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(strrep(BASES, 10), strrep(BASES, 8))
-    out <- countComboBarcodes(tmp, template, choices, del=TRUE)
-    expect_identical(out$combination[,1], 2L)
-    expect_identical(out$combination[,2], 3L)
-    expect_identical(out$count, 3L)
+    out <- countComboBarcodes(tmp, template, choices, del=TRUE, indices=TRUE)
+    expect_identical(out$combinations[,1], 2L)
+    expect_identical(out$combinations[,2], 3L)
+    expect_identical(out$counts, 3L)
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 
@@ -127,10 +127,10 @@ test_that("countComboBarcodes works as expected with deletions", {
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
     choices <- list(c("CCCCCCCCCC", "CCCCCCCCCA"), c("GGGGGGGG", "TGGGGGGG"))
-    out <- countComboBarcodes(tmp, template, choices=choices, del=TRUE)
-    expect_identical(out$combination[,1], c(1L, 1L, 2L))
-    expect_identical(out$combination[,2], c(1L, 2L, 1L))
-    expect_identical(out$count, rep(1L, 3))
+    out <- countComboBarcodes(tmp, template, choices=choices, del=TRUE, indices=TRUE)
+    expect_identical(out$combinations[,1], c(1L, 1L, 2L))
+    expect_identical(out$combinations[,2], c(1L, 2L, 1L))
+    expect_identical(out$counts, rep(1L, 3))
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 })
@@ -148,7 +148,7 @@ test_that("countComboBarcodes works as expected with strands", {
         tmp <- tempfile(fileext=".fastq")
         writeXStringSet(strandFUN(B), filepath=tmp, format="fastq")
 
-        out <- countComboBarcodes(tmp, template, list(POOL1, POOL2), strand=strand)
+        out <- countComboBarcodes(tmp, template, list(POOL1, POOL2), strand=strand, indices=TRUE)
 
         tab <- table(factor(i1, seq_along(POOL1)), factor(i2, seq_along(POOL2)))
         ref <- list(as.vector(row(tab)), as.vector(col(tab)), as.vector(tab)) 
@@ -157,12 +157,28 @@ test_that("countComboBarcodes works as expected with strands", {
         o <- do.call(order, ref)
         ref <- lapply(ref, "[", o)
 
-        expect_identical(out$combination[,1], ref[[1]])
-        expect_identical(out$combination[,2], ref[[2]])
-        expect_identical(out$count, ref[[3]])
+        expect_identical(out$combinations[,1], ref[[1]])
+        expect_identical(out$combinations[,2], ref[[2]])
+        expect_identical(out$counts, ref[[3]])
 
         # Same results when you stick a bunch of random crap to the start and end.
         STICKER(barcodes, tmp, out, choices=list(POOL1, POOL2), strand=strand, strandFUN=strandFUN)
     }
 })
 
+test_that("countComboBarcodes works with reporting sequences directly", {
+    N <- 100
+    i1 <- sample(length(POOL1), N, replace=TRUE)
+    i2 <- sample(length(POOL2), N, replace=TRUE)
+    barcodes <- sprintf(barcode.fmt, POOL1[i1], POOL2[i2])
+    names(barcodes) <- seq_len(N)
+
+    B <- DNAStringSet(barcodes)
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(B, filepath=tmp, format="fastq")
+
+    out1 <- countComboBarcodes(tmp, template, list(POOL1, POOL2), indices=FALSE)
+    out2 <- countComboBarcodes(tmp, template, list(POOL1, POOL2), indices=TRUE)
+    expect_identical(out1$combinations[,1], POOL1[out2$combinations[,1]])
+    expect_identical(out1$combinations[,2], POOL2[out2$combinations[,2]])
+})

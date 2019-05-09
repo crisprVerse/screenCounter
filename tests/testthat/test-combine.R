@@ -13,7 +13,7 @@ GENERATOR <- function(nsamples, npool, nreads) {
         re.X <- as.integer(sub("\\..*", "", names(tab)))
         re.Y <- as.integer(sub(".*\\.", "", names(tab)))
 
-        output[[i]] <- DataFrame(combination=I(DataFrame(X=re.X, Y=re.Y)), count=as.integer(tab))
+        output[[i]] <- DataFrame(combinations=I(DataFrame(X=re.X, Y=re.Y)), counts=as.integer(tab))
     }
     output
 }
@@ -23,7 +23,7 @@ MANUAL <- function(...) {
     
     has.keys <- vector("list", length(everything))
     for (i in seq_along(has.keys)) {
-        current <- everything[[i]]$combination
+        current <- everything[[i]]$combinations
         has.keys[[i]] <- paste0(current[,1], ".", current[,2])
     }
 
@@ -31,14 +31,14 @@ MANUAL <- function(...) {
     mat <- matrix(0L, length(all.keys), length(everything))
     for (i in seq_along(has.keys)) {
         m <- match(has.keys[[i]], all.keys)
-        counts <- everything[[i]]$count
+        counts <- everything[[i]]$counts
         mat[m,i] <- counts
     }
 
     out <- DataFrame(X=as.integer(sub("\\..*", "", all.keys)),
         Y=as.integer(sub(".*\\.", "", all.keys)))
     o <- order(out$X, out$Y)
-    list(keys=out[o,], counts=mat[o,,drop=FALSE])
+    list(combinations=out[o,], counts=mat[o,,drop=FALSE])
 }
 
 test_that("combineComboCounts works as expected", {
@@ -46,7 +46,7 @@ test_that("combineComboCounts works as expected", {
         output <- GENERATOR(3, 10, N)
         out <- combineComboCounts(output[[1]], output[[2]], output[[3]])
         ref <- MANUAL(output[[1]], output[[2]], output[[3]])
-        expect_equivalent(out$keys, ref$keys)
+        expect_equivalent(out$combinations, ref$combinations)
         expect_identical(out$counts, ref$counts)
     }
 })
