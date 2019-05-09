@@ -38,9 +38,10 @@ or a connection object to such a file.}
 \value{
 \code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
 containing the frequency of each barcode.
-This is named with the row names of \code{choices}.
+This is named with the values of \code{choices}.
 
 \code{matrixOfSingleBarcodes} will return an integer matrix where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
+Row names are \code{choices} while column names are \code{files}.
 }
 \description{
 Count the frequency of barcodes in a FASTQ file containing data for a single-end sequencing screen.

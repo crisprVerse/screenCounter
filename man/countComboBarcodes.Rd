@@ -6,7 +6,8 @@
 \title{Count combinatorial barcodes}
 \usage{
 countComboBarcodes(fastq, template, choices, substitutions = FALSE,
-  deletions = FALSE, strand = c("original", "reverse", "both"))
+  deletions = FALSE, strand = c("original", "reverse", "both"),
+  indices = FALSE)
 
 matrixOfComboBarcodes(files, ..., BPPARAM = SerialParam())
 }
@@ -16,14 +17,16 @@ or a connection object to such a file.}
 
 \item{template}{A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.}
 
-\item{choices}{A \linkS4class{List} of potential sequences for each variable region in \code{template}.
-Each row should correspond to a barcode and each column should contain a character vector of sequences.}
+\item{choices}{A \linkS4class{List} of character vectors, one per variable region in \code{template}.
+Each vector should contain the potential sequences for the corresponding variable region.}
 
 \item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
 
 \item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
 
 \item{strand}{String specifying which strand of the read to search.}
+
+\item{indices}{Logical scalar indicating whether integer indices should be used to define each combinational barcode.}
 
 \item{files}{A character vector of paths to FASTQ files.}
 
@@ -33,11 +36,16 @@ Each row should correspond to a barcode and each column should contain a charact
 }
 \value{
 \code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
-It contains \code{keys}, a nested \linkS4class{DataFrame} where each column corresponds to an element of \code{choices} and contains the indices of the sequences in each combinatorial barcode;
+It contains \code{keys}, a nested \linkS4class{DataFrame} that contains the sequences that define each combinatorial barcode;
 and \code{counts}, an integer vector containing the frequency of each barcode.
 
 \code{matrixOfComboBarcodes} returns the same output as \code{\link{combineComboCounts}},
-i.e., a list containing a count matrix of frequencies for each combinatorial barcode in each \code{files}.
+i.e., a \linkS4class{DataFrame} containing \code{keys} and a count matrix of frequencies for each combinatorial barcode in each \code{files}.
+Columns of the count matrix are named with \code{files}.
+
+Each column of \code{keys} corresponds to a single variable region in \code{template} and thus one entry of \code{choices}.
+By default, the sequences are reported directly as character vectors.
+If \code{indices=FALSE}, each column contains the indices of the sequences in the corresponding entry of \code{choices}.
 }
 \description{
 Count combinatorial barcodes for screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences.
