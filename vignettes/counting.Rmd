@@ -4,6 +4,7 @@ author:
 - name: Aaron Lun
   affiliation: Genentech gRED B&CB
   email: luna@gene.com
+date: "Revised: May 9, 2019"  
 output:
   BiocStyle::html_document:
     toc_float: yes
@@ -126,7 +127,7 @@ It is permissible for each variable sequence to be sampled from a different know
 out <- matrixOfComboBarcodes(combo.fq,
     template="GTACNNNNCATGNNNNGTAC",
     choices=list(first=known1, second=known2))
-out$combination
+out$combinations
 out$counts
 ```
 
