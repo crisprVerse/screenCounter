@@ -7,7 +7,7 @@
 #' @return A \linkS4class{DataFrame} containing:
 #' \itemize{
 #' \item \code{combinations}, a DataFrame containing all unique combinatorial barcodes observed in any \code{...}.
-#' Each row corresponds to a barcode and each column contains an integer identifier for the sequence in the variable region.
+#' Each row corresponds to a barcode and each column contains an identifier (either integer or character) for the sequence in the variable region.
 #' \item \code{counts}, a matrix with number of columns equal to number of objects in \code{...}. 
 #' Each row corresponds to a unique combinatorial barcode in \code{keys} and each column represents the count of that barcode in each entry if \code{...}.
 #' Column names are set to the names of \code{...}, if supplied.
@@ -35,7 +35,7 @@ combineComboCounts <- function(...) {
     o <- do.call(order, as.list(combined$combinations))
     combined <- combined[o,]
     if (nrow(combined)) {
-        any.diff <- lapply(as.list(combined$combinations), FUN=function(x) c(TRUE, diff(x)!=0L))
+        any.diff <- lapply(as.list(combined$combinations), FUN=function(x) c(TRUE, x[-1L]!=x[-length(x)]))
         is.unique <- Reduce("|", any.diff)
     } else {
         is.unique <- logical(0)

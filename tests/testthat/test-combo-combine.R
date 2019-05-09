@@ -10,8 +10,13 @@ GENERATOR <- function(nsamples, npool, nreads) {
         # Unique-ifying
         key <- paste0(X, ".", Y)
         tab <- table(key)
-        re.X <- as.integer(sub("\\..*", "", names(tab)))
-        re.Y <- as.integer(sub(".*\\.", "", names(tab)))
+
+        re.X <- sub("\\..*", "", names(tab))
+        re.Y <- sub(".*\\.", "", names(tab))
+        if (is.integer(npool)) {
+            re.X <- as.integer(re.X)
+            re.Y <- as.integer(re.Y)
+        }
 
         output[[i]] <- DataFrame(combinations=I(DataFrame(X=re.X, Y=re.Y)), counts=as.integer(tab))
     }
@@ -35,13 +40,17 @@ MANUAL <- function(...) {
         mat[m,i] <- counts
     }
 
-    out <- DataFrame(X=as.integer(sub("\\..*", "", all.keys)),
-        Y=as.integer(sub(".*\\.", "", all.keys)))
+    out <- DataFrame(X=sub("\\..*", "", all.keys), Y=sub(".*\\.", "", all.keys))
+    if (is.integer(everything[[1]]$combinations[,1])) {
+        out[,1] <- as.integer(out[,1])
+        out[,2] <- as.integer(out[,2])
+    }
+
     o <- order(out$X, out$Y)
     list(combinations=out[o,], counts=mat[o,,drop=FALSE])
 }
 
-test_that("combineComboCounts works as expected", {
+test_that("combineComboCounts works as expected with integers", {
     for (N in c(1, 5, 10, 50, 100, 500)) {
         output <- GENERATOR(3, 10, N)
         out <- combineComboCounts(output[[1]], output[[2]], output[[3]])
@@ -51,7 +60,18 @@ test_that("combineComboCounts works as expected", {
     }
 })
 
-test_that("combineComboCounts works as expected", {
+test_that("combineComboCounts works as expected with strings", {
+    for (N in c(1, 5, 10, 50, 100, 500)) {
+        output <- GENERATOR(3, head(LETTERS, 10), N)
+        out <- combineComboCounts(output[[1]], output[[2]], output[[3]])
+        ref <- MANUAL(output[[1]], output[[2]], output[[3]])
+        expect_equivalent(out$combinations, ref$combinations)
+        expect_identical(out$counts, ref$counts)
+    }
+})
+
+
+test_that("combineComboCounts respects file names", {
     N <- 500
     output <- GENERATOR(3, 10, N)
     out <- combineComboCounts(A=output[[1]], B=output[[2]], C=output[[3]])
