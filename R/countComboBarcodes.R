@@ -36,7 +36,8 @@
 #' and \code{counts}, an integer vector containing the frequency of each barcode.
 #'
 #' \code{matrixOfComboBarcodes} returns the same output as \code{\link{combineComboCounts}},
-#' i.e., a list containing a count matrix of frequencies for each combinatorial barcode in each \code{files}.
+#' i.e., a \linkS4class{DataFrame} containing a count matrix of frequencies for each combinatorial barcode in each \code{files}.
+#' Columns of the count matrix are named with \code{files}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -121,5 +122,6 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
 #' @importFrom BiocParallel SerialParam bplapply
 matrixOfComboBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countComboBarcodes, ..., BPPARAM=BPPARAM)
+    names(out) <- files
     do.call(combineComboCounts, out)
 }
