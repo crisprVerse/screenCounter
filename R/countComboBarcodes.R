@@ -5,11 +5,12 @@
 #' @param fastq String containing the path to a FASTQ file containing single-end data,
 #' or a connection object to such a file.
 #' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
-#' @param choices A \linkS4class{List} of potential sequences for each variable region in \code{template}.
-#' Each row should correspond to a barcode and each column should contain a character vector of sequences.
+#' @param choices A \linkS4class{List} of character vectors, one per variable region in \code{template}.
+#' Each vector should contain the potential sequences for the corresponding variable region.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
 #' @param strand String specifying which strand of the read to search.
+#' @param indices Logical scalar indicating whether integer indices should be used to define each combinational barcode.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countComboBarcodes}.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.
@@ -32,13 +33,17 @@
 #'
 #' @return 
 #' \code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
-#' It contains \code{keys}, a nested \linkS4class{DataFrame} where each column corresponds to an element of \code{choices} and contains the indices of the sequences in each combinatorial barcode;
+#' It contains \code{keys}, a nested \linkS4class{DataFrame} that contains the sequences that define each combinatorial barcode;
 #' and \code{counts}, an integer vector containing the frequency of each barcode.
 #'
 #' \code{matrixOfComboBarcodes} returns the same output as \code{\link{combineComboCounts}},
-#' i.e., a \linkS4class{DataFrame} containing a count matrix of frequencies for each combinatorial barcode in each \code{files}.
+#' i.e., a \linkS4class{DataFrame} containing \code{keys} and a count matrix of frequencies for each combinatorial barcode in each \code{files}.
 #' Columns of the count matrix are named with \code{files}.
 #'
+#' Each column of \code{keys} corresponds to a single variable region in \code{template} and thus one entry of \code{choices}.
+#' By default, the sequences are reported directly as character vectors.
+#' If \code{indices=FALSE}, each column contains the indices of the sequences in the corresponding entry of \code{choices}.
+#' 
 #' @author Aaron Lun
 #' @examples
 #' # Creating an example dual barcode sequencing experiment.
@@ -69,7 +74,7 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom ShortRead FastqStreamer sread yield
 countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE,
-    strand=c("original", "reverse", "both"))                               
+    strand=c("original", "reverse", "both"), indices=FALSE)
 {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
@@ -114,7 +119,12 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
     if (!is.null(names(choices))) {
         colnames(keys) <- names(choices)
     }
-    DataFrame(combination=I(keys), count=output[[1]])
+    if (!indices) {
+        for (i in seq_len(ncol(keys))) {
+            keys[,i] <- choices[[i]][keys[,i]]
+        }
+    }
+    DataFrame(combinations=I(keys), counts=output[[1]])
 }
 
 #' @rdname countComboBarcodes

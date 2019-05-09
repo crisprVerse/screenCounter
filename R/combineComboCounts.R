@@ -6,7 +6,7 @@
 #'
 #' @return A \linkS4class{DataFrame} containing:
 #' \itemize{
-#' \item \code{keys}, a DataFrame containing all unique combinatorial barcodes observed in any \code{...}.
+#' \item \code{combinations}, a DataFrame containing all unique combinatorial barcodes observed in any \code{...}.
 #' Each row corresponds to a barcode and each column contains an integer identifier for the sequence in the variable region.
 #' \item \code{counts}, a matrix with number of columns equal to number of objects in \code{...}. 
 #' Each row corresponds to a unique combinatorial barcode in \code{keys} and each column represents the count of that barcode in each entry if \code{...}.
@@ -32,10 +32,10 @@ combineComboCounts <- function(...) {
     combined <- do.call(rbind, everything)
     combined$origin <- rep(seq_along(everything), vapply(everything, nrow, FUN.VALUE=0L))
 
-    o <- do.call(order, as.list(combined$combination))
+    o <- do.call(order, as.list(combined$combinations))
     combined <- combined[o,]
     if (nrow(combined)) {
-        any.diff <- lapply(as.list(combined$combination), FUN=function(x) c(TRUE, diff(x)!=0L))
+        any.diff <- lapply(as.list(combined$combinations), FUN=function(x) c(TRUE, diff(x)!=0L))
         is.unique <- Reduce("|", any.diff)
     } else {
         is.unique <- logical(0)
@@ -44,6 +44,6 @@ combineComboCounts <- function(...) {
     out.counts <- matrix(0L, sum(is.unique), length(everything))
     colnames(out.counts) <- names(everything)
     id <- cumsum(is.unique)
-    out.counts[cbind(id, combined$origin)] <- combined$count
-    DataFrame(keys=I(combined$combination[is.unique,]), counts=I(out.counts))
+    out.counts[cbind(id, combined$origin)] <- combined$counts
+    DataFrame(combinations=I(combined$combinations[is.unique,]), counts=I(out.counts))
 }
