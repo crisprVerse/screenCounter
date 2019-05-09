@@ -60,7 +60,7 @@
 #' @export
 #' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts
 #' defaultEdgeRFilter defaultEdgeRNormalize
-#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newDirectoryPath
+#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newReportPath 
 #' @importFrom grDevices pdf dev.list dev.off
 runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
@@ -86,9 +86,7 @@ runVoomScreen <- function(se, ...,
 
     # Define the output file and temporarily change directory to it.
     # Note that CD'ing is done *after* defining input paths.
-    if (is.null(fname)) {
-        fname <- file.path(newDirectoryPath("voom-screen"), "report.Rmd")
-    }
+    fname <- newReportPath(fname, "voom-screen")
     old <- getwd()
     setwd(dirname(fname))
     fname <- basename(fname)
