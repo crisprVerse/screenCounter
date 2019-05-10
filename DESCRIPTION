@@ -1,15 +1,15 @@
 Package: gp.sa.screen
-Version: 0.99.8
-Date: 2019-05-09
+Version: 0.99.9
+Date: 2019-05-10
 Title: Standardized Analytics for Sequencing Screens
 Description: Provides a standardized analysis pipeline for 
     analyzing data from high-throughput sequencing screens
     involving shRNA silencing or various flavors of CRISPR.
 Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="luna@gene.com")
-Depends: S4Vectors
+Depends: S4Vectors, SummarizedExperiment
 Imports: gp.sa.core, gp.sa.diff, Rcpp, IRanges, XVector, 
     Biostrings, ShortRead, BiocParallel, edgeR, csaw, 
-    grDevices, SummarizedExperiment
+    grDevices
 Suggests: BiocStyle, knitr, rmarkdown, testthat
 LinkingTo: Rcpp, IRanges, XVector, Biostrings, S4Vectors, BH
 License: Genentech, Inc.
