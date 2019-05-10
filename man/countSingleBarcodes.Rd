@@ -9,7 +9,7 @@ countSingleBarcodes(fastq, choices, flank5, flank3, template = NULL,
   substitutions = FALSE, deletions = FALSE, strand = c("original",
   "reverse", "both"))
 
-matrixOfSingleBarcodes(files, ..., BPPARAM = SerialParam())
+matrixOfSingleBarcodes(files, choices, ..., BPPARAM = SerialParam())
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,
@@ -36,12 +36,22 @@ or a connection object to such a file.}
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.}
 }
 \value{
-\code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
-containing the frequency of each barcode.
-This is named with the values of \code{choices}.
+\code{countSingleBarcodes} will return a \linkS4class{DataFrame} containing:
+\itemize{
+\item \code{choices}, a character vector equal to the input \code{choices}.
+\item \code{counts}, an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode.
+}
+The metadata contains \code{nreads}, an integer scalar containing the total number of reads in \code{fastq}.
 
-\code{matrixOfSingleBarcodes} will return an integer matrix where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
-Row names are \code{choices} while column names are \code{files}.
+\code{matrixOfSingleBarcodes} will return a \linkS4class{SummarizedExperiment} object containing:
+\itemize{
+\item An integer matrix named \code{"counts"}, where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
+\item Row metadata containing a character vector \code{choices}, the sequence of the variable region of each barcode for each row.
+\item Column metadata containing a character vector \code{files}, the path to each file;
+an integer vector \code{nreads}, containing the total number of reads in each file;
+and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
+}
+Row names are set to \code{choices} while column names are \code{basename(files)}.
 }
 \description{
 Count the frequency of barcodes in a FASTQ file containing data for a single-end sequencing screen.
