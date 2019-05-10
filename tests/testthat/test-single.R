@@ -14,6 +14,12 @@ STICKER <- function(barcodes, fname, out, ..., strandFUN=identity) {
     expect_identical(out, out2)
 }
 
+CHECK_OUTPUT <- function(out, tab, choices, N) {
+    expect_identical(tab, out$counts)
+    expect_identical(choices, out$choices)
+    expect_identical(as.integer(N), metadata(out)$nreads) 
+}
+
 test_that("countSingleBarcodes works as expected in basic mode", {
     for (N in c(1, 10, 100, 1000)) {
         i <- sample(nbarcodes, N, replace=TRUE)
@@ -25,7 +31,7 @@ test_that("countSingleBarcodes works as expected in basic mode", {
 
         out <- countSingleBarcodes(tmp, POOL, template=template)
         tab <- tabulate(i, nbins=nbarcodes)
-        expect_identical(tab, unname(out))
+        CHECK_OUTPUT(out, tab, POOL, N)
 
         # Same results when you stick a bunch of random crap to the start and end.
         STICKER(barcodes, tmp, out, choices=POOL)
@@ -47,7 +53,7 @@ test_that("countSingleBarcodes works as expected with substitutions", {
 
     choices <- strrep(BASES, 10)
     out <- countSingleBarcodes(tmp, choices, template=template, sub=TRUE)
-    expect_identical(unname(out), c(0L, 0L, 2L, 0L))
+    CHECK_OUTPUT(out, c(0L, 0L, 2L, 0L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 
@@ -65,7 +71,7 @@ test_that("countSingleBarcodes works as expected with substitutions", {
 
     choices <- c("CCCCCCCCCC", "CCCCCCCCCA")
     out <- countSingleBarcodes(tmp, choices, template=template, sub=TRUE)
-    expect_identical(unname(out), c(1L, 1L))
+    CHECK_OUTPUT(out, c(1L, 1L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 })
@@ -85,7 +91,7 @@ test_that("countSingleBarcodes works as expected with deletions", {
 
     choices <- strrep(BASES, 10)
     out <- countSingleBarcodes(tmp, choices, template=template, del=TRUE)
-    expect_identical(unname(out), c(0L, 2L, 0L, 0L))
+    CHECK_OUTPUT(out, c(0L, 2L, 0L, 0L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 
@@ -103,7 +109,7 @@ test_that("countSingleBarcodes works as expected with deletions", {
 
     choices <- c("CCCCCCCCCC", "CCCCCCCCCA")
     out <- countSingleBarcodes(tmp, choices, template=template, del=TRUE)
-    expect_identical(unname(out), c(1L, 2L))
+    CHECK_OUTPUT(out, c(1L, 2L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 })
@@ -121,14 +127,14 @@ test_that("countSingleBarcodes works as expected with strands", {
 
         out <- countSingleBarcodes(tmp, POOL, template=template, strand=strand)
         tab <- tabulate(i, nbins=nbarcodes)
-        expect_identical(tab, unname(out))
+        CHECK_OUTPUT(out, tab, POOL, length(B)) 
 
         # Same results when you stick a bunch of random crap to the start and end.
         STICKER(barcodes, tmp, out, choices=POOL, strand=strand, strandFUN=strandFUN)
     }
 })
 
-test_that("countSingleBarcodes works as expected with names", {
+test_that("matrixOfSingleBarcodes works as expected with names", {
     i <- sample(nbarcodes, 10, replace=TRUE)
     barcodes <- sprintf(barcode.fmt, POOL[i])
     names(barcodes) <- seq_len(10)
@@ -136,13 +142,7 @@ test_that("countSingleBarcodes works as expected with names", {
     tmp <- tempfile(fileext=".fastq")
     writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
-    # Uses the sequences directly.
-    out <- countSingleBarcodes(tmp, POOL, template=template)
-    expect_identical(names(out), POOL)
-
-    # Uses the file names directly.
-    tmp2 <- tempfile(fileext=".fastq")
-    file.copy(tmp, tmp2)
-    mat <- matrixOfSingleBarcodes(c(tmp, tmp2), POOL, template=template)
-    expect_identical(colnames(mat), c(tmp, tmp2))
+    mat <- matrixOfSingleBarcodes(tmp, POOL, template=template)
+    expect_identical(colnames(mat), basename(tmp))
+    expect_identical(rownames(mat), POOL)
 })
