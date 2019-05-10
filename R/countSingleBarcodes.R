@@ -33,12 +33,22 @@
 #' The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
 #'
 #' @return 
-#' \code{countSingleBarcodes} will return an integer vector of length equal to \code{nrow(choices)},
-#' containing the frequency of each barcode.
-#' This is named with the values of \code{choices}.
+#' \code{countSingleBarcodes} will return a \linkS4class{DataFrame} containing:
+#' \itemize{
+#' \item \code{choices}, a character vector equal to the input \code{choices}.
+#' \item \code{counts}, an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode.
+#' }
+#' The metadata contains \code{nreads}, an integer scalar containing the total number of reads in \code{fastq}.
 #' 
-#' \code{matrixOfSingleBarcodes} will return an integer matrix where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
-#' Row names are \code{choices} while column names are \code{files}.
+#' \code{matrixOfSingleBarcodes} will return a \linkS4class{SummarizedExperiment} object containing:
+#' \itemize{
+#' \item An integer matrix named \code{"counts"}, where each column is the output of \code{countSingleBarcodes} for each file in \code{files}.
+#' \item Row metadata containing a character vector \code{choices}, the sequence of the variable region of each barcode for each row.
+#' \item Column metadata containing a character vector \code{files}, the path to each file;
+#' an integer vector \code{nreads}, containing the total number of reads in each file;
+#' and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
+#' }
+#' Row names are set to \code{choices} while column names are \code{basename(files)}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -66,6 +76,7 @@
 #'     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
+#' @importFrom S4Vectors DataFrame metadata<-
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
     template=NULL, substitutions=FALSE, deletions=FALSE, 
     strand=c("original", "reverse", "both"))
@@ -87,21 +98,34 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
     ptr <- setup_barcodes_single(constants, list(choices), substitutions, deletions)
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
+
+    N <- 0L
     while (length(fq <- yield(incoming))) {
         count_barcodes_single(sread(fq), ptr, use.forward, use.reverse)
+        N <- N + length(fq)
     }
 
     all.available <- report_barcodes_single(ptr)
-    names(all.available) <- choices
-    all.available
+    out <- DataFrame(choices=choices, counts=all.available)
+    metadata(out)$nreads <- N
+    out
 }
 
 #' @rdname countSingleBarcodes
 #' @export
 #' @importFrom BiocParallel bplapply SerialParam
-matrixOfSingleBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
-    out <- bplapply(files, FUN=countSingleBarcodes, ..., BPPARAM=BPPARAM)
-    out <- do.call(cbind, out)
-    colnames(out) <- files
-    out
+#' @importFrom SummarizedExperiment SummarizedExperiment
+#' @importFrom S4Vectors DataFrame
+matrixOfSingleBarcodes <- function(files, choices, ..., BPPARAM=SerialParam()) {
+    out <- bplapply(files, FUN=countSingleBarcodes, choices=choices, ..., BPPARAM=BPPARAM)
+    mat <- do.call(cbind, lapply(out, "[[", "counts"))
+    nreads <- vapply(out, function(x) metadata(x)$nreads, FUN.VALUE=0L)
+
+    se <- SummarizedExperiment(list(counts=mat),
+        rowData=DataFrame(choices=choices),
+        colData=DataFrame(paths=files, nreads=nreads, nmapped=colSums(mat)))
+
+    rownames(se) <- choices
+    colnames(se) <- basename(files)
+    se 
 }
