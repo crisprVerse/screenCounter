@@ -115,7 +115,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
 #' @export
 #' @importFrom BiocParallel bplapply SerialParam
 #' @importFrom SummarizedExperiment SummarizedExperiment
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame metadata
 matrixOfSingleBarcodes <- function(files, choices, ..., BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countSingleBarcodes, choices=choices, ..., BPPARAM=BPPARAM)
     mat <- do.call(cbind, lapply(out, "[[", "counts"))

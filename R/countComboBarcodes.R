@@ -142,7 +142,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
 #' @rdname countComboBarcodes
 #' @export
 #' @importFrom BiocParallel SerialParam bplapply
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame metadata
 #' @importFrom SummarizedExperiment SummarizedExperiment
 matrixOfComboBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countComboBarcodes, ..., BPPARAM=BPPARAM)
