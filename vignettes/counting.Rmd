@@ -4,7 +4,7 @@ author:
 - name: Aaron Lun
   affiliation: Genentech gRED B&CB
   email: luna@gene.com
-date: "Revised: May 9, 2019"  
+date: "Revised: May 10, 2019"  
 output:
   BiocStyle::html_document:
     toc_float: yes
@@ -67,7 +67,7 @@ writeXStringSet(DNAStringSet(reads), file=single.fq, format="fastq")
 ```
 
 We quantify single barcodes across one or more files using the `matrixOfSingleBarcodes()` function.
-This produces a matrix of frequencies of each barcode (row) in each file (column).
+This produces a `SummarizedExperiment` containing a count matrix of frequencies of each barcode (row) in each file (column).
 The order of rows corresponds to the order of variable regions in `known` that distinguishes each barcode.
 
 ```{r}
@@ -75,6 +75,7 @@ library(gp.sa.screen)
 out <- matrixOfSingleBarcodes(single.fq, 
     flank5="GTAC", flank3="CATG", choices=known)
 out
+assay(out)
 ```
 
 We specify the constant sequences that immediately flank the variable region^[A template structure can also be specified in `template=`, which may be more convenient.].
@@ -127,12 +128,21 @@ It is permissible for each variable sequence to be sampled from a different know
 out <- matrixOfComboBarcodes(combo.fq,
     template="GTACNNNNCATGNNNNGTAC",
     choices=list(first=known1, second=known2))
-out$combinations
-out$counts
+out
 ```
 
-This function produces a matrix of frequencies of each barcode (row) in each file (column).
-The identities of the variable regions in each combinatorial barcode are specified in the `combination` data frame, which contains integer indices to the variable sequences in `known1` and `known2`.
+This function yields a `SummarizedExperiment` object containing a matrix of frequencies of each barcode (row) in each file (column).
+
+```{r}
+assay(out)
+```
+
+The identities of the variable regions in each combinatorial barcode are specified in the `rowData`, 
+which contains the variable sequences in `known1` and `known2` that define each barcode.
+
+```{r}
+rowData(out)
+```
 
 # Further options
 
