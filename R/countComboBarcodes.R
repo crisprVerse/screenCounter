@@ -33,17 +33,24 @@
 #'
 #' @return 
 #' \code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
-#' It contains \code{keys}, a nested \linkS4class{DataFrame} that contains the sequences that define each combinatorial barcode;
+#' It contains \code{combinations}, a nested \linkS4class{DataFrame} that contains the sequences that define each combinatorial barcode;
 #' and \code{counts}, an integer vector containing the frequency of each barcode.
+#' The medata contains \code{nreads}, an integer scalar of the total number of reads in \code{fastq}.
 #'
-#' \code{matrixOfComboBarcodes} returns the same output as \code{\link{combineComboCounts}},
-#' i.e., a \linkS4class{DataFrame} containing \code{keys} and a count matrix of frequencies for each combinatorial barcode in each \code{files}.
-#' Columns of the count matrix are named with \code{files}.
-#'
-#' Each column of \code{keys} corresponds to a single variable region in \code{template} and thus one entry of \code{choices}.
+#' Each column of \code{combinations} corresponds to a single variable region in \code{template} and one vector in \code{choices}.
 #' By default, the sequences are reported directly as character vectors.
 #' If \code{indices=FALSE}, each column contains the indices of the sequences in the corresponding entry of \code{choices}.
 #' 
+#' \code{matrixOfComboBarcodes} returns a \linkS4class{SummarizedExperiment} containing:
+#' \itemize{
+#' \item An integer matrix named \code{"counts"}, containing counts for each combinatorial barcode in each \code{files}.
+#' \item One or more vectors in the \code{rowData} that define each combinatorial barcode, equivalent to \code{combinations}.
+#' \item Column metadata containing a character vector \code{files}, the path to each file;
+#' an integer vector \code{nreads}, containing the total number of reads in each file;
+#' and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
+#' }
+#' Column names are set to \code{basename(files)}.
+#'
 #' @author Aaron Lun
 #' @examples
 #' # Creating an example dual barcode sequencing experiment.
@@ -71,7 +78,7 @@
 #'     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame metadata<-
 #' @importFrom ShortRead FastqStreamer sread yield
 countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE,
     strand=c("original", "reverse", "both"), indices=FALSE)
@@ -107,11 +114,13 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
 
     # Counting all pairs of barcodes. 
     ptr <- setupfun(constants, as.list(choices), substitutions, deletions)
-
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
+
+    N <- 0L
     while (length(fq <- yield(incoming))) {
         countfun(sread(fq), ptr, use.forward, use.reverse)
+        N <- N + length(fq)
     }
 
     output <- reportfun(ptr)
@@ -124,14 +133,26 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
             keys[,i] <- choices[[i]][keys[,i]]
         }
     }
-    DataFrame(combinations=I(keys), counts=output[[1]])
+
+    out <- DataFrame(combinations=I(keys), counts=output[[1]])
+    metadata(out)$nreads <- N
+    out
 }
 
 #' @rdname countComboBarcodes
 #' @export
 #' @importFrom BiocParallel SerialParam bplapply
+#' @importFrom S4Vectors DataFrame
+#' @importFrom SummarizedExperiment SummarizedExperiment
 matrixOfComboBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countComboBarcodes, ..., BPPARAM=BPPARAM)
-    names(out) <- files
-    do.call(combineComboCounts, out)
+    combined <- do.call(combineComboCounts, out)
+    mat <- combined$counts
+    nreads <- vapply(out, function(x) metadata(x)$nreads, FUN.VALUE=0L)
+
+    se <- SummarizedExperiment(list(counts=mat),
+        rowData=combined$combinations,
+        colData=DataFrame(paths=files, nreads=nreads, nmapped=colSums(mat)))
+    colnames(se) <- basename(files)
+    se
 }
