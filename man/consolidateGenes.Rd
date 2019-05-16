@@ -4,20 +4,18 @@
 \alias{consolidateGenes}
 \title{Consolidate to genes}
 \usage{
-consolidateGenes(gene.field, res.dir)
+consolidateGenes(gene.field)
 }
 \arguments{
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
-
-\item{res.dir}{String specifying the directory in which results are to be saved.}
 }
 \value{
 A function that takes a machine-readable name of the contrast (see \code{\link{createContrasts}}),
 and returns a Rmarkdown chunk containing code to:
 \itemize{
-\item save per-barcode results to file, with a \code{:barcode.csv} or \code{:barcode.rds} suffix.
+\item store per-barcode results in the \code{all.results} list, named with a \code{:barcode} suffix.
 \item combine barcode-level statistics for that contrast into gene-level statistics.
-\item save per-gene results to file, with a \code{:gene.csv} or \code{:gene.rds} suffix.
+\item store per-gene results in the \code{all.results} list, named with a \code{:gene} suffix.
 }
 }
 \description{
@@ -34,6 +32,6 @@ This is used to determine the name of the output files to which to save results.
 The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
 }
 \examples{
-FUN <- consolidateGenes("gene.type", "reuslts")
+FUN <- consolidateGenes("gene.type")
 cat(FUN("A-B"))
 }

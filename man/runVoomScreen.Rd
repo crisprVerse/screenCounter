@@ -5,8 +5,7 @@
 \title{Use \code{voom} to analyze a screen}
 \usage{
 runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
-  norm.type.level, gene.field, fname = NULL, res.dir = "results",
-  obj.dir = "objects")
+  norm.type.level, gene.field, fname = NULL)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.}
@@ -24,15 +23,11 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
-
-\item{res.dir}{String containing the name of the directory for result files.}
-
-\item{obj.dir}{String containing the name of the directory for object files.}
 }
 \value{
 A list containing \code{objects} and \code{results}.
-\code{objects} is a list containing the \code{fit} object, the MArrayLM object produced by \code{eBayes}.
-\code{results} is a named list containing \linkS4class{DataFrame}s of result tables from all contrasts.
+\code{objects} is a \linkS4class{List} containing useful objects generated during the analysis.
+\code{results} is a \linkS4class{List} containing \linkS4class{DataFrame}s of result tables from all contrasts.
 }
 \description{
 Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
