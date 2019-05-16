@@ -3,15 +3,14 @@
 #' Consolidate barcode-level statistics to gene-level statistics.
 #'
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
-#' @param res.dir String specifying the directory in which results are to be saved.
 #'
 #' @return
 #' A function that takes a machine-readable name of the contrast (see \code{\link{createContrasts}}),
 #' and returns a Rmarkdown chunk containing code to:
 #' \itemize{
-#' \item save per-barcode results to file, with a \code{:barcode.csv} or \code{:barcode.rds} suffix.
+#' \item store per-barcode results in the \code{all.results} list, named with a \code{:barcode} suffix.
 #' \item combine barcode-level statistics for that contrast into gene-level statistics.
-#' \item save per-gene results to file, with a \code{:gene.csv} or \code{:gene.rds} suffix.
+#' \item store per-gene results in the \code{all.results} list, named with a \code{:gene} suffix.
 #' }
 #'
 #' @details
@@ -25,34 +24,14 @@
 #' The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
 #' 
 #' @examples
-#' FUN <- consolidateGenes("gene.type", "reuslts")
+#' FUN <- consolidateGenes("gene.type")
 #' cat(FUN("A-B"))
 #' @export
 #' @importFrom csaw combineTests
-consolidateGenes <- function (gene.field, res.dir) {
+consolidateGenes <- function (gene.field) {
     to.add <- deparse(gene.field)
-    force(res.dir)
-
     function(vname) {
-        vname <- file.path(res.dir, vname)
-
-        cur.csv <- paste0(vname, ":barcode.csv")
-        cur.rds <- paste0(vname, ":barcode.rds")
-        per.barcode <- sprintf('The per-barcode results are saved to file in both CSV format (for external use) and in RDS format (for re-reading into R).
-
-```{r}
-write.csv(file=%s, res)
-saveRDS(res, file=%s)
-```
-
-<!-- GPSA_OUTPUT
-- path: %s
-  contains: differential barcode abundance results
-- path: %s
--->', deparse(cur.csv), deparse(cur.rds), cur.csv, cur.rds)
-
-        new.csv <- paste0(vname, ":gene.csv")
-        new.rds <- paste0(vname, ":gene.rds")
+        per.barcode <- .default_postcon(vname)
         per.gene <- sprintf("We also consolidate per-barcode statistics into per-gene results using Simes' method.
 This tests the joint null hypothesis that all barcodes for a gene are not differentially abundant.
 
@@ -75,7 +54,7 @@ colnames(best) <- paste0('Best', colnames(best))
 head(best)
 ```
 
-We expand the result table so that there is one row per gene, and save it to file.
+We expand the result table so that there is one row per gene, and save it into our result `List`.
 
 ```{r}
 stats <- cbind(per.gene, best)
@@ -83,17 +62,19 @@ all.genes <- sort(unique(rowData(se)[[%s]]))
 expander <- match(all.genes, rownames(stats))
 stats <- stats[expander,]
 rownames(stats) <- all.genes
-
-write.csv(file=%s, stats)
-saveRDS(stats, file=%s)
-```
-
-<!-- GPSA_OUTPUT
-- path: %s
-  contains: differential gene abundance results
-- path: %s
--->", to.add, to.add, deparse(new.csv), deparse(new.rds), new.csv, new.rds)
+all.results[[%s]] <- stats 
+```", to.add, to.add, deparse(paste0(vname, ":gene")))
 
         paste0(per.barcode, "\n\n", per.gene)
     }
 }
+
+.default_postcon <- function(vname) {
+    vname <- paste0(vname, ":barcode")
+    sprintf('We save the results in our output `List` for later use.
+
+```{r}
+all.results[[%s]] <- res
+```', deparse(vname))
+}            
+

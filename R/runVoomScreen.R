@@ -10,12 +10,10 @@
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param fname String containing the path to an output Rmarkdown file.
-#' @param res.dir String containing the name of the directory for result files.
-#' @param obj.dir String containing the name of the directory for object files.
 #'
 #' @return A list containing \code{objects} and \code{results}.
-#' \code{objects} is a list containing the \code{fit} object, the MArrayLM object produced by \code{eBayes}.
-#' \code{results} is a named list containing \linkS4class{DataFrame}s of result tables from all contrasts.
+#' \code{objects} is a \linkS4class{List} containing useful objects generated during the analysis.
+#' \code{results} is a \linkS4class{List} containing \linkS4class{DataFrame}s of result tables from all contrasts.
 #'
 #' @details
 #' This function is largely a wrapper around \code{\link{runVoom}}, with three additional features:
@@ -57,13 +55,12 @@
 #' head(out$results$`2-1:de:gene`)
 #'
 #' @export
-#' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts
-#' defaultEdgeRFilter defaultEdgeRNormalize
-#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newReportPath 
+#' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts defaultEdgeRFilter defaultEdgeRNormalize
+#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newReportPath setOriginInList setOriginFromRmd
 #' @importFrom grDevices pdf dev.list dev.off
 runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
-    fname=NULL, res.dir="results", obj.dir="objects")
+    fname=NULL)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
@@ -73,11 +70,9 @@ runVoomScreen <- function(se, ...,
 
     # Choosing whether to output just barcode results, or to consolidate.
     if (is.na(gene.field)) {
-        postcon <- NULL
-        res.fmt <- "%s"
+        postcon <- .default_postcon
     } else {
-        postcon <- consolidateGenes(gene.field, res.dir)
-        res.fmt <- "%s:barcode"
+        postcon <- consolidateGenes(gene.field)
     }
 
     # Define the output file and temporarily change directory to it.
@@ -115,38 +110,28 @@ runVoomScreen <- function(se, ...,
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
-        post.contrast=postcon,
-        res.dir=res.dir, obj.dir=obj.dir
+        post.contrast=postcon
     )
 
     # Cleaning up.
-    y.name <- file.path(obj.dir, "y.rds")
-    fit.name <- file.path(obj.dir, "fit.rds")
-    knitAndWrite(fname, env, sprintf("# Wrapping up
+    knitAndWrite(fname, env, "# Wrapping up
 
-We save the `y` and `fit` objects to file for later use.
+We gather together some of the useful objects for later use.
 
 ```{r}
-saveRDS(y, file=%s)
-saveRDS(fit, file=%s)
+voom.objects <- List(v=v, fit=fit)
 ```
 
-<!-- GPSA_OUTPUT
-- path: %s
-- path: %s
--->
-
-We also report the session information for our records.
+We report the session information for our records.
 
 ```{r}
 sessionInfo()
-```", deparse(y.name), deparse(fit.name), y.name, fit.name))
+```")
 
-    # Reporting the results.
-    all.res <- .retrieve_saved_results(fname)
-    res <- lapply(all.res, readRDS)
-    names(res) <- sub("\\.rds$", "", basename(all.res))
-    list(objects=env, results=res)
+    list(
+        objects=setOriginFromRmd(env, "voom.objects", fname),
+        results=setOriginInList(setOriginFromRmd(env, "all.results", fname))
+    )
 }
 
 #' @importFrom gp.sa.diff defaultEdgeRMDS defaultEdgeRMD
