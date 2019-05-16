@@ -20,13 +20,13 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA)
     expect_identical(as.character(class(out$objects$fit)), "MArrayLM")
-    expect_identical(names(out$results), "time:de")
+    expect_identical(names(out$results), "time:de:barcode")
 
-    expect_true("PValue" %in% colnames(out$results$`time:de`))
-    expect_true("FDR" %in% colnames(out$results$`time:de`))
-    expect_true("AverageAbundance" %in% colnames(out$results$`time:de`))
-    expect_true("LogFC" %in% colnames(out$results$`time:de`))
-    expect_identical(rownames(out$results$`time:de`), NULL) # no names in 'se'.
+    expect_true("PValue" %in% colnames(out$results$`time:de:barcode`))
+    expect_true("FDR" %in% colnames(out$results$`time:de:barcode`))
+    expect_true("AverageAbundance" %in% colnames(out$results$`time:de:barcode`))
+    expect_true("LogFC" %in% colnames(out$results$`time:de:barcode`))
+    expect_identical(rownames(out$results$`time:de:barcode`), NULL) # no names in 'se'.
 
     # All proper settings.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
