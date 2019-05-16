@@ -9,8 +9,7 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
   obj.dir = "objects")
 }
 \arguments{
-\item{se}{A \linkS4class{SummarizedExperiment} object.
-Alternatively, a string containing a file path to a serialized instance of a SummarizedExperiment.}
+\item{se}{A \linkS4class{SummarizedExperiment} object.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
