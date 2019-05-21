@@ -6,7 +6,7 @@
 \title{Count combinatorial barcodes}
 \usage{
 countComboBarcodes(fastq, template, choices, substitutions = FALSE,
-  deletions = FALSE, strand = c("original", "reverse", "both"),
+  deletions = FALSE, strand = c("both", "original", "reverse"),
   indices = FALSE)
 
 matrixOfComboBarcodes(files, ..., BPPARAM = SerialParam())

@@ -79,7 +79,7 @@
 #' @importFrom S4Vectors DataFrame metadata<-
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
     template=NULL, substitutions=FALSE, deletions=FALSE, 
-    strand=c("original", "reverse", "both"))
+    strand=c("both", "original", "reverse")) 
 {
     if (!is.null(template)) {
         parsed <- parseBarcodeTemplate(template)

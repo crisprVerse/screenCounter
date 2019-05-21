@@ -81,7 +81,7 @@
 #' @importFrom S4Vectors DataFrame metadata<-
 #' @importFrom ShortRead FastqStreamer sread yield
 countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE,
-    strand=c("original", "reverse", "both"), indices=FALSE)
+    strand=c("both", "original", "reverse"), indices=FALSE)
 {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos

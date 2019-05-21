@@ -6,8 +6,8 @@
 \title{Count single barcodes}
 \usage{
 countSingleBarcodes(fastq, choices, flank5, flank3, template = NULL,
-  substitutions = FALSE, deletions = FALSE, strand = c("original",
-  "reverse", "both"))
+  substitutions = FALSE, deletions = FALSE, strand = c("both",
+  "original", "reverse"))
 
 matrixOfSingleBarcodes(files, choices, ..., BPPARAM = SerialParam())
 }
