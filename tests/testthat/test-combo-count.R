@@ -189,6 +189,22 @@ test_that("matrixOfComboBarcodes handles names correctly", {
     tmp <- tempfile(fileext=".fastq")
     writeXStringSet(B, filepath=tmp, format="fastq")
 
-    se <- matrixOfComboBarcodes(tmp, template, list(first=POOL1, second=POOL2))
-    expect_identical(colnames(se), basename(tmp))
+    # Generating a second file.
+    N <- 200
+    i1 <- sample(length(POOL1), N, replace=TRUE)
+    i2 <- sample(length(POOL2), N, replace=TRUE)
+    barcodes <- sprintf(barcode.fmt, POOL1[i1], POOL2[i2])
+    names(barcodes) <- seq_len(N)
+
+    B <- DNAStringSet(barcodes)
+    tmp2 <- tempfile(fileext=".fastq")
+    writeXStringSet(B, filepath=tmp2, format="fastq")
+
+    # File names match up.
+    se <- matrixOfComboBarcodes(c(tmp, tmp2), template, list(first=POOL1, second=POOL2))
+    expect_identical(colnames(se), basename(c(tmp, tmp2)))
+
+    # Works when pool names are not specified.
+    se <- matrixOfComboBarcodes(tmp, template, list(POOL1, POOL2))
+    expect_identical(colnames(rowData(se)), c("X1", "X2"))
 }) 

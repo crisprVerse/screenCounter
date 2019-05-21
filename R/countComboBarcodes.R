@@ -98,6 +98,9 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
             stop("each column of 'choices' must have same width as variable region in 'template'")
         }
     }
+    if (is.null(names(choices))) {
+        names(choices) <- sprintf("X%i", seq_along(choices))
+    }
 
     # Choosing the C++ functions to use.
     if (nvariables==2L) {
@@ -125,9 +128,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
 
     output <- reportfun(ptr)
     keys <- do.call(DataFrame, output[[2]])
-    if (!is.null(names(choices))) {
-        colnames(keys) <- names(choices)
-    }
+    colnames(keys) <- names(choices)
     if (!indices) {
         for (i in seq_len(ncol(keys))) {
             keys[,i] <- choices[[i]][keys[,i]]
