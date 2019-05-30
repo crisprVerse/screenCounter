@@ -13,6 +13,7 @@
 #' @param indices Logical scalar indicating whether integer indices should be used to define each combinational barcode.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countComboBarcodes}.
+#' @param withDimnames A logical scalar indicating whether the rows and columns should be named.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.
 #' 
 #' @details
@@ -49,7 +50,7 @@
 #' an integer vector \code{nreads}, containing the total number of reads in each file;
 #' and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
 #' }
-#' Column names are set to \code{basename(files)}.
+#' If \code{withDimnames=TRUE}, row names are set to \code{"BARCODE_[ROW]"} and column names are set to \code{basename(files)}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -145,7 +146,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
 #' @importFrom BiocParallel SerialParam bplapply
 #' @importFrom S4Vectors DataFrame metadata
 #' @importFrom SummarizedExperiment SummarizedExperiment
-matrixOfComboBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
+matrixOfComboBarcodes <- function(files, ..., withDimnames=TRUE, BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countComboBarcodes, ..., BPPARAM=BPPARAM)
     combined <- do.call(combineComboCounts, out)
     mat <- combined$counts
@@ -154,6 +155,10 @@ matrixOfComboBarcodes <- function(files, ..., BPPARAM=SerialParam()) {
     se <- SummarizedExperiment(list(counts=mat),
         rowData=combined$combinations,
         colData=DataFrame(paths=files, nreads=nreads, nmapped=colSums(mat)))
-    colnames(se) <- basename(files)
+
+    if (withDimnames) {
+        colnames(se) <- basename(files)
+        rownames(se) <- sprintf("BARCODE_%i", seq_len(nrow(se)))
+    }
     se
 }

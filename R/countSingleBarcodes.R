@@ -13,6 +13,7 @@
 #' @param strand String specifying which strand of the read to search.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countSingleBarcodes}.
+#' @param withDimnames A logical scalar indicating whether the rows and columns should be named.
 #' @param BPPARAM A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.
 #'
 #' @details
@@ -48,7 +49,7 @@
 #' an integer vector \code{nreads}, containing the total number of reads in each file;
 #' and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
 #' }
-#' Row names are set to \code{choices} while column names are \code{basename(files)}.
+#' If \code{withDimnames=TRUE}, row names are set to \code{choices} while column names are \code{basename(files)}.
 #'
 #' @author Aaron Lun
 #' @examples
@@ -116,7 +117,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
 #' @importFrom BiocParallel bplapply SerialParam
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame metadata
-matrixOfSingleBarcodes <- function(files, choices, ..., BPPARAM=SerialParam()) {
+matrixOfSingleBarcodes <- function(files, choices, ..., withDimnames=TRUE, BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countSingleBarcodes, choices=choices, ..., BPPARAM=BPPARAM)
     mat <- do.call(cbind, lapply(out, "[[", "counts"))
     nreads <- vapply(out, function(x) metadata(x)$nreads, FUN.VALUE=0L)
@@ -125,7 +126,9 @@ matrixOfSingleBarcodes <- function(files, choices, ..., BPPARAM=SerialParam()) {
         rowData=DataFrame(choices=choices),
         colData=DataFrame(paths=files, nreads=nreads, nmapped=colSums(mat)))
 
-    rownames(se) <- choices
-    colnames(se) <- basename(files)
+    if (withDimnames) {
+        rownames(se) <- choices
+        colnames(se) <- basename(files)
+    }
     se 
 }
