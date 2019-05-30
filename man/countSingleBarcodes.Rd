@@ -9,7 +9,8 @@ countSingleBarcodes(fastq, choices, flank5, flank3, template = NULL,
   substitutions = FALSE, deletions = FALSE, strand = c("both",
   "original", "reverse"))
 
-matrixOfSingleBarcodes(files, choices, ..., BPPARAM = SerialParam())
+matrixOfSingleBarcodes(files, choices, ..., withDimnames = TRUE,
+  BPPARAM = SerialParam())
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,
@@ -33,6 +34,8 @@ or a connection object to such a file.}
 
 \item{...}{Further arguments to pass to \code{countSingleBarcodes}.}
 
+\item{withDimnames}{A logical scalar indicating whether the rows and columns should be named.}
+
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.}
 }
 \value{
@@ -51,7 +54,7 @@ The metadata contains \code{nreads}, an integer scalar containing the total numb
 an integer vector \code{nreads}, containing the total number of reads in each file;
 and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
 }
-Row names are set to \code{choices} while column names are \code{basename(files)}.
+If \code{withDimnames=TRUE}, row names are set to \code{choices} while column names are \code{basename(files)}.
 }
 \description{
 Count the frequency of barcodes in a FASTQ file containing data for a single-end sequencing screen.

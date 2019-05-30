@@ -9,7 +9,8 @@ countComboBarcodes(fastq, template, choices, substitutions = FALSE,
   deletions = FALSE, strand = c("both", "original", "reverse"),
   indices = FALSE)
 
-matrixOfComboBarcodes(files, ..., BPPARAM = SerialParam())
+matrixOfComboBarcodes(files, ..., withDimnames = TRUE,
+  BPPARAM = SerialParam())
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,
@@ -32,6 +33,8 @@ Each vector should contain the potential sequences for the corresponding variabl
 
 \item{...}{Further arguments to pass to \code{countComboBarcodes}.}
 
+\item{withDimnames}{A logical scalar indicating whether the rows and columns should be named.}
+
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.}
 }
 \value{
@@ -52,7 +55,7 @@ If \code{indices=FALSE}, each column contains the indices of the sequences in th
 an integer vector \code{nreads}, containing the total number of reads in each file;
 and \code{nmapped}, containing the number of reads assigned to a barcode in the output count matrix.
 }
-Column names are set to \code{basename(files)}.
+If \code{withDimnames=TRUE}, row names are set to \code{"BARCODE_[ROW]"} and column names are set to \code{basename(files)}.
 }
 \description{
 Count combinatorial barcodes for screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences.
