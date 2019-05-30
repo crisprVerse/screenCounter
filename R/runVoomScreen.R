@@ -59,6 +59,7 @@
 #' @importFrom gp.sa.core makeFrontMatter knitAndWrite newReportPath setOriginFromRmd
 #' @importClassesFrom gp.sa.core TrackedList
 #' @importFrom grDevices pdf dev.list dev.off
+#' @importFrom methods as
 runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
     fname=NULL)
