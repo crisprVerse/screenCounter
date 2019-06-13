@@ -54,7 +54,7 @@ colnames(best) <- paste0('Best', colnames(best))
 head(best)
 ```
 
-We expand the result table so that there is one row per gene, and save it into our result `List`.
+We expand the result table so that there is one row per gene.
 
 ```{r}
 stats <- cbind(per.gene, best)
@@ -62,19 +62,34 @@ all.genes <- sort(unique(rowData(se)[[%s]]))
 expander <- match(all.genes, rownames(stats))
 stats <- stats[expander,]
 rownames(stats) <- all.genes
-all.results[[%s]] <- stats 
-```", to.add, to.add, deparse(paste0(vname, ":gene")))
+```
+
+... and save it into our result `List`.
+
+```{r}
+stats <- as(stats, 'DGEStatFrame')
+trackinfo(stats) <- trackinfo(se)
+trackinfo(stats)$contrast <- con
+con.desc <- %s
+trackinfo(stats)$description <- con.desc
+all.results[[con.desc]] <- stats
+```", to.add, to.add, deparse(paste(vname, "(gene)")))
 
         paste0(per.barcode, "\n\n", per.gene)
     }
 }
 
 .default_postcon <- function(vname) {
-    vname <- paste0(vname, ":barcode")
-    sprintf('We save the results in our output `List` for later use.
+    vname <- paste(vname, "(barcode)")
+    sprintf("We save the results in our output `List` for later use.
 
 ```{r}
-all.results[[%s]] <- res
-```', deparse(vname))
+res <- as(res, 'DGEStatFrame')
+trackinfo(res) <- trackinfo(se)
+trackinfo(res)$contrast <- con
+con.desc <- %s
+trackinfo(res)$description <- con.desc
+all.results[[con.desc]] <- res
+```", deparse(vname))
 }            
 

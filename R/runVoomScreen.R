@@ -11,9 +11,9 @@
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param fname String containing the path to an output Rmarkdown file.
 #'
-#' @return A list containing \code{objects} and \code{results}.
-#' \code{objects} is a \linkS4class{List} containing useful objects generated during the analysis.
-#' \code{results} is a \linkS4class{List} containing \linkS4class{DataFrame}s of result tables from all contrasts.
+#' @return A \linkS4class{List} containing \linkS4class{DGEStatFrame} objects of result tables from all contrasts.
+#' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
+#' This also provides a basis for further customization.
 #'
 #' @details
 #' This function is largely a wrapper around \code{\link{runVoom}}, with three additional features:
@@ -51,13 +51,11 @@
 #'     gene.field="gene", fname=tmp)
 #' file.exists(tmp)
 #'
-#' head(out$results$`2-1:de:barcode`)
-#' head(out$results$`2-1:de:gene`)
+#' names(out)
 #'
 #' @export
 #' @importFrom gp.sa.diff runVoomCore createDesignMatrix createContrasts defaultEdgeRFilter defaultEdgeRNormalize
-#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newReportPath setOriginFromRmd
-#' @importClassesFrom gp.sa.core TrackedList
+#' @importFrom gp.sa.core makeFrontMatter knitAndWrite newReportPath 
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 runVoomScreen <- function(se, ..., 
@@ -118,22 +116,13 @@ runVoomScreen <- function(se, ...,
     # Cleaning up.
     knitAndWrite(fname, env, "# Wrapping up
 
-We gather together some of the useful objects for later use.
-
-```{r}
-voom.objects <- List(v=v, fit=fit)
-```
-
 We report the session information for our records.
 
 ```{r}
 sessionInfo()
 ```")
 
-    list(
-        objects=setOriginFromRmd(env, "voom.objects", fname),
-        results=as(setOriginFromRmd(env, "all.results", fname), "TrackedList")
-    )
+    env$all.results
 }
 
 #' @importFrom gp.sa.diff defaultEdgeRMDS defaultEdgeRMD
@@ -162,11 +151,4 @@ for (i in seq_len(n)) {
         md.code,
         defaultEdgeRMDS("barcodes"),
         sep="\n\n")
-}
-
-# Copied verbatim from gp.sa.diff, couldn't be bothered to export this...
-.retrieve_saved_results <- function(fname, pattern="^saveRDS\\((res|stats), file=\"(.*)\"\\)$") {
-    read.back <- readLines(fname)
-    read.back <- read.back[grep(pattern, read.back)]
-    sub(pattern, "\\2", read.back)
 }
