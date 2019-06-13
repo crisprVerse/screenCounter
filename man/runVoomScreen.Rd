@@ -25,9 +25,9 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
 \item{fname}{String containing the path to an output Rmarkdown file.}
 }
 \value{
-A list containing \code{objects} and \code{results}.
-\code{objects} is a \linkS4class{List} containing useful objects generated during the analysis.
-\code{results} is a \linkS4class{List} containing \linkS4class{DataFrame}s of result tables from all contrasts.
+A \linkS4class{List} containing \linkS4class{DGEStatFrame} objects of result tables from all contrasts.
+A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
+This also provides a basis for further customization.
 }
 \description{
 Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
@@ -66,8 +66,7 @@ out <- runVoomScreen(se, groups="group",
     gene.field="gene", fname=tmp)
 file.exists(tmp)
 
-head(out$results$`2-1:de:barcode`)
-head(out$results$`2-1:de:gene`)
+names(out)
 
 }
 \author{
