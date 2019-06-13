@@ -77,7 +77,7 @@ runVoomScreen <- function(se, ...,
 
     # Define the output file and temporarily change directory to it.
     # Note that CD'ing is done *after* defining input paths.
-    fname <- newReportPath(fname, "voom-screen")
+    fname <- newReportPath(fname=fname, prefix="voom-screen")
     old <- getwd()
     setwd(dirname(fname))
     fname <- basename(fname)
