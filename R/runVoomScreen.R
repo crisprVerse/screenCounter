@@ -3,6 +3,7 @@
 #' Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
 #'
 #' @param se A \linkS4class{SummarizedExperiment} object.
+#' Alternatively, a database ID string or list to be passed to \code{\link{processSE}}.
 #' @param ... Further arguments to pass to \code{\link{runVoom}}. 
 #' @param reference.field String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).
 #' @param reference.level Character vector specifying the reference levels of the column named by \code{reference.field}.

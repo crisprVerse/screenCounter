@@ -67,11 +67,8 @@ rownames(stats) <- all.genes
 ... and save it into our result `List`.
 
 ```{r}
-stats <- as(stats, 'DGEStatFrame')
-trackinfo(stats) <- trackinfo(se)
-trackinfo(stats)$contrast <- con
 con.desc <- %s
-trackinfo(stats)$description <- con.desc
+stats <- DGEStatFrame(stats, se, contrast=con, description=con.desc)
 all.results[[con.desc]] <- stats
 ```", to.add, to.add, deparse(paste(vname, "(gene)")))
 
@@ -84,11 +81,8 @@ all.results[[con.desc]] <- stats
     sprintf("We save the results in our output `List` for later use.
 
 ```{r}
-res <- as(res, 'DGEStatFrame')
-trackinfo(res) <- trackinfo(se)
-trackinfo(res)$contrast <- con
 con.desc <- %s
-trackinfo(res)$description <- con.desc
+res <- DGEStatFrame(res, se, contrast=con, description=con.desc)
 all.results[[con.desc]] <- res
 ```", deparse(vname))
 }            
