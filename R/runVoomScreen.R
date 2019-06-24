@@ -12,7 +12,7 @@
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param fname String containing the path to an output Rmarkdown file.
 #'
-#' @return A \linkS4class{List} containing \linkS4class{DGEStatFrame} objects of result tables from all contrasts.
+#' @return A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 #' This also provides a basis for further customization.
 #'

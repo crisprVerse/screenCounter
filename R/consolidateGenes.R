@@ -30,7 +30,7 @@
 #' @importFrom csaw combineTests
 consolidateGenes <- function (gene.field) {
     to.add <- deparse(gene.field)
-    function(vname) {
+    function(vname, method="voom") {
         per.barcode <- .default_postcon(vname)
         per.gene <- sprintf("We also consolidate per-barcode statistics into per-gene results using Simes' method.
 This tests the joint null hypothesis that all barcodes for a gene are not differentially abundant.
@@ -68,22 +68,24 @@ rownames(stats) <- all.genes
 
 ```{r}
 con.desc <- %s
-stats <- DGEStatFrame(stats, se, contrast=con, description=con.desc)
+stats <- DGAStatFrame(stats, se, contrast=con, 
+    description=con.desc, method=%s)
 all.results[[con.desc]] <- stats
-```", to.add, to.add, deparse(paste(vname, "(gene)")))
+```", to.add, to.add, deparse(paste(vname, "(gene)")), deparse(method))
 
         paste0(per.barcode, "\n\n", per.gene)
     }
 }
 
-.default_postcon <- function(vname) {
+.default_postcon <- function(vname, method="voom") {
     vname <- paste(vname, "(barcode)")
     sprintf("We save the results in our output `List` for later use.
 
 ```{r}
 con.desc <- %s
-res <- DGEStatFrame(res, se, contrast=con, description=con.desc)
+res <- DBAStatFrame(res, se, contrast=con, 
+    description=con.desc, method=%s)
 all.results[[con.desc]] <- res
-```", deparse(vname))
+```", deparse(vname), deparse(method))
 }            
 
