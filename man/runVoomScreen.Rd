@@ -8,7 +8,8 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
   norm.type.level, gene.field, fname = NULL)
 }
 \arguments{
-\item{se}{A \linkS4class{SummarizedExperiment} object.}
+\item{se}{A \linkS4class{SummarizedExperiment} object.
+Alternatively, a database ID string or list to be passed to \code{\link{processSE}}.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
@@ -25,7 +26,7 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
 \item{fname}{String containing the path to an output Rmarkdown file.}
 }
 \value{
-A \linkS4class{List} containing \linkS4class{DGEStatFrame} objects of result tables from all contrasts.
+A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
 A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 This also provides a basis for further customization.
 }
