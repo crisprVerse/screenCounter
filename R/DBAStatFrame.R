@@ -73,7 +73,7 @@ DGAStatFrame <- function(x, parent, ...) {
 #' @importFrom gp.sa.core quickError trackcheck
 setMethod("trackcheck", "DBAStatFrame", function(x) {
     out <- callNextMethod()
-    .common_check(out)
+    .common_check(x, out)
     out$type <- "Differential barcode abundance result"
     out
 })
@@ -82,12 +82,12 @@ setMethod("trackcheck", "DBAStatFrame", function(x) {
 #' @importFrom gp.sa.core quickError trackcheck
 setMethod("trackcheck", "DGAStatFrame", function(x) {
     out <- callNextMethod()
-    .common_check(out)
+    .common_check(x, out)
     out$type <- "Differential gene abundance result"
     out
 })
 
-.common_check <- function(info) {
+.common_check <- function(x, info) {
     if (!"method" %in% names(info)) {
         quickError(x, "method", "a string specifying the differential analysis method that was used")
     }

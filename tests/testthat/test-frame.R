@@ -41,6 +41,7 @@ test_that("trackcheck specialization works as expected for DGAStatFrames", {
     trackinfo(X)$contrast <- c(A=1, B=-1)
 
     # Okay, adding a method.
+    expect_error(trackcheck(X), "that was used")
     trackinfo(X)$method <- "random"
     expect_error(trackcheck(X), "should be 'voom'")
 
