@@ -13,10 +13,6 @@
 #' The output commands assume that there is a \linkS4class{SummarizedExperiment} object named \code{se} and a DGEList object named \code{y} in the evaluation environment.
 #' Filtering will be applied based on the reference samples to modify \code{y} in place.
 #' 
-#' Technically, this filtering strategy is not independent as it can theoretically enrich for barcodes that are upregulated in the reference.
-#' In practice, this is not an issue as the filtering is only designed to remove outliers.
-#' The density of barcodes around the filter boundary is so low that there will be no noticeable effect on type I error.
-#' 
 #' @author Aaron Lun
 #' @examples
 #' cat(filterReference("condition", "ref"))
@@ -26,8 +22,9 @@
 #' \code{\link{runVoomScreen}}, in which this function is called.
 #'
 #' @export
+#' @rdname filterReference
 #' @importFrom edgeR aveLogCPM
-filterReference <- function(ref.field, to.use) {
+.filterReference <- function(ref.field, to.use) {
     sprintf("We use the reference samples from the screen to remove low-abundance barcodes.
 These usually represent barcodes that were missing from the original pool (e.g., due to defects in manufacture) and are not of interest.
 We define a threshold on the log-average CPM by defining small outliers based on the median absolute deviation.

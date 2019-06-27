@@ -5,7 +5,7 @@
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #'
 #' @return
-#' A function that takes a machine-readable name of the contrast (see \code{\link{createContrasts}}),
+#' A function that takes a machine-readable name of the contrast (see \code{\link{.createContrasts}}),
 #' and returns a Rmarkdown chunk containing code to:
 #' \itemize{
 #' \item store per-barcode results in the \code{all.results} list, named with a \code{:barcode} suffix.
@@ -14,21 +14,18 @@
 #' }
 #'
 #' @details
-#' We use Simes' method as it is fast, statistically rigorous and able to detect genes with only a minority of differentially abundant barcodes.
-#' The exact implementation uses the \code{\link{combineTests}} function from the \pkg{csaw} package.
-#' We also report the abundance and log-fold changes of the best barcode within each gene.
-#'
-#' The returned function needs a string equivalent to the \code{name} field in the DataFrame from \code{\link{createContrasts}}.
+#' The returned function needs a string equivalent to the \code{name} field in the DataFrame from \code{\link{.createContrasts}}.
 #' This is used to determine the name of the output files to which to save results.
 #'
 #' The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
 #' 
 #' @examples
-#' FUN <- consolidateGenes("gene.type")
+#' FUN <- .consolidateGenes("gene.type")
 #' cat(FUN("A-B"))
 #' @export
+#' @rdname consolidateGenes
 #' @importFrom csaw combineTests
-consolidateGenes <- function (gene.field) {
+.consolidateGenes <- function (gene.field) {
     to.add <- deparse(gene.field)
     function(vname, method="voom") {
         per.barcode <- .default_postcon(vname)

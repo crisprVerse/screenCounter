@@ -56,21 +56,21 @@
 NULL
 
 #' @export
-#' @importFrom gp.sa.core createTSFSubclass
+#' @importFrom gp.sa.core .createTSFSubclass
 DBAStatFrame <- function(x, parent, ...) {
-    x <- createTSFSubclass(x, parent, ...)
+    x <- .createTSFSubclass(x, parent, ...)
     as(x, "DBAStatFrame")
 }
 
 #' @export
-#' @importFrom gp.sa.core createTSFSubclass
+#' @importFrom gp.sa.core .createTSFSubclass
 DGAStatFrame <- function(x, parent, ...) {
-    x <- createTSFSubclass(x, parent, ...)
+    x <- .createTSFSubclass(x, parent, ...)
     as(x, "DGAStatFrame")
 }
 
 #' @export
-#' @importFrom gp.sa.core quickError trackcheck
+#' @importFrom gp.sa.core trackcheck
 setMethod("trackcheck", "DBAStatFrame", function(x) {
     out <- callNextMethod()
     .common_check(x, out)
@@ -79,7 +79,7 @@ setMethod("trackcheck", "DBAStatFrame", function(x) {
 })
 
 #' @export
-#' @importFrom gp.sa.core quickError trackcheck
+#' @importFrom gp.sa.core trackcheck
 setMethod("trackcheck", "DGAStatFrame", function(x) {
     out <- callNextMethod()
     .common_check(x, out)
@@ -87,9 +87,10 @@ setMethod("trackcheck", "DGAStatFrame", function(x) {
     out
 })
 
+#' @importFrom gp.sa.core .quickError 
 .common_check <- function(x, info) {
     if (!"method" %in% names(info)) {
-        quickError(x, "method", "a string specifying the differential analysis method that was used")
+        .quickError(x, "method", "a string specifying the differential analysis method that was used")
     }
     if (!info$method %in% c("voom")) {
         stop("'method' should be 'voom'")

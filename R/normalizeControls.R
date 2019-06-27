@@ -14,10 +14,6 @@
 #' Normalization factors are computed using TMM normalization on the subset of control barcodes,
 #' and assigned back to \code{y} for downstream analysis.
 #'
-#' We only use control barcodes to weaken the assumption of a non-DE majority of barcodes.
-#' We use TMM normalization (i.e., robust average of a ratio) rather than methods based on a robust average of expression within each sample.
-#' This avoids inflated errors due to the greater variance of the distribution of expression values compared to the ratio.
-#'
 #' @author Aaron Lun
 #' @examples
 #' cat(normalizeControls("gene.type", "NTG"))
@@ -28,8 +24,9 @@
 #' cat(normalizeControls("gene.type", c("NTG", "NEG")))
 #'
 #' @export
+#' @rdname normalizeControls
 #' @importFrom edgeR calcNormFactors
-normalizeControls <- function(type.field, to.use) {
+.normalizeControls <- function(type.field, to.use) {
     normalize <- sprintf("We define a normalization factor for each sample by taking the median abundance of a set of control barcodes.
 This avoids composition biases due to genuine changes in abundance for barcodes associated with relevant biological processes.
 
