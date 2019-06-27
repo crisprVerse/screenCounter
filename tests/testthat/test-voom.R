@@ -1,6 +1,8 @@
 # This runs through all of the voom-specific functionality.
 # library(testthat); library(gp.sa.screen); source("test-voom.R")
 
+options(gp.sa.core_commit="never")
+
 set.seed(1000)
 
 N <- 10000
@@ -71,5 +73,3 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
     expect_identical(rownames(out[[TG_NAME]]), sort(unique(rowData(se)$gene)))
     expect_true(all(is.na(out[[TG_NAME]][discarded, "PValue"])))
 })
-
-
