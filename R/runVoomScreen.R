@@ -20,7 +20,7 @@
 #' This function is largely a wrapper around \code{\link{runVoom}}, with three additional features:
 #' \itemize{
 #' \item Filtering based on reference samples, see below.
-#' If \code{reference.field=NULL}, default edgeR filtering is used instead based \code{\link{filterExpr}}.
+#' If \code{reference.field=NULL}, default edgeR filtering is used instead based \code{\link{filterByExpr}}.
 #' If \code{reference.field=NA}, no filtering is performed.
 #' \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs), see below.
 #' If \code{norm.type.field=NULL}, default edgeR normalization is used instead based on \code{\link{calcNormFactors}}.

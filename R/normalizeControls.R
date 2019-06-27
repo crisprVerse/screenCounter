@@ -16,12 +16,12 @@
 #'
 #' @author Aaron Lun
 #' @examples
-#' cat(normalizeControls("gene.type", "NTG"))
-#' cat(normalizeControls("gene.type", "NEG"))
+#' cat(.normalizeControls("gene.type", "NTG"))
+#' cat(.normalizeControls("gene.type", "NEG"))
 #'
 #' # One can also specify multiple features,
 #' # but this is probably unwise.
-#' cat(normalizeControls("gene.type", c("NTG", "NEG")))
+#' cat(.normalizeControls("gene.type", c("NTG", "NEG")))
 #'
 #' @export
 #' @rdname normalizeControls

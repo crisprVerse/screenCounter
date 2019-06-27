@@ -15,8 +15,8 @@
 #' 
 #' @author Aaron Lun
 #' @examples
-#' cat(filterReference("condition", "ref"))
-#' cat(filterReference("time", 0))
+#' cat(.filterReference("condition", "ref"))
+#' cat(.filterReference("time", 0))
 #'
 #' @seealso
 #' \code{\link{runVoomScreen}}, in which this function is called.
