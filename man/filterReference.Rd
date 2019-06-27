@@ -23,8 +23,8 @@ The output commands assume that there is a \linkS4class{SummarizedExperiment} ob
 Filtering will be applied based on the reference samples to modify \code{y} in place.
 }
 \examples{
-cat(filterReference("condition", "ref"))
-cat(filterReference("time", 0))
+cat(.filterReference("condition", "ref"))
+cat(.filterReference("time", 0))
 
 }
 \seealso{

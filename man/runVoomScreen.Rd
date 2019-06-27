@@ -9,7 +9,7 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.
-Alternatively, a database ID string or list to be passed to \code{\link{processSE}}.}
+Alternatively, a database ID string or list to be passed to \code{\link{.processSE}}.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
@@ -37,7 +37,7 @@ Perform a \code{voom} analysis on a count matrix from a sequencing screen to det
 This function is largely a wrapper around \code{\link{runVoom}}, with three additional features:
 \itemize{
 \item Filtering based on reference samples, see below.
-If \code{reference.field=NULL}, default edgeR filtering is used instead based \code{\link{filterExprs}}.
+If \code{reference.field=NULL}, default edgeR filtering is used instead based \code{\link{filterByExpr}}.
 If \code{reference.field=NA}, no filtering is performed.
 \item Normalization based on non-targeting genes (NTGs) and/or non-essential genes (NEGs), see below.
 If \code{norm.type.field=NULL}, default edgeR normalization is used instead based on \code{\link{calcNormFactors}}.

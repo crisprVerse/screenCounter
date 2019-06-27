@@ -10,7 +10,7 @@
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 }
 \value{
-A function that takes a machine-readable name of the contrast (see \code{\link{createContrasts}}),
+A function that takes a machine-readable name of the contrast (see \code{\link{.createContrasts}}),
 and returns a Rmarkdown chunk containing code to:
 \itemize{
 \item store per-barcode results in the \code{all.results} list, named with a \code{:barcode} suffix.
@@ -22,7 +22,7 @@ and returns a Rmarkdown chunk containing code to:
 Consolidate barcode-level statistics to gene-level statistics.
 }
 \details{
-The returned function needs a string equivalent to the \code{name} field in the DataFrame from \code{\link{createContrasts}}.
+The returned function needs a string equivalent to the \code{name} field in the DataFrame from \code{\link{.createContrasts}}.
 This is used to determine the name of the output files to which to save results.
 
 The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
