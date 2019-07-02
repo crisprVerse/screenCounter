@@ -6,7 +6,7 @@ library(SummarizedExperiment)
 se.input <- SummarizedExperiment()
 
 library(gp.sa.core)
-trackinfo(se.input)$origin <- list(id="SOME_ID")
+trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
 
 # Mocking up the aftermath of a DA analysis:
 da.output <- DataFrame(N=1:10, PValue=0:9/10)
@@ -19,7 +19,7 @@ test_that("constructors works as expected", {
     expect_s4_class(Y, "DBAStatFrame")
     expect_identical(trackinfo(Y)$method, "voom")
     expect_identical(trackinfo(Y)$description, "I did voom")
-    expect_identical(trackinfo(Y)$origin$id, "SOME_ID")
+    expect_identical(trackinfo(Y)$origin[[1]]$id, "SOME_ID")
 
     Y <- DGAStatFrame(da.output, se.input,
         contrast=c(A=1, B=-1),
@@ -28,7 +28,7 @@ test_that("constructors works as expected", {
     expect_s4_class(Y, "DGAStatFrame")
     expect_identical(trackinfo(Y)$method, "voom")
     expect_identical(trackinfo(Y)$description, "I did voom")
-    expect_identical(trackinfo(Y)$origin$id, "SOME_ID")
+    expect_identical(trackinfo(Y)$origin[[1]]$id, "SOME_ID")
 })
 
 test_that("trackcheck specialization works as expected for DGAStatFrames", {
@@ -36,7 +36,7 @@ test_that("trackcheck specialization works as expected for DGAStatFrames", {
     X <- as(tmp, "DGAStatFrame")
     expect_error(trackcheck(X), "origin")
 
-    trackinfo(X) <- list(origin=list(id="SOME_RANDOM_ID"),
+    trackinfo(X) <- list(origin=list(list(id="SOME_RANDOM_ID")),
         description="blah blah blah")
     trackinfo(X)$contrast <- c(A=1, B=-1)
 
@@ -57,7 +57,7 @@ test_that("trackcheck specialization works as expected for DBAStatFrames", {
     X <- as(tmp, "DBAStatFrame")
     expect_error(trackcheck(X), "origin")
 
-    trackinfo(X) <- list(origin=list(id="SOME_RANDOM_ID"),
+    trackinfo(X) <- list(origin=list(list(id="SOME_RANDOM_ID")),
         description="blah blah blah")
     trackinfo(X)$contrast <- c(A=1, B=-1)
 

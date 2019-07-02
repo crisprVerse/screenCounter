@@ -36,7 +36,7 @@
 #' # Mocking up an input into runVoomScreen()
 #' library(SummarizedExperiment)
 #' se.input <- SummarizedExperiment()
-#' trackinfo(se.input)$origin <- list(id="SOME_ID")
+#' trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
 #'
 #' # Mocking up the aftermath of a DE analysis:
 #' de.output <- DataFrame(N=1:10, PValue=0:9/10)
@@ -70,20 +70,20 @@ DGAStatFrame <- function(x, parent, ...) {
 }
 
 #' @export
-#' @importFrom gp.sa.core trackcheck
+#' @importFrom gp.sa.core trackcheck trackinfo trackinfo<-
 setMethod("trackcheck", "DBAStatFrame", function(x) {
+    trackinfo(x)$type <- "differential barcode abundance"
     out <- callNextMethod()
     .common_check(x, out)
-    out$type <- "Differential barcode abundance result"
     out
 })
 
 #' @export
-#' @importFrom gp.sa.core trackcheck
+#' @importFrom gp.sa.core trackcheck trackinfo trackinfo<-
 setMethod("trackcheck", "DGAStatFrame", function(x) {
+    trackinfo(x)$type <- "differential gene abundance"
     out <- callNextMethod()
     .common_check(x, out)
-    out$type <- "Differential gene abundance result"
     out
 })
 
