@@ -9,7 +9,7 @@ runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.
-Alternatively, a database ID string or list to be passed to \code{\link{.processSE}}.}
+Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-inputs}"}.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
