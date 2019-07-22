@@ -60,7 +60,7 @@ barcodes2genes <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.r
     best <- best[,c(which(colnames(best)==lcpm.col), grep(lfc.regex, colnames(best))),drop=FALSE]
 
     output <- cbind(per.gene, best)
-    output <- output[match(rownames(output), all.genes),]
+    output <- output[match(all.genes, rownames(output)),]
     rownames(output) <- all.genes
     output
 }
