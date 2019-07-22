@@ -11,6 +11,8 @@
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param fname String containing the path to an output Rmarkdown file.
+#' @param commit String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.
+#' @param save.all Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.
 #'
 #' @return A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
@@ -83,13 +85,13 @@
 #' out[[1]]
 #'
 #' @export
-#' @importFrom gp.sa.diff runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize
+#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize
 #' @importFrom gp.sa.core .reportStart .reportEnd
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
-    fname='voom-screen.Rmd')
+    fname='voom-screen.Rmd', commit="auto", save.all=TRUE)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
@@ -107,7 +109,8 @@ runVoomScreen <- function(se, ...,
     .reportStart(fname,
         title="Differential abundance analysis of barcode count data with `voom` and _limma_",
         author=list(list(name="Aaron Lun", affiliation="Genentech gRED B&CB", email="luna@gene.com")),
-        call=match.call()
+        call=match.call(),
+        commit=commit
     )
 
     # Setting up all the parts of the analysis that are screen-specific.
@@ -127,14 +130,20 @@ runVoomScreen <- function(se, ...,
         norm <- .normalizeControls(norm.type.field, norm.type.level)
     }
 
-    env <- runVoomCore(fname, se, ..., 
+    env <- .runVoomCore(fname, se, ..., 
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
         post.contrast=postcon
     )
 
-    .reportEnd(fname, msg="Created voom screen report with runVoomScreen().")
+    if (!save.all) {
+        to.save <- NULL
+    } else {
+        to.save <- sprintf("all.results[[%i]]", seq_along(env$all.results))
+    }
+    .reportEnd(fname, msg="Created report with runVoomScreen().", 
+        commit=commit, env=env, to.save=to.save)
 
     env$all.results
 }
