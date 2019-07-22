@@ -31,44 +31,21 @@
         per.barcode <- .default_postcon(vname)
         per.gene <- sprintf("We also consolidate per-barcode statistics into per-gene results using Simes' method.
 This tests the joint null hypothesis that all barcodes for a gene are not differentially abundant.
+We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
 
 ```{r}
-grouping <- rowData(se)[[%s]][y$genes$origin]
-subres <- res[y$genes$origin,]
-per.gene <- csaw::combineTests(grouping, subres,
-    pval.col='PValue', fc.col=grep('LogFC', colnames(res)))
-colnames(per.gene)[1] <- 'nbarcodes'
-head(per.gene)
+gene.ids <- rowData(se)[[%s]]
+gene.stats <- barcodes2genes(res, gene.ids)
+gene.stats
 ```
 
-We add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
-
-```{r}
-best <- csaw::getBestTest(grouping, subres, pval.col='PValue')
-best <- best[,c(which(colnames(best)=='AverageAbundance'), 
-    grep('LogFC', colnames(best))),drop=FALSE]
-colnames(best) <- paste0('Best', colnames(best))
-head(best)
-```
-
-We expand the result table so that there is one row per gene.
-
-```{r}
-stats <- cbind(per.gene, best)
-all.genes <- sort(unique(rowData(se)[[%s]]))
-expander <- match(all.genes, rownames(stats))
-stats <- stats[expander,]
-rownames(stats) <- all.genes
-```
-
-... and save it into our result `List`.
+We expand the result table so that there is one row per gene, and save it into our result `List`.
 
 ```{r}
 con.desc <- %s
-stats <- DGAStatFrame(stats, se, contrast=con, 
+all.results[[con.desc]] <- DGAStatFrame(gene.stats, se, contrast=con,
     description=con.desc, method=%s)
-all.results[[con.desc]] <- stats
-```", to.add, to.add, deparse(paste(vname, "(gene)")), deparse(method))
+```", to.add, deparse(paste(vname, "(gene)")), deparse(method))
 
         paste0(per.barcode, "\n\n", per.gene)
     }
@@ -84,5 +61,5 @@ res <- DBAStatFrame(res, se, contrast=con,
     description=con.desc, method=%s)
 all.results[[con.desc]] <- res
 ```", deparse(vname), deparse(method))
-}            
+}
 
