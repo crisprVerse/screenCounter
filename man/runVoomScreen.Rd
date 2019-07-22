@@ -5,7 +5,8 @@
 \title{Use \code{voom} to analyze a screen}
 \usage{
 runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
-  norm.type.level, gene.field, fname = "voom-screen.Rmd")
+  norm.type.level, gene.field, fname = "voom-screen.Rmd",
+  commit = "auto", save.all = TRUE)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.
@@ -24,6 +25,10 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
+
+\item{commit}{String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.}
+
+\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.}
 }
 \value{
 A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
