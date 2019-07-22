@@ -1,8 +1,6 @@
 # This runs through all of the voom-specific functionality.
 # library(testthat); library(gp.sa.screen); source("test-voom.R")
 
-options(gp.sa.core_commit="never")
-
 set.seed(1000)
 
 N <- 10000
@@ -23,12 +21,13 @@ TG_NAME <- "Effect of increasing `time` (de) (gene)"
 test_that("runVoomScreen works correctly in basic scenarios", {
     # All missing settings.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
-        reference.field=NA, norm.type.field=NA, gene.field=NA)
+        reference.field=NA, norm.type.field=NA, gene.field=NA, 
+        commit="never", save.all=FALSE)
     expect_identical(names(out), TB_NAME)
 
     expect_true("PValue" %in% colnames(out[[TB_NAME]]))
     expect_true("FDR" %in% colnames(out[[TB_NAME]]))
-    expect_true("AverageAbundance" %in% colnames(out[[TB_NAME]]))
+    expect_true("LogCPM" %in% colnames(out[[TB_NAME]]))
     expect_true("LogFC" %in% colnames(out[[TB_NAME]]))
     expect_identical(rownames(out[[TB_NAME]]), NULL) # no names in 'se'.
 
@@ -36,19 +35,21 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
-        gene.field="gene"
+        gene.field="gene",
+        commit="never", save.all=FALSE
     )
     expect_identical(names(out), c(TB_NAME, TG_NAME))
 
     expect_true("PValue" %in% colnames(out[[TG_NAME]]))
     expect_true("FDR" %in% colnames(out[[TG_NAME]]))
-    expect_true("BestAverageAbundance" %in% colnames(out[[TG_NAME]]))
-    expect_true("BestLogFC" %in% colnames(out[[TG_NAME]]))
+    expect_true("LogCPM" %in% colnames(out[[TG_NAME]]))
+    expect_true("LogFC" %in% colnames(out[[TG_NAME]]))
     expect_identical(rownames(out[[TG_NAME]]), sort(unique(rowData(se)$gene)))
 
     # All default settings
     out2 <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
-        reference.field=NULL, norm.type.field=NULL, gene.field="gene")
+        reference.field=NULL, norm.type.field=NULL, gene.field="gene",
+        commit="never", save.all=FALSE)
     expect_identical(names(out2), c(TB_NAME, TG_NAME))
 
     expect_identical(nrow(out2[[TB_NAME]]), nrow(out[[TB_NAME]]))
@@ -66,10 +67,28 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
     out <- runVoomScreen(se2, covariates="time", comparisons=list("time"), block="run",
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
-        gene.field="gene"
+        gene.field="gene",
+        commit="never", save.all=FALSE
     )
     expect_identical(names(out), c(TB_NAME, TG_NAME))
 
     expect_identical(rownames(out[[TG_NAME]]), sort(unique(rowData(se)$gene)))
     expect_true(all(is.na(out[[TG_NAME]][discarded, "PValue"])))
+})
+
+test_that("runVoomScreen saves content correctly", {
+    library(gp.sa.core)
+    proj <- tempfile()
+    newProject(proj, title="Aaron's project",
+        description="This is one of Aaron's projects")
+
+    report <- file.path(proj, "report.Rmd")
+    trackinfo(se)$origin <- list(list(id="asdad"))
+
+    out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field=NA, norm.type.field=NA, gene.field=NA,
+        fname=report)
+    expect_true(file.exists(report))
+    expect_true(file.exists(file.path(proj, "report-1")))
+    expect_true(file.exists(getResultManifest(dir=proj)))
 })
