@@ -6,7 +6,7 @@
 \usage{
 runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
   norm.type.level, gene.field, fname = "voom-screen.Rmd",
-  commit = "auto", save.all = TRUE)
+  commit = "auto", save.all = NULL)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object.
@@ -28,7 +28,8 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 
 \item{commit}{String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.}
 
-\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.}
+\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.
+Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment, and \code{TRUE} otherwise.}
 }
 \value{
 A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
