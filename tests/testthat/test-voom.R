@@ -87,7 +87,7 @@ test_that("runVoomScreen saves content correctly", {
 
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA,
-        fname=report)
+        fname=report, save.all=TRUE)
     expect_true(file.exists(report))
     expect_true(file.exists(file.path(proj, "report-1")))
     expect_true(file.exists(getResultManifest(dir=proj)))
