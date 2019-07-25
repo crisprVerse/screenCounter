@@ -13,7 +13,7 @@
 #' @param fname String containing the path to an output Rmarkdown file.
 #' @param commit String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.
-#' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment, and \code{TRUE} otherwise.
+#' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
 #'
 #' @return A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
