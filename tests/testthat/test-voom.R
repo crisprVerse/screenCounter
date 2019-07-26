@@ -90,7 +90,7 @@ test_that("runVoomScreen saves content correctly", {
         fname=report, save.all=TRUE)
     expect_true(file.exists(report))
 
-    res.dir <- file.path(proj, "report_gp.sa.results")
+    res.dir <- file.path(proj, "report-results")
     expect_true(file.exists(file.path(res.dir, "1")))
     expect_true(file.exists(getResultManifest(dir=res.dir)))
 })
