@@ -86,8 +86,8 @@
 #' out[[1]]
 #'
 #' @export
-#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .findDFsToSave
-#' @importFrom gp.sa.core .reportStart .reportEnd
+#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .findDFsToSave 
+#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 runVoomScreen <- function(se, ..., 
@@ -107,11 +107,15 @@ runVoomScreen <- function(se, ...,
         postcon <- .consolidateGenes(gene.field)
     }
 
+    holding <- .createTempRmd(fname)
+    on.exit(unlink(holding))
+
     .reportStart(fname,
         title="Differential abundance analysis of barcode count data with `voom` and _limma_",
         author=list(list(name="Aaron Lun", affiliation="Genentech gRED B&CB", email="luna@gene.com")),
         call=match.call(),
-        commit=commit
+        commit=commit,
+        temporary=holding
     )
 
     # Setting up all the parts of the analysis that are screen-specific.
@@ -131,7 +135,7 @@ runVoomScreen <- function(se, ...,
         norm <- .normalizeControls(norm.type.field, norm.type.level)
     }
 
-    env <- .runVoomCore(fname, se, ..., 
+    env <- .runVoomCore(holding, se, ..., 
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
@@ -139,7 +143,7 @@ runVoomScreen <- function(se, ...,
     )
 
     .reportEnd(fname, msg="Created report with runVoomScreen().", 
-        commit=commit, env=env, to.save=.findDFsToSave(se, env, save.all))
+        commit=commit, env=env, to.save=.findDFsToSave(se, env, save.all), temporary=holding)
 
     env$all.results
 }
