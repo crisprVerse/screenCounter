@@ -15,7 +15,8 @@
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.
 #' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
 #'
-#' @return A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
+#' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
+#' Each list contains barcode- and gene-level result tables as \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects, respectively, from all contrasts.
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 #' This also provides a basis for further customization.
 #'
@@ -86,10 +87,11 @@
 #' out[[1]]
 #'
 #' @export
-#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .findDFsToSave 
+#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize
 #' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
+#' @importFrom S4Vectors List
 runVoomScreen <- function(se, ..., 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
     fname='voom-screen.Rmd', commit="auto", save.all=NULL)
@@ -101,10 +103,11 @@ runVoomScreen <- function(se, ...,
     }
 
     # Choosing whether to output just barcode results, or to consolidate.
-    if (is.na(gene.field)) {
-        postcon <- .default_postcon
-    } else {
+    do.genes <- !is.na(gene.field)
+    if (do.genes) {
         postcon <- .consolidateGenes(gene.field)
+    } else {
+        postcon <- .default_postcon
     }
 
     holding <- .createTempRmd(fname)
@@ -142,10 +145,42 @@ runVoomScreen <- function(se, ...,
         post.contrast=postcon
     )
 
-    .reportEnd(fname, msg="Created report with runVoomScreen().", 
-        commit=commit, env=env, to.save=.findDFsToSave(se, env, save.all), temporary=holding)
+    if (do.genes) {
+        .knitAndWrite(fname, env, "# Unrolling result tables
 
-    env$all.results
+We reorganize the result tables to make them easier to interrogate.
+One `List` now contains all tables of barcode-level statistics, while the other list contains all tables of gene-level statistics.
+
+```{r}
+barcode.results <- lapply(all.results, '[[', i='barcode')
+barcode.results <- as(barcode.results, 'List')
+gene.results <- lapply(all.results, '[[', i='gene')
+gene.results <- as(gene.results, 'List')
+```")
+    }
+
+    # Deciding whether or not we can save stuff.
+    if (is.null(save.all)) {
+        save.all <- !is(se, "SummarizedExperiment") || !is.null(trackinfo(se)$origin)
+    }
+    if (!save.all) {
+        saveable <- NULL
+    } else {
+        if (do.genes) {
+            saveable <- c("barcode.results", "gene.results")
+        } else {
+            saveable <- "all.results"
+        }
+    }
+
+    .reportEnd(fname, msg="Created report with runVoomScreen().", 
+        commit=commit, env=env, to.save.list=saveable, temporary=holding)
+
+    if (do.genes) {
+        List(barcode=env$barcode.results, gene=env$gene.results)
+    } else {
+        env$all.results
+    }
 }
 
 #' @importFrom gp.sa.diff .defaultEdgeRMDS .defaultEdgeRMD
