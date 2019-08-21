@@ -88,7 +88,7 @@
 #'
 #' @export
 #' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize
-#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd
+#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 #' @importFrom S4Vectors List

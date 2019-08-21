@@ -32,7 +32,8 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.}
 }
 \value{
-A \linkS4class{List} containing \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects of result tables from all contrasts.
+A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
+Each list contains barcode- and gene-level result tables as \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects, respectively, from all contrasts.
 A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 This also provides a basis for further customization.
 }

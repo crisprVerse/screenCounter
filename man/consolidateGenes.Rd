@@ -11,12 +11,7 @@
 }
 \value{
 A function that takes a machine-readable name of the contrast (see \code{\link{.createContrasts}}),
-and returns a Rmarkdown chunk containing code to:
-\itemize{
-\item store per-barcode results in the \code{all.results} list, named with a \code{:barcode} suffix.
-\item combine barcode-level statistics for that contrast into gene-level statistics.
-\item store per-gene results in the \code{all.results} list, named with a \code{:gene} suffix.
-}
+and returns a Rmarkdown chunk containing code to store per-barcode and per-gene results in the \code{all.results} list.
 }
 \description{
 Consolidate barcode-level statistics to gene-level statistics.
@@ -25,7 +20,12 @@ Consolidate barcode-level statistics to gene-level statistics.
 The returned function needs a string equivalent to the \code{name} field in the DataFrame from \code{\link{.createContrasts}}.
 This is used to determine the name of the output files to which to save results.
 
-The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} and a result table \code{res} to be present in the evaluation environment.
+The Rmarkdown chunk expects the SummarizedExperiment \code{se}, a \code{DGEList} object \code{y} 
+and a per-barcode result table \code{res} to be present in the evaluation environment.
+
+Note that all results for a single contrast are saved as a single entry of \code{all.results};
+per-barcode and per-gene results are accommodated by making this entry a list of length two to hold the separate result tables.
+It is useful to unroll this list for easier parsing by users later, see \code{\link{runVoomScreen}}.
 }
 \examples{
 FUN <- .consolidateGenes("gene.type")
