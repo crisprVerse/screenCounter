@@ -2,7 +2,7 @@
 #'
 #' Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
 #'
-#' @param se A \linkS4class{SummarizedExperiment} object.
+#' @param se A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
 #' Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-inputs}"}.
 #' @param ... Further arguments to pass to \code{\link{runVoom}}. 
 #' @param reference.field String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).
@@ -10,13 +10,14 @@
 #' @param norm.type.field String specifying the field of \code{rowData(se)} containing the gene type for each barcode.
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
-#' @param fname String containing the path to an output Rmarkdown file.
-#' @param commit String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.
-#' @param save.all Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.
+#' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 #' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
+#' @inheritParams gp.sa.diff::runVoom
 #'
 #' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-#' Each list contains barcode- and gene-level result tables as \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects, respectively, from all contrasts.
+#' Each list contains barcode- and gene-level result tables as \linkS4class{DAScreenStatFrame}s from all contrasts.
+#' If \code{gene.field=NULL}, only the \code{barcode} List is returned.
+#' 
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 #' This also provides a basis for further customization.
 #'
@@ -87,27 +88,20 @@
 #' out[[1]]
 #'
 #' @export
-#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize
+#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .createContrasts
 #' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 #' @importFrom S4Vectors List
-runVoomScreen <- function(se, ..., 
+runVoomScreen <- function(se, groups, comparisons, 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
+    ..., annotation=NULL, lfc=0, robust=TRUE, contrasts.fun=NULL,
     fname='voom-screen.Rmd', commit="auto", save.all=NULL)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
         pdf(file=NULL)
         on.exit(dev.off())
-    }
-
-    # Choosing whether to output just barcode results, or to consolidate.
-    do.genes <- !is.na(gene.field)
-    if (do.genes) {
-        postcon <- .consolidateGenes(gene.field)
-    } else {
-        postcon <- .default_postcon
     }
 
     holding <- .createTempRmd(fname)
@@ -138,28 +132,19 @@ runVoomScreen <- function(se, ...,
         norm <- .normalizeControls(norm.type.field, norm.type.level)
     }
 
-    env <- .runVoomCore(holding, se, ..., 
+    env <- .runVoomCore(holding, se, groups=groups, comparisons=comparisons,
+        lfc=lfc, robust=robust, annotation=annotation, ..., contrasts.fun=contrasts.fun,
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
-        post.contrast=postcon
+        skip.contrasts=TRUE,
     )
 
-    if (do.genes) {
-        .knitAndWrite(fname, env, "# Unrolling result tables
-
-We reorganize the result tables to make them easier to interrogate.
-One `List` now contains all tables of barcode-level statistics, while the other list contains all tables of gene-level statistics.
-
-```{r}
-barcode.results <- lapply(all.results, '[[', i='barcode')
-barcode.results <- as(barcode.results, 'List')
-gene.results <- lapply(all.results, '[[', i='gene')
-gene.results <- as(gene.results, 'List')
-```")
-    }
+    contrast.cmds <- .createContrasts(comparisons, contrasts.fun)
+    .screen_contrast_chunk(fname, env, gene.field, lfc=lfc, robust=robust, annotation=annotation, contrast.cmds=contrast.cmds)
 
     # Deciding whether or not we can save stuff.
+    do.genes <- !is.null(gene.field)
     if (is.null(save.all)) {
         save.all <- !is(se, "SummarizedExperiment") || !is.null(trackinfo(se)$origin)
     }
@@ -169,19 +154,22 @@ gene.results <- as(gene.results, 'List')
         if (do.genes) {
             saveable <- c("barcode.results", "gene.results")
         } else {
-            saveable <- "all.results"
+            saveable <- "barcode.results"
         }
     }
 
     .reportEnd(fname, msg="Created report with runVoomScreen().", 
         commit=commit, env=env, to.save.list=saveable, temporary=holding)
 
+    output <- List(barcode=env$barcode.results)
     if (do.genes) {
-        List(barcode=env$barcode.results, gene=env$gene.results)
-    } else {
-        env$all.results
+        output$gene <- env$gene.results
     }
+    output
 }
+
+####################################
+####################################
 
 #' @importFrom gp.sa.diff .defaultEdgeRMDS .defaultEdgeRMD
 .screen_edgeR_diag_plots <- function(norm.type.field, norm.type.level) {
@@ -209,4 +197,159 @@ for (i in seq_len(n)) {
         md.code,
         .defaultEdgeRMDS("barcodes"),
         sep="\n\n")
+}
+
+####################################
+####################################
+
+#' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .knitAndWrite .evalAndWrite
+.screen_contrast_chunk <- function(fname, env, gene.field, lfc, robust, annotation, contrast.cmds) {
+    do.genes <- !is.null(gene.field)
+    if (do.genes) {
+        gene_txt <- "\nWe also create a function to convert per-barcode results into per-gene results"
+    } else {
+        gene_txt <- ""
+    }
+
+    .justWrite(fname, sprintf('# Setting up contrasts
+
+## Overview
+
+We set up a function to format the results into a table that lists all the barcodes that we previously filtered out with `NA` statistics,
+so as to distinguish between filtered barcodes and those that were not in `se` in the first place.%s', gene_txt))
+
+    # Defining formatting functions for the raw limma output.
+    .openChunk(fname)
+    .evalAndWrite(fname, env, sprintf('library(gp.sa.core)
+library(gp.sa.diff)
+barcode_formatter <- function(res, ...) {
+    res <- cleanDataFrame(res, se, subset=res$origin,
+        anno.fields=%s)
+    res$origin <- NULL
+    res
+}', paste(deparse(union(gene.field, annotation)), collapse="\n")))
+
+    if (do.genes) {
+        fun.body <- sprintf('gene_formatter <- function(res) {
+    gene.ids <- rowData(se)[[%s]]
+    gres <- barcodes2genes(res, gene.ids)', deparse(gene.field))
+
+        if (!is.null(annotation)) {
+            listing <- paste(deparse(annotation), collapse="\n")
+            fun.body <- paste0(fun.body, sprintf("
+    m <- match(rownames(gres), gene.ids)
+    anno.fields <- %s
+    cbind(rowData(se)[m,anno.fields,drop=FALSE], gres)", listing))
+        }
+
+        fun.body <- paste0(fun.body, '\n}')
+        .evalAndWrite(fname, env, fun.body)
+    }
+    .closeChunk(fname)
+
+    # Setting up output lists.
+    .justWrite(fname, "We set up a `List` to hold all of our output results.
+
+```{r}")
+    .evalAndWrite(fname, env, "barcode.results <- List()")
+    if (do.genes) {
+        .evalAndWrite(fname, env, "gene.results <- List()")
+    }
+    .closeChunk(fname)
+
+    # Code mostly lifted from limma_contrast_chunk, which was necessary
+    # to smoothly handle the barcode -> gene result conversion.
+    extra_eb_code <- if (robust) ", robust=TRUE" else ""
+    shrink_eb_cmd <- sprintf("eBayes(fit2%s)", extra_eb_code)
+
+    for (con in seq_len(nrow(contrast.cmds))) {
+        vname <- contrast.cmds$name[con]
+        .justWrite(fname, sprintf('## %s', vname))
+        .justWrite(fname, "### Setting up the contrast")
+
+        if (!is.null(env$con)) { # clearing out existing 'con'.
+            rm("con", envir=env)
+        }
+
+        .openChunk(fname)
+        .evalAndWrite(fname, env, contrast.cmds$contrast[con])
+
+        if (is.null(env$con)) {
+            stop("contrast commands should define a 'con' object")
+        }
+
+        gp.sa.diff:::.enforce_contrast_colnames(fname, env)
+        .justWrite(fname, "con", trail=FALSE)
+        .closeChunk(fname)
+
+        solo <- is.null(dim(env$con)) || ncol(env$con)==1L
+        if (!solo) {
+            null <- 0
+        } else {
+            null <- lfc
+        }
+        
+        if (null==0) {
+            .justWrite(fname, "### Testing for any differenc
+
+We test the filtered barcodes for significant differences in abundance.")
+            cur_shrink_cmd <- shrink_eb_cmd
+        } else {
+            dlfc <- deparse(null)
+            .justWrite(fname, sprintf("### Testing for log-FCs above %s
+
+We test the filtered barcodes for log-fold changes that are significantly more extreme than %s using the `treat` function", dlfc, dlfc))
+            cur_shrink_cmd <- sprintf("treat(fit2, lfc=%s%s)", dlfc, extra_eb_code)
+        }
+
+        .knitAndWrite(fname, env, sprintf('```{r}
+fit2 <- contrasts.fit(fit, con)
+fit2 <- %s
+res <- topTable(fit2, n=Inf, sort.by="none")
+res <- barcode_formatter(res)
+head(res[order(res$PValue),])
+```', cur_shrink_cmd))
+
+        sum.cmd <- if (solo) "summary(decideTests(fit2))" else "summary(res$FDR <= 0.05)"
+        .knitAndWrite(fname, env, sprintf('We report summary statistics for this comparison, defining significant differences in abundance at a FDR threshold of 5%%.
+
+```{r}
+%s
+```', sum.cmd))
+
+        .knitAndWrite(fname, env, sprintf("We save the results in our output `List` for later use.
+
+```{r}                               
+con.desc <- %s
+barcode.results[[con.desc]] <- DAScreenStatFrame(res, se, contrast=con, 
+    description=con.desc, method='voom', feature='barcode')
+```", deparse(vname)))
+
+        if (do.genes) {
+            .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using Simes' method.
+This tests the joint null hypothesis that all barcodes for a gene are not differentially abundant.
+We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
+
+```{r}
+gres <- gene_formatter(res)
+head(gres[order(gres$PValue),])
+```")
+
+            sum.cmd <- if (solo) "table(Sig=gres$FDR <= 0.05, Direction=gres$Direction)" else "summary(gres$FDR <= 0.05)"
+            .knitAndWrite(fname, env, sprintf('We report summary statistics for this comparison at the gene level.
+
+```{r}
+%s
+```', sum.cmd))
+
+            .knitAndWrite(fname, env, "We then save it into our result `List`.
+
+```{r}
+gene.results[[con.desc]] <- DAScreenStatFrame(gres, se, contrast=con, 
+    description=con.desc, method='voom', feature='gene')
+```")
+        }
+    }
+
+    invisible(NULL)
 }
