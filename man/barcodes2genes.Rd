@@ -5,10 +5,10 @@
 \title{Barcode to gene statistics}
 \usage{
 barcodes2genes(x, genes, pval.col = "PValue", lcpm.col = "LogCPM",
-  lfc.regex = "^LogFC", ...)
+  lfc.regex = "^LogFC")
 }
 \arguments{
-\item{x}{A \linkS4class{DataFrame} of per-barcode results, usually a \linkS4class{DBAStatFrame}.}
+\item{x}{A \linkS4class{DataFrame} of per-barcode results.}
 
 \item{genes}{A character vector or factor containing the gene ID for each barcode.}
 
@@ -17,11 +17,9 @@ barcodes2genes(x, genes, pval.col = "PValue", lcpm.col = "LogCPM",
 \item{lcpm.col}{String specifying the column of \code{x} containing the log-CPMs.}
 
 \item{lfc.regex}{String containing a regular expression to match the column names of \code{x} containing the log-fold changes.}
-
-\item{...}{Other arguments to pass to the \code{\link{DGAStatFrame}} constructor.}
 }
 \value{
-A \linkS4class{DGAStatFrame} containing per-gene statistics.
+A \linkS4class{DataFrame} containing per-gene statistics, with one row per gene.
 }
 \description{
 Combine barcode-level differential abundance statistics into gene-level statistics.
@@ -46,7 +44,7 @@ If ANOVA-like contrasts are supplied in \code{x}, \code{Direction} is not report
 and each \code{LogFC} column name will be suffixed by the name of the relevant column of the contrast.
 }
 \examples{
-example(DBAStatFrame, echo=FALSE)
+example(DAScreenStatFrame, echo=FALSE)
 
 genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
 barcodes2genes(Y, genes=genes)

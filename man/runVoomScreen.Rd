@@ -4,15 +4,18 @@
 \alias{runVoomScreen}
 \title{Use \code{voom} to analyze a screen}
 \usage{
-runVoomScreen(se, ..., reference.field, reference.level, norm.type.field,
-  norm.type.level, gene.field, fname = "voom-screen.Rmd",
-  commit = "auto", save.all = NULL)
+runVoomScreen(se, groups, comparisons, reference.field, reference.level,
+  norm.type.field, norm.type.level, gene.field, ..., annotation = NULL,
+  lfc = 0, robust = TRUE, contrasts.fun = NULL,
+  fname = "voom-screen.Rmd", commit = "auto", save.all = NULL)
 }
 \arguments{
-\item{se}{A \linkS4class{SummarizedExperiment} object.
+\item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
 Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-inputs}"}.}
 
-\item{...}{Further arguments to pass to \code{\link{runVoom}}.}
+\item{groups}{String specifying the column of \code{colData(se)} containing the grouping factor, see \code{?"\link{gp.sa.diff-args}"}.}
+
+\item{comparisons}{A list of character vectors specifying simple contrasts to perform between groups, see \code{?"\link{gp.sa.diff-args}"}.}
 
 \item{reference.field}{String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).}
 
@@ -24,16 +27,29 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
+\item{...}{Further arguments to pass to \code{\link{runVoom}}.}
+
+\item{annotation}{Character vector specifying feature annotation to carry through into the result table.}
+
+\item{lfc}{Numeric scalar specifying a log-fold change threshold to be used in \code{\link{treat}}.
+A value of zero will default to the standard analysis with \code{\link{eBayes}}.}
+
+\item{robust}{Logical scalar indicating whether robust empirical Bayes shrinkage should be used in \code{\link{eBayes}}.}
+
+\item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link{gp.sa.diff-args}"}.}
+
 \item{fname}{String containing the path to an output Rmarkdown file.}
 
 \item{commit}{String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.}
 
-\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DataFrame}s should also be saved to file.
+\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.}
 }
 \value{
 A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-Each list contains barcode- and gene-level result tables as \linkS4class{DBAStatFrame} and \linkS4class{DGAStatFrame} objects, respectively, from all contrasts.
+Each list contains barcode- and gene-level result tables as \linkS4class{DAScreenStatFrame}s from all contrasts.
+If \code{gene.field=NA}, only the \code{barcode} List is returned.
+
 A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 This also provides a basis for further customization.
 }
