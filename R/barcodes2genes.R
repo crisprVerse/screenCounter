@@ -2,15 +2,14 @@
 #'
 #' Combine barcode-level differential abundance statistics into gene-level statistics.
 #' 
-#' @param x A \linkS4class{DataFrame} of per-barcode results, usually a \linkS4class{DBAStatFrame}.
+#' @param x A \linkS4class{DataFrame} of per-barcode results. 
 #' @param genes A character vector or factor containing the gene ID for each barcode.
 #' @param pval.col String specifying the column of \code{x} containing the p-values.
 #' @param lcpm.col String specifying the column of \code{x} containing the log-CPMs.
 #' @param lfc.regex String containing a regular expression to match the column names of \code{x} containing the log-fold changes.
-#' @param ... Other arguments to pass to the \code{\link{DGAStatFrame}} constructor.
 #'
 #' @return
-#' A \linkS4class{DGAStatFrame} containing per-gene statistics.
+#' A \linkS4class{DataFrame} containing per-gene statistics, with one row per gene.
 #' 
 #' @details
 #' Statistics from all barcodes of a particular gene are defined as follows:
@@ -36,14 +35,15 @@
 #' \code{\link{combineTests}} and \code{\link{getBestTest}}, for the actual statistical calculations.
 #'
 #' @examples
-#' example(DBAStatFrame, echo=FALSE)
+#' example(DAScreenStatFrame, echo=FALSE)
 #'
 #' genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
 #' barcodes2genes(Y, genes=genes)
 #' 
 #' @export
 #' @importFrom csaw combineTests getBestTest
-barcodes2genes <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.regex="^LogFC", ...) {
+#' @importFrom S4Vectors DataFrame
+barcodes2genes <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.regex="^LogFC") {
     lost <- is.na(genes)
     all.genes <- sort(unique(genes[!lost]))
     keep <- !is.na(x[,pval.col]) & !lost
@@ -62,5 +62,6 @@ barcodes2genes <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.r
     output <- cbind(per.gene, best)
     output <- output[match(all.genes, rownames(output)),]
     rownames(output) <- all.genes
-    output
+    
+    DataFrame(output)
 }
