@@ -93,6 +93,7 @@
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 #' @importFrom S4Vectors List
+#' @importFrom limma eBayes treat
 runVoomScreen <- function(se, groups, comparisons, 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
     ..., annotation=NULL, lfc=0, robust=TRUE, contrasts.fun=NULL,

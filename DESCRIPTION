@@ -20,6 +20,7 @@ Imports:
     ShortRead,
     BiocParallel,
     edgeR,
+    limma,
     csaw,
     grDevices
 Suggests: 

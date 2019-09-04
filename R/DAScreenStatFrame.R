@@ -2,7 +2,7 @@
 #'
 #' The DAScreenStatFrame class is literally identical to a standard \linkS4class{DataFrame},
 #' and can be used as such in all applications.
-#' It is intended to hold results from a differential gene/barcode abundance analyses of sequencing screen data.
+#' It is intended to hold results from a differential abundance analysis of barcode sequencing data from high-throughput CRISPR/siRNA screens.
 #' 
 #' @section Constructor:
 #' \code{DAScreenStatFrame(x, parent, ...)} will return a DAScreenStatFrame object, given the arguments:
