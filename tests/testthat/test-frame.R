@@ -1,4 +1,4 @@
-# This tests the DBAStatFrame and DGAStatFrame class.
+# This tests the DAScreenStatFrame class.
 # library(testthat); library(gp.sa.screen); source("test-frame.R")
 
 # Mocking up an input into runVoom()
@@ -12,62 +12,41 @@ trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
 da.output <- DataFrame(N=1:10, PValue=0:9/10)
 
 test_that("constructors works as expected", {
-    Y <- DBAStatFrame(da.output, se.input,
+    Y <- DAScreenStatFrame(da.output, se.input,
         contrast=c(A=1, B=-1),
         method="voom", description="I did voom")
 
-    expect_s4_class(Y, "DBAStatFrame")
-    expect_identical(trackinfo(Y)$method, "voom")
-    expect_identical(trackinfo(Y)$description, "I did voom")
-    expect_identical(trackinfo(Y)$origin[[1]]$id, "SOME_ID")
-
-    Y <- DGAStatFrame(da.output, se.input,
-        contrast=c(A=1, B=-1),
-        method="voom", description="I did voom")
-
-    expect_s4_class(Y, "DGAStatFrame")
+    expect_s4_class(Y, "DAScreenStatFrame")
     expect_identical(trackinfo(Y)$method, "voom")
     expect_identical(trackinfo(Y)$description, "I did voom")
     expect_identical(trackinfo(Y)$origin[[1]]$id, "SOME_ID")
 })
 
-test_that("trackcheck specialization works as expected for DGAStatFrames", {
-    tmp <- DataFrame(a=1, b=2, c="3")
-    X <- as(tmp, "DGAStatFrame")
-    expect_error(trackcheck(X), "origin")
+test_that(".trackCheck specialization works as expected for DAScreenStatFrames", {
+    tmp <- DataFrame(LogFC=1, LogCPM=2, PValue=3, FDR=4)
+    X <- as(tmp, "DAScreenStatFrame")
+    expect_error(.trackCheck(X), "origin")
 
     trackinfo(X) <- list(origin=list(list(id="SOME_RANDOM_ID")),
         description="blah blah blah")
     trackinfo(X)$contrast <- c(A=1, B=-1)
-
-    # Okay, adding a method.
-    expect_error(trackcheck(X), "that was used")
-    trackinfo(X)$method <- "random"
-    expect_error(trackcheck(X), "should be 'voom'")
-
-    # Fine!
-    trackinfo(X)$method <- "voom"
-    info <- trackcheck(X)
-    expect_identical(info$method, "voom")
-    expect_match(info$type, "gene abundance")
-})
-
-test_that("trackcheck specialization works as expected for DBAStatFrames", {
-    tmp <- DataFrame(a=1, b=2, c="3")
-    X <- as(tmp, "DBAStatFrame")
-    expect_error(trackcheck(X), "origin")
-
-    trackinfo(X) <- list(origin=list(list(id="SOME_RANDOM_ID")),
-        description="blah blah blah")
-    trackinfo(X)$contrast <- c(A=1, B=-1)
+    expect_error(.trackCheck(X), "method")
 
     # Okay, adding a method.
     trackinfo(X)$method <- "random"
-    expect_error(trackcheck(X), "should be 'voom'")
+    expect_error(.trackCheck(X), "should be")
 
-    # Fine!
+    # Okay, adding the right method.
     trackinfo(X)$method <- "voom"
-    info <- trackcheck(X)
+    expect_error(.trackCheck(X), "feature")
+
+    # Okay, adding a feature.
+    trackinfo(X)$feature <- "blah"
+    expect_error(.trackCheck(X), "should be either")
+
+    trackinfo(X)$feature <- "gene"
+
+    info <- .trackCheck(X)
     expect_identical(info$method, "voom")
-    expect_match(info$type, "barcode abundance")
+    expect_match(info$type, "abundance")
 })

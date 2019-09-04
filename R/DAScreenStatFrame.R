@@ -1,6 +1,6 @@
 #' DataFrame for differential abundance results
 #'
-#' The DAScreenStatFrame and DGAStatFrame classes are literally identical to a standard \linkS4class{DataFrame},
+#' The DAScreenStatFrame class is literally identical to a standard \linkS4class{DataFrame},
 #' and can be used as such in all applications.
 #' It is intended to hold results from a differential gene/barcode abundance analyses of sequencing screen data.
 #' 
