@@ -16,7 +16,7 @@
 #'
 #' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
 #' Each list contains barcode- and gene-level result tables as \linkS4class{DAScreenStatFrame}s from all contrasts.
-#' If \code{gene.field=NULL}, only the \code{barcode} List is returned.
+#' If \code{gene.field=NA}, only the \code{barcode} List is returned.
 #' 
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 #' This also provides a basis for further customization.
@@ -137,14 +137,14 @@ runVoomScreen <- function(se, groups, comparisons,
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
-        skip.contrasts=TRUE,
+        skip.contrasts=TRUE
     )
 
     contrast.cmds <- .createContrasts(comparisons, contrasts.fun)
-    .screen_contrast_chunk(fname, env, gene.field, lfc=lfc, robust=robust, annotation=annotation, contrast.cmds=contrast.cmds)
+    .screen_contrast_chunk(holding, env, gene.field, lfc=lfc, robust=robust, annotation=annotation, contrast.cmds=contrast.cmds)
 
     # Deciding whether or not we can save stuff.
-    do.genes <- !is.null(gene.field)
+    do.genes <- !is.na(gene.field)
     if (is.null(save.all)) {
         save.all <- !is(se, "SummarizedExperiment") || !is.null(trackinfo(se)$origin)
     }
@@ -204,7 +204,7 @@ for (i in seq_len(n)) {
 
 #' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .knitAndWrite .evalAndWrite
 .screen_contrast_chunk <- function(fname, env, gene.field, lfc, robust, annotation, contrast.cmds) {
-    do.genes <- !is.null(gene.field)
+    do.genes <- !is.na(gene.field)
     if (do.genes) {
         gene_txt <- "\nWe also create a function to convert per-barcode results into per-gene results"
     } else {
@@ -220,6 +220,12 @@ so as to distinguish between filtered barcodes and those that were not in `se` i
 
     # Defining formatting functions for the raw limma output.
     .openChunk(fname)
+
+#    if (do.genes) {
+#        listing <- union(gene.field, annotation)
+#    } else {
+        listing <- annotation
+#    }
     .evalAndWrite(fname, env, sprintf('library(gp.sa.core)
 library(gp.sa.diff)
 barcode_formatter <- function(res, ...) {
@@ -227,7 +233,7 @@ barcode_formatter <- function(res, ...) {
         anno.fields=%s)
     res$origin <- NULL
     res
-}', paste(deparse(union(gene.field, annotation)), collapse="\n")))
+}', paste(deparse(listing), collapse="\n")))
 
     if (do.genes) {
         fun.body <- sprintf('gene_formatter <- function(res) {

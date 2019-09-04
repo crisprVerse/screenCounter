@@ -22,13 +22,10 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA, 
         commit="never", save.all=FALSE)
-    expect_identical(names(out), NAME)
 
-    expect_true("PValue" %in% colnames(out[[NAME]]))
-    expect_true("FDR" %in% colnames(out[[NAME]]))
-    expect_true("LogCPM" %in% colnames(out[[NAME]]))
-    expect_true("LogFC" %in% colnames(out[[NAME]]))
-    expect_identical(rownames(out[[NAME]]), NULL) # no names in 'se'.
+    expect_identical(names(out$barcode), NAME)
+    expect_true(all(c("PValue", "FDR", "LogCPM", "LogFC") %in% colnames(out$barcode[[NAME]])))
+    expect_identical(rownames(out$barcode[[NAME]]), NULL) # no names in 'se'.
 
     # All proper settings.
     out2 <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
@@ -38,7 +35,8 @@ test_that("runVoomScreen works correctly in basic scenarios", {
         commit="never", save.all=FALSE
     )
     expect_identical(names(out2$barcode), NAME)
-    expect_identical(colnames(out2$barcode[[1]]), colnames(out[[1]]))
+#    expect_identical(colnames(out2$barcode[[1]])[-1], colnames(out$barcode[[1]])) # skipping auto-added gene field.
+    expect_identical(colnames(out2$barcode[[1]]), colnames(out$barcode[[1]])) 
     expect_identical(names(out2$gene), NAME)
 
     expect_true("PValue" %in% colnames(out2$gene[[NAME]]))
@@ -90,7 +88,7 @@ test_that("runVoomScreen saves content correctly", {
     expect_true(file.exists(report))
 
     res.dir <- file.path(proj, "report-results")
-    expect_true(file.exists(file.path(res.dir, "all.results-1")))
+    expect_true(file.exists(file.path(res.dir, "barcode.results-1")))
     expect_true(file.exists(getResultManifest(dir=res.dir)))
 
     # Trying to save with gene-level information now.

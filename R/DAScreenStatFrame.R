@@ -52,7 +52,8 @@
 #' trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
 #'
 #' # Mocking up the aftermath of a DE analysis:
-#' de.output <- DataFrame(N=1:10, PValue=0:9/10)
+#' de.output <- DataFrame(LogFC=1:10, LogCPM=1:10, 
+#'    PValue=0:9/10, FDR=0:9/10)
 #'
 #' Y <- DAScreenStatFrame(de.output, se.input,
 #'     contrast=c(A=1, B=-1), feature="barcode",
