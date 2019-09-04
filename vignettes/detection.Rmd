@@ -103,6 +103,7 @@ library(gp.sa.screen)
 out <- runVoomScreen(se, covariates="time", comparisons=list("time"),
     block="run", reference.field="time", reference.level=0,
     norm.type.field="Type", norm.type.level="NEG", gene.field="ID")   
+out
 ```
 
 In addition to the standard differential analysis arguments passed to `runVoom()`,
@@ -119,11 +120,12 @@ In this case, the relevant column metadata field is `ID`.
 
 The `runVoomScreen()` function will produce two result tables per comparison.
 One table refers to the barcode-level results, while the other table contains gene-level results from consolidating the statistics across barcodes for each gene.
-We combine $p$-values across barcodes using Simes' method, and report statistics for the best barcode (i.e., with the lowest $p$-value) in each gene's pool of barcodes.
+We combine $p$-values across barcodes using Simes' method, which tests the null hypothesis that all barcodes for a given gene are not differentially abundant.
+Log-fold changes and log-counts-per-million are reported for the "best" barcode (i.e., with the lowest $p$-value) in each gene's pool.
 
 ```{r}
-out$results$`time:de:barcode`
-out$results$`time:de:gene`
+out$barcode[[1]]
+out$gene[[1]]
 ```
 
 As with `runVoom()`, the `runVoomScreen()` function will produce a Rmarkdown report describing the exact steps that were performed.
@@ -138,7 +140,7 @@ For example, we might prefer to analyze our data by treating `run` as a random e
 out.dc <- runVoomScreen(se, covariates="time", comparisons=list('time'),
     dup.cor="run", reference.field="time", reference.level=0,
     norm.type.field="Type", norm.type.level="NEG", gene.field="ID")                        
-out.dc$results$`time:de:gene`
+out.dc$barcode
 ```
 
 The screen-specific options can also be fine-tuned:
