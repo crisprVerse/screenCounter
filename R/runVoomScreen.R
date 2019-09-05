@@ -246,7 +246,9 @@ barcode_formatter <- function(res, ...) {
             fun.body <- paste0(fun.body, sprintf("
     m <- match(rownames(gres), gene.ids)
     anno.fields <- %s
-    cbind(rowData(se)[m,anno.fields,drop=FALSE], gres)", listing))
+    cbind(gres, rowData(se)[m,anno.fields,drop=FALSE])", paste(deparse(annotation), collapse="\n")))
+        } else {
+            fun.body <- paste0(fun.body, "\ngres")
         }
 
         fun.body <- paste0(fun.body, '\n}')

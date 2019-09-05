@@ -73,6 +73,47 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
     expect_true(all(is.na(out$gene[[NAME]][discarded, "PValue"])))
 })
 
+test_that("runVoomScreen works correctly with other options", {
+    ref <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene",
+        commit="never", save.all=FALSE
+    )
+
+    # Checking that the annotation is properly stored.
+    rowData(se)$SEVERANCE <- rowData(se)$gene
+    alt <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run", lfc=1,
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene", annotation="SEVERANCE",
+        commit="never", save.all=FALSE
+    )
+    expect_identical(alt[[1]][[1]]$SEVERANCE, rowData(se)$gene)
+    expect_identical(alt[[2]][[1]]$SEVERANCE, rownames(alt[[2]][[1]]))
+
+    # Checking that it responds to the lfc threshold.
+    alt <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run", lfc=1,
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene",
+        commit="never", save.all=FALSE
+    )
+    expect_true(isTRUE(all.equal(alt[[1]][[1]]$LogFC, ref[[1]][[1]]$LogFC)))
+    expect_false(isTRUE(all.equal(alt[[1]][[1]]$PValue, ref[[1]][[1]]$PValue)))
+
+    # Checking that it responds to contrasts.fun.
+    alt <- runVoomScreen(se, covariates="time", block="run", 
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene", contrasts.fun=list(TIME=c(time=1)),
+        commit="never", save.all=FALSE
+    )
+    expect_identical(names(alt[[1]]), "TIME")
+    expect_identical(as.data.frame(alt[[1]][[1]]), as.data.frame(ref[[1]][[1]]))
+    expect_identical(as.data.frame(alt[[2]][[1]]), as.data.frame(ref[[2]][[1]]))
+})
+
 test_that("runVoomScreen saves content correctly", {
     library(gp.sa.core)
     proj <- tempfile()
