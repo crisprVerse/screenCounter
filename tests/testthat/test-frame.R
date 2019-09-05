@@ -8,10 +8,8 @@ se.input <- SummarizedExperiment()
 library(gp.sa.core)
 trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
 
-# Mocking up the aftermath of a DA analysis:
-da.output <- DataFrame(N=1:10, PValue=0:9/10)
-
 test_that("constructors works as expected", {
+    da.output <- DataFrame(LogFC=1:10, LogCPM=1:10, FDR=0, PValue=0:9/10)
     Y <- DAScreenStatFrame(da.output, se.input,
         contrast=c(A=1, B=-1),
         method="voom", description="I did voom")
