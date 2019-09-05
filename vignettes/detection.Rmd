@@ -67,7 +67,8 @@ time <- rep(0:2, 3)
 data.frame(run, time)
 ```
 
-We assume we have 1000 barcodes with random assignments to genes, of which a small fraction are control genes that should not exhibit any change over time.
+We assume we have 1000 barcodes that have assignments to 100 genes.
+Of these, a small fraction are control genes that should not exhibit any change over time.
 
 ```{r}
 # Generating a random count matrix, assuming barcodes
@@ -95,7 +96,7 @@ se
 # Running the pipeline
 
 The `runVoomScreen()` function will, as its name suggests, run `voom` on the sequencing screen count matrix to identify barcodes that change in abundance across a contrast of interest.
-In our application, we want to identify barcodes that change in abundance over time.
+In our example, we want to identify barcodes that change in abundance over time.
 Assuming a linear response in the log-abundance over time, we can do:
 
 ```{r, fig.show="hide"}
@@ -116,7 +117,7 @@ In this case, our reference samples are those that are at zero in the `time` col
 These barcodes should not change during the course of an experiment and thus can be used for normalization.
 In this case, our negative controls are specified as `NEG`s (i.e., non-essential genes) in the `Type` row metadata field.
 - `gene.field`, which specifies the barcode-to-gene mappings.
-In this case, the relevant column metadata field is `ID`.
+In this case, the relevant row metadata field is `ID`.
 
 The `runVoomScreen()` function will produce two result tables per comparison.
 One table refers to the barcode-level results, while the other table contains gene-level results from consolidating the statistics across barcodes for each gene.
