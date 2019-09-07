@@ -5,9 +5,10 @@
 \title{Use \code{voom} to analyze a screen}
 \usage{
 runVoomScreen(se, groups, comparisons, reference.field, reference.level,
-  norm.type.field, norm.type.level, gene.field, ..., annotation = NULL,
-  lfc = 0, robust = TRUE, contrasts.fun = NULL,
-  fname = "voom-screen.Rmd", commit = "auto", save.all = NULL)
+  norm.type.field, norm.type.level, gene.field, method = c("simes",
+  "fry"), ..., annotation = NULL, lfc = 0, robust = TRUE,
+  dup.cor = NULL, contrasts.fun = NULL, fname = "voom-screen.Rmd",
+  commit = "auto", save.all = NULL)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
@@ -27,6 +28,8 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
+\item{method}{Stirng specifying the consolidation method to convert per-barcode statistics into per-gene results.}
+
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
 \item{annotation}{Character vector specifying feature annotation to carry through into the result table.}
@@ -35,6 +38,9 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 A value of zero will default to the standard analysis with \code{\link{eBayes}}.}
 
 \item{robust}{Logical scalar indicating whether robust empirical Bayes shrinkage should be used in \code{\link{eBayes}}.}
+
+\item{dup.cor}{String specifying the blocking factor to use in \code{\link{duplicateCorrelation}}.
+No additional blocking is performed if \code{NULL}.}
 
 \item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link{gp.sa.diff-args}"}.}
 
@@ -90,9 +96,16 @@ This avoids inflated errors due to the greater variance of the distribution of e
 
 \section{Consolidating barcodes to genes}{
 
-We use Simes' method as it is fast, statistically rigorous and able to detect genes with only a minority of differentially abundant barcodes.
-The exact implementation uses the \code{\link{combineTests}} function from the \pkg{csaw} package.
+When \code{method="simes"}, we use Simes' method to combine p-values from multiple barcodes into a single p-value per gene.
+This is done using the \code{\link{combineBarcodeTests}} function, implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
+We use Simes' method as it is fast, statistically rigorous and robust to correlations between guides for the same gene.
+It is able to detect genes with only a minority of differentially abundant barcodes, though it will favor genes with many significant barcodes.
 We also report the abundance and log-fold changes of the best barcode within each gene.
+
+When \code{method="fry"}, we use the \code{\link{fry}} method to combine per-barcode statistics into a per-gene p-value.
+This effectively applies gene set testing machinery on the set of guides for each gene.
+The aim is to identify genes for which the mean t-statistic is significantly non-zero, which favors consistency among guides more than \code{method="simes"},
+This may yield low p-values for genes with weak but consistent DE in each guide, at the cost of genes that have strong DE but only in a few guides.
 }
 
 \examples{
