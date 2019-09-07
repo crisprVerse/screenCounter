@@ -106,6 +106,7 @@ When \code{method="fry"}, we use the \code{\link{fry}} method to combine per-bar
 This effectively applies gene set testing machinery on the set of guides for each gene.
 The aim is to identify genes for which the mean t-statistic is significantly non-zero, which favors consistency among guides more than \code{method="simes"},
 This may yield low p-values for genes with weak but consistent DE in each guide, at the cost of genes that have strong DE but only in a few guides.
+Note that this mode is not compatible with ANOVA-like contrasts or with non-zero \code{lfc}.
 }
 
 \examples{
