@@ -1,4 +1,4 @@
-#' Barcode to gene statistics
+#' Combine barcode statistics
 #'
 #' Combine barcode-level differential abundance statistics into gene-level statistics.
 #' 
@@ -38,12 +38,15 @@
 #' example(DAScreenStatFrame, echo=FALSE)
 #'
 #' genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
-#' barcodes2genes(Y, genes=genes)
+#' combineBarcodeTests(Y, genes=genes)
 #' 
+#' @seealso
+#' \code{\link{barcodeSetTest}}, for another way of consolidating barcode statistics to gene-level results.
+#'
 #' @export
 #' @importFrom csaw combineTests getBestTest
 #' @importFrom S4Vectors DataFrame
-barcodes2genes <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.regex="^LogFC") {
+combineBarcodeTests <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.regex="^LogFC") {
     lost <- is.na(genes)
     all.genes <- sort(unique(genes[!lost]))
     keep <- !is.na(x[,pval.col]) & !lost

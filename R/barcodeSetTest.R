@@ -15,7 +15,7 @@
 #' @details
 #' This function uses the \code{\link{fry}} machinery developed for self-contained gene set tests, and applies it to the set of barcodes for each gene.
 #' The aim is to determine whether there is a consistent change in abundance across conditions for all barcodes associated with a given gene.
-#' This contrasts with \code{\link{barcodes2genes}}, which is more willing to consider genes that only exhibit a change in abundance for barcode.
+#' This contrasts with \code{\link{combineBarcodeTests}}, which is more willing to consider genes that only exhibit a change in abundance for barcode.
 #' 
 #' If \code{stats} is specified, some barcode-level statistics are added to the output DataFrame.
 #' We report the median log-fold change and median log-CPM across all barcodes for each gene, using \code{lcpm.col} and \code{lfc.col}.
@@ -47,7 +47,7 @@
 #' output
 #'
 #' @seealso
-#' \code{\link{barcodes2genes}}, another method for consolidating per-barcode statistics into per-gene results.
+#' \code{\link{combineBarcodeTests}}, another method for consolidating per-barcode statistics into per-gene results.
 #'
 #' @export
 #' @importFrom stats median

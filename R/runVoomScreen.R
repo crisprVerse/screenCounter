@@ -52,7 +52,7 @@
 #'
 #' @section Consolidating barcodes to genes:
 #' When \code{method="simes"}, we use Simes' method to combine p-values from multiple barcodes into a single p-value per gene.
-#' This is done using the \code{\link{barcodes2genes}} function, implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
+#' This is done using the \code{\link{combineBarcodeTests}} function, implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
 #' We use Simes' method as it is fast, statistically rigorous and robust to correlations between guides for the same gene.
 #' It is able to detect genes with only a minority of differentially abundant barcodes, though it will favor genes with many significant barcodes.
 #' We also report the abundance and log-fold changes of the best barcode within each gene.
@@ -348,7 +348,7 @@ This tests the joint null hypothesis that all barcodes for a gene are not differ
 We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
 
 ```{r}
-gres <- barcodes2genes(res, gene.ids)
+gres <- combineBarcodeTests(res, gene.ids)
 gres <- gene_formatter(gres)
 head(gres[order(gres$PValue),])
 ```")
