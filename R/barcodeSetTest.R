@@ -64,6 +64,7 @@ barcodeSetTest <- function(v, gene.ids, ...,
     }
     barcode.sets <- split(seq_along(g), g)
     gres <- fry(v, barcode.sets, ...) 
+    colnames(gres)[colnames(gres)=="NGenes"] <- "NBarcodes"
 
     if (!is.null(stats)) {
         if (!is.null(subset)) {
