@@ -10,6 +10,7 @@
 #' @param norm.type.field String specifying the field of \code{rowData(se)} containing the gene type for each barcode.
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
+#' @param method Stirng specifying the consolidation method to convert per-barcode statistics into per-gene results.
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 #' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
 #' @inheritParams gp.sa.diff::runVoom
@@ -50,10 +51,17 @@
 #' This avoids inflated errors due to the greater variance of the distribution of expression values compared to the ratio.
 #'
 #' @section Consolidating barcodes to genes:
-#' We use Simes' method as it is fast, statistically rigorous and able to detect genes with only a minority of differentially abundant barcodes.
-#' The exact implementation uses the \code{\link{combineTests}} function from the \pkg{csaw} package.
+#' When \code{method="simes"}, we use Simes' method to combine p-values from multiple barcodes into a single p-value per gene.
+#' This is done using the \code{\link{barcodes2genes}} function, implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
+#' We use Simes' method as it is fast, statistically rigorous and robust to correlations between guides for the same gene.
+#' It is able to detect genes with only a minority of differentially abundant barcodes, though it will favor genes with many significant barcodes.
 #' We also report the abundance and log-fold changes of the best barcode within each gene.
 #' 
+#' When \code{method="fry"}, we use the \code{\link{fry}} method to combine per-barcode statistics into a per-gene p-value.
+#' This effectively applies gene set testing machinery on the set of guides for each gene.
+#' The aim is to identify genes for which the mean t-statistic is significantly non-zero, which favors consistency among guides more than \code{method="simes"},
+#' This may yield low p-values for genes with weak but consistent DE in each guide, at the cost of genes that have strong DE but only in a few guides.
+#'
 #' @author Aaron Lun
 #'
 #' @examples
@@ -95,8 +103,8 @@
 #' @importFrom S4Vectors List
 #' @importFrom limma eBayes treat
 runVoomScreen <- function(se, groups, comparisons, 
-    reference.field, reference.level, norm.type.field, norm.type.level, gene.field,
-    ..., annotation=NULL, lfc=0, robust=TRUE, contrasts.fun=NULL,
+    reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "fry"),
+    ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts.fun=NULL,
     fname='voom-screen.Rmd', commit="auto", save.all=NULL)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
@@ -134,7 +142,8 @@ runVoomScreen <- function(se, groups, comparisons,
     }
 
     env <- .runVoomCore(holding, se, groups=groups, comparisons=comparisons,
-        lfc=lfc, robust=robust, annotation=annotation, ..., contrasts.fun=contrasts.fun,
+        lfc=lfc, robust=robust, dup.cor=dup.cor, 
+        annotation=annotation, ..., contrasts.fun=contrasts.fun,
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
@@ -142,7 +151,9 @@ runVoomScreen <- function(se, groups, comparisons,
     )
 
     contrast.cmds <- .createContrasts(comparisons, contrasts.fun)
-    .screen_contrast_chunk(holding, env, gene.field, lfc=lfc, robust=robust, annotation=annotation, contrast.cmds=contrast.cmds)
+    .screen_contrast_prep(holding, env, gene.field, method=match.arg(method), annotation=annotation)
+    .screen_contrast_loop(holding, env, gene.field, lfc=lfc, robust=robust, dup.cor=dup.cor, 
+        method=match.arg(method), contrast.cmds=contrast.cmds)
 
     # Deciding whether or not we can save stuff.
     do.genes <- !is.na(gene.field)
@@ -203,11 +214,11 @@ for (i in seq_len(n)) {
 ####################################
 ####################################
 
-#' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .knitAndWrite .evalAndWrite
-.screen_contrast_chunk <- function(fname, env, gene.field, lfc, robust, annotation, contrast.cmds) {
+#' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .evalAndWrite
+.screen_contrast_prep <- function(fname, env, gene.field, method="simes", annotation=NULL) {
     do.genes <- !is.na(gene.field)
     if (do.genes) {
-        gene_txt <- "\nWe also create a function to convert per-barcode results into per-gene results"
+        gene_txt <- "\nWe also create a function to convert per-barcode results into per-gene results."
     } else {
         gene_txt <- ""
     }
@@ -229,30 +240,20 @@ so as to distinguish between filtered barcodes and those that were not in `se` i
 #    }
     .evalAndWrite(fname, env, sprintf('library(gp.sa.core)
 library(gp.sa.diff)
+library(gp.sa.screen)
 barcode_formatter <- function(res, ...) {
     res <- cleanDataFrame(res, se, subset=res$origin,
         anno.fields=%s)
     res$origin <- NULL
     res
-}', paste(deparse(listing), collapse="\n")))
+}', paste(deparse(listing), collapse="\n        ")))
 
     if (do.genes) {
-        fun.body <- sprintf('gene_formatter <- function(res) {
-    gene.ids <- rowData(se)[[%s]]
-    gres <- barcodes2genes(res, gene.ids)', deparse(gene.field))
-
-        if (!is.null(annotation)) {
-            listing <- paste(deparse(annotation), collapse="\n")
-            fun.body <- paste0(fun.body, sprintf("
+        .evalAndWrite(fname, env, sprintf("\ngene.ids <- rowData(se)[[%s]]
+gene_formatter <- function(gres) {
     m <- match(rownames(gres), gene.ids)
-    anno.fields <- %s
-    cbind(gres, rowData(se)[m,anno.fields,drop=FALSE])", paste(deparse(annotation), collapse="\n")))
-        } else {
-            fun.body <- paste0(fun.body, "\ngres")
-        }
-
-        fun.body <- paste0(fun.body, '\n}')
-        .evalAndWrite(fname, env, fun.body)
+    cbind(gres, rowData(se)[m,%s,drop=FALSE])
+}", deparse(gene.field), paste(deparse(annotation), collapse="\n        ")))
     }
     .closeChunk(fname)
 
@@ -265,11 +266,17 @@ barcode_formatter <- function(res, ...) {
         .evalAndWrite(fname, env, "gene.results <- List()")
     }
     .closeChunk(fname)
+}
 
-    # Code mostly lifted from limma_contrast_chunk, which was necessary
-    # to smoothly handle the barcode -> gene result conversion.
+#' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .knitAndWrite .evalAndWrite
+.screen_contrast_loop <- function(fname, env, gene.field, method="simes", lfc=0, robust=TRUE, dup.cor=NULL, contrast.cmds) 
+# Code mostly lifted from limma_contrast_chunk, which was necessary
+# to smoothly handle the barcode -> gene result conversion.
+{
+    do.genes <- !is.na(gene.field)
     extra_eb_code <- if (robust) ", robust=TRUE" else ""
     shrink_eb_cmd <- sprintf("eBayes(fit2%s)", extra_eb_code)
+    fry_params <- .get_fry_params(robust=robust, dup.cor=dup.cor)
 
     for (con in seq_len(nrow(contrast.cmds))) {
         vname <- contrast.cmds$name[con]
@@ -328,21 +335,36 @@ head(res[order(res$PValue),])
 
         .knitAndWrite(fname, env, sprintf("We save the results in our output `List` for later use.
 
-```{r}                               
+```{r}
 con.desc <- %s
 barcode.results[[con.desc]] <- DAScreenStatFrame(res, se, contrast=con, 
     description=con.desc, method='voom', feature='barcode')
 ```", deparse(vname)))
 
         if (do.genes) {
-            .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using Simes' method.
+            if (method=="simes") {
+                .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using Simes' method.
 This tests the joint null hypothesis that all barcodes for a gene are not differentially abundant.
 We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
 
 ```{r}
-gres <- gene_formatter(res)
+gres <- barcodes2genes(res, gene.ids)
+gres <- gene_formatter(gres)
 head(gres[order(gres$PValue),])
 ```")
+            } else {
+                .knitAndWrite(fname, env, sprintf("We also consolidate per-barcode statistics into per-gene results using the `fry` method.
+This uses the machinery for performing a self-contained gene set test, and applies it to 'barcode sets' corresponding to a single gene.
+The null hypothesis is that no barcodes for a given gene are differentially abundant, but favoring genes where most barcodes are DA.
+We also add the median log-FC and log-CPM across all barcodes for the each gene.
+
+```{r}
+gres <- barcodeSetTest(v, gene.ids, design=design, contrast=con, 
+    subset=v$genes$origin, stats=res%s)
+gres <- gene_formatter(gres)
+head(gres[order(gres$PValue),])
+```", fry_params))
+            }
 
             sum.cmd <- if (solo) "table(Sig=gres$FDR <= 0.05, Direction=gres$Direction)" else "summary(gres$FDR <= 0.05)"
             .knitAndWrite(fname, env, sprintf('We report summary statistics for this comparison at the gene level.
@@ -361,4 +383,21 @@ gene.results[[con.desc]] <- DAScreenStatFrame(gres, se, contrast=con,
     }
 
     invisible(NULL)
+}
+
+.get_fry_params <- function(dup.cor, robust) {
+    included <- character(0)
+    if (!is.null(dup.cor)) {
+        included <- c(included, "block=dc.block", "correlation=dc$consensus")
+    }
+    if (robust) {
+        included <- c(included, "robust=TRUE")
+    }
+    if (length(included)) {
+        arg.string <- paste(included, collapse=", ")
+        arg.string <- paste0(",\n    ", arg.string)
+    } else {
+        arg.string <- ""
+    }
+    arg.string
 }
