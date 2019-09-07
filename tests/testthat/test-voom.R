@@ -175,4 +175,10 @@ test_that("runVoomScreen saves content correctly", {
     expect_true(file.exists(file.path(res.dir, "barcode.results-1")))
     expect_true(file.exists(file.path(res.dir, "gene.results-1")))
     expect_true(file.exists(getResultManifest(dir=res.dir)))
+   
+    # Dumps out normalized expression values.
+    out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field=NA, norm.type.field=NA, gene.field=NA,
+        fname=report, dump.norm="whee.csv")
+    expect_true(file.exists("whee.csv"))
 })

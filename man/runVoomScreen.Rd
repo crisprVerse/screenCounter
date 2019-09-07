@@ -7,8 +7,8 @@
 runVoomScreen(se, groups, comparisons, reference.field, reference.level,
   norm.type.field, norm.type.level, gene.field, method = c("simes",
   "fry"), ..., annotation = NULL, lfc = 0, robust = TRUE,
-  dup.cor = NULL, contrasts.fun = NULL, fname = "voom-screen.Rmd",
-  commit = "auto", save.all = NULL)
+  dup.cor = NULL, contrasts.fun = NULL, dump.norm = NULL,
+  fname = "voom-screen.Rmd", commit = "auto", save.all = NULL)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
@@ -43,6 +43,8 @@ A value of zero will default to the standard analysis with \code{\link{eBayes}}.
 No additional blocking is performed if \code{NULL}.}
 
 \item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link{gp.sa.diff-args}"}.}
+
+\item{dump.norm}{String specifying a path to an output file to save normalized abundances in a CSV file.}
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
 

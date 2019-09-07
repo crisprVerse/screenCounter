@@ -13,6 +13,7 @@
 #' @param method Stirng specifying the consolidation method to convert per-barcode statistics into per-gene results.
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 #' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
+#' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
 #' @inheritParams gp.sa.diff::runVoom
 #'
 #' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
@@ -106,7 +107,7 @@
 runVoomScreen <- function(se, groups, comparisons, 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "fry"),
     ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts.fun=NULL,
-    fname='voom-screen.Rmd', commit="auto", save.all=NULL)
+    dump.norm=NULL, fname='voom-screen.Rmd', commit="auto", save.all=NULL)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
@@ -140,6 +141,14 @@ runVoomScreen <- function(se, groups, comparisons,
         norm <- ""
     } else {
         norm <- .normalizeControls(norm.type.field, norm.type.level)
+    }
+    if (!is.null(dump.norm)) {
+        norm <- paste0(norm, sprintf("\n\nWe dump out the normalized abundances in a CSV file for diagnostic use elsewhere.                       
+Do **NOT** use this file as input in other GPSA pipelines.
+
+```{r}
+write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
+```", deparse(dump.norm)))
     }
 
     env <- .runVoomCore(holding, se, groups=groups, comparisons=comparisons,
