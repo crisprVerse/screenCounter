@@ -52,6 +52,13 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     expect_identical(names(out3), names(out2))
     expect_identical(colnames(out3$gene), colnames(out2$gene))
     expect_identical(colnames(out3$barcode), colnames(out2$barcode))
+
+    out3b <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field=NULL, norm.type.field=NULL, gene.field="gene", method="fry",
+        commit="never", save.all=FALSE)
+    expect_identical(names(out3b), names(out2))
+    expect_identical(colnames(out3b$gene), colnames(out2$gene))
+    expect_identical(colnames(out3b$barcode), colnames(out2$barcode))
 })
 
 test_that("runVoomScreen works correctly with expansion of per-gene results", {
@@ -68,9 +75,20 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
 
     expect_identical(names(out$barcode), NAME)
     expect_identical(names(out$gene), NAME)
-
     expect_identical(rownames(out$gene[[1]]), sort(unique(rowData(se)$gene)))
     expect_true(all(is.na(out$gene[[NAME]][discarded, "PValue"])))
+
+    out2 <- runVoomScreen(se2, covariates="time", comparisons=list("time"), block="run",
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene", method="fry",
+        commit="never", save.all=FALSE
+    )
+
+    expect_identical(names(out2$barcode), NAME)
+    expect_identical(names(out2$gene), NAME)
+    expect_identical(sort(rownames(out2$gene[[1]])), sort(unique(rowData(se)$gene)))
+    expect_true(all(is.na(out2$gene[[NAME]][discarded, "PValue"])))
 })
 
 test_that("runVoomScreen works correctly with other options", {
@@ -137,6 +155,19 @@ test_that("runVoomScreen saves content correctly", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene",
+        fname=report, commit="never"
+    )
+
+    res.dir <- file.path(proj, "report-results")
+    expect_true(file.exists(file.path(res.dir, "barcode.results-1")))
+    expect_true(file.exists(file.path(res.dir, "gene.results-1")))
+    expect_true(file.exists(getResultManifest(dir=res.dir)))
+
+    # Trying to save with fry.
+    out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene", method="fry",
         fname=report, commit="never"
     )
 
