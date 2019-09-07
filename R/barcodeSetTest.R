@@ -70,8 +70,8 @@ barcodeSetTest <- function(v, gene.ids, ...,
         if (!is.null(subset)) {
             stats <- stats[subset,]
         }
-        gres[[lcpm.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,lcpm.col], na.rm=TRUE), 0)
-        gres[[lfc.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,lfc.col], na.rm=TRUE), 0)
+        gres[[lcpm.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,lcpm.col], na.rm=TRUE), 0)[rownames(gres)]
+        gres[[lfc.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,lfc.col], na.rm=TRUE), 0)[rownames(gres)]
     }
 
     gres <- gres[match(all.genes, rownames(gres)),]
