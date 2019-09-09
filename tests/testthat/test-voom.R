@@ -1,4 +1,4 @@
-G This runs through all of the voom-specific functionality.
+# This runs through all of the voom-specific functionality.
 # library(testthat); library(gp.sa.screen); source("test-voom.R")
 
 set.seed(1000)
