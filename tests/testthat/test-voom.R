@@ -1,4 +1,4 @@
-# This runs through all of the voom-specific functionality.
+G This runs through all of the voom-specific functionality.
 # library(testthat); library(gp.sa.screen); source("test-voom.R")
 
 set.seed(1000)
@@ -179,6 +179,6 @@ test_that("runVoomScreen saves content correctly", {
     # Dumps out normalized expression values.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA,
-        fname=report, dump.norm="whee.csv")
+        fname=report, dump.norm="whee.csv", commit="never")
     expect_true(file.exists("whee.csv"))
 })
