@@ -1,6 +1,6 @@
 Package: gp.sa.screen
-Version: 0.99.26
-Date: 2019-08-21
+Version: 0.99.27
+Date: 2019-09-09
 Title: Standardized Analytics for Sequencing Screens
 Description: Provides a standardized analysis pipeline for 
     analyzing data from high-throughput sequencing screens

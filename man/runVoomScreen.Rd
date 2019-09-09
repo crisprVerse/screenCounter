@@ -44,7 +44,8 @@ No additional blocking is performed if \code{NULL}.}
 
 \item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link{gp.sa.diff-args}"}.}
 
-\item{dump.norm}{String specifying a path to an output file to save normalized abundances in a CSV file.}
+\item{dump.norm}{String specifying a path to an output file to save normalized abundances in a CSV file.
+This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.}
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
 

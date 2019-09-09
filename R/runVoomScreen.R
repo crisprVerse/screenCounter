@@ -14,6 +14,7 @@
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 #' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
 #' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
+#' This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.
 #' @inheritParams gp.sa.diff::runVoom
 #'
 #' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
@@ -143,7 +144,7 @@ runVoomScreen <- function(se, groups, comparisons,
         norm <- .normalizeControls(norm.type.field, norm.type.level)
     }
     if (!is.null(dump.norm)) {
-        norm <- paste0(norm, sprintf("\n\nWe dump out the normalized abundances in a CSV file for diagnostic use elsewhere.                       
+        norm <- paste0(norm, sprintf("\n\nWe dump out the normalized abundances in a CSV file for diagnostic use elsewhere.
 Do **NOT** use this file as input in other GPSA pipelines.
 
 ```{r}
