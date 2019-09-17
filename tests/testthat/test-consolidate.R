@@ -44,6 +44,36 @@ test_that("combineBarcodeTests handles multiple LogFCs correctly", {
     expect_false("Direction" %in% colnames(per.gene))
 })
 
+test_that("combineBarcodeTests works with the Holm-based approach correctly", {
+    # Same as taking the minimum bonferroni p-value.
+    gstats <- combineBarcodeTests(stats, gene, method="holm-min", min.sig.n=1, min.sig.prop=0)
+    by.gene <- split(stats$PValue, gene)
+    min.p <- vapply(by.gene, min, 0)
+    expect_identical(unname(gstats$PValue), pmin(1, min.p * lengths(by.gene)))
+
+    # Same as taking the maximum p-value.
+    gstats <- combineBarcodeTests(stats, gene, method="holm-min", min.sig.n=1, min.sig.prop=1)
+    max.p <- vapply(by.gene, FUN=function(p) max(p.adjust(p, "holm")), 0)
+    expect_identical(gstats$PValue, max.p)
+
+    gstats2 <- combineBarcodeTests(stats, gene, method="holm-min", min.sig.n=100, min.sig.prop=100)
+    expect_identical(gstats, gstats2)
+
+    # Same as taking the "middle" p-value.
+    gstats <- combineBarcodeTests(stats, gene, method="holm-min", min.sig.n=1, min.sig.prop=0.5)
+    mid.p <- vapply(by.gene, FUN=function(p) {
+        p <- p.adjust(p, method="holm")
+        if (length(p) %% 2) median(p) else sort(p)[length(p)/2]
+    }, 0)
+    expect_identical(gstats$PValue, mid.p)
+
+    # Works correctly after shuffling the order.
+    o <- sample(nrow(stats))
+    gstats <- combineBarcodeTests(stats, gene, method="holm-min")
+    gstats2 <- combineBarcodeTests(stats[o,], gene[o], method="holm-min")
+    expect_identical(gstats, gstats2[rownames(gstats),])
+})
+
 test_that("combineBarcodeTests handles empty inputs correctly", {
     per.gene <- combineBarcodeTests(stats[0,], gene[0])
     expect_identical(nrow(per.gene), 0L)
