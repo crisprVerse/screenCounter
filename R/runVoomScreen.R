@@ -10,7 +10,7 @@
 #' @param norm.type.field String specifying the field of \code{rowData(se)} containing the gene type for each barcode.
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
-#' @param method Stirng specifying the consolidation method to convert per-barcode statistics into per-gene results.
+#' @param method String specifying the consolidation method to convert per-barcode statistics into per-gene results.
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 #' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
 #' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
@@ -53,11 +53,16 @@
 #' This avoids inflated errors due to the greater variance of the distribution of expression values compared to the ratio.
 #'
 #' @section Consolidating barcodes to genes:
-#' When \code{method="simes"}, we use Simes' method to combine p-values from multiple barcodes into a single p-value per gene.
-#' This is done using the \code{\link{combineBarcodeTests}} function, implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
-#' We use Simes' method as it is fast, statistically rigorous and robust to correlations between guides for the same gene.
+#' When \code{method="holm-mid"}, we use the \dQuote{minimum-Holm} method in \code{\link{combineBarcodeTests}} to combine p-values from multiple barcodes into a single p-value per gene.
+#' This applies a Holm-Bonferroni correction across all barcodes for each gene before taking the \eqn{k}-th largest p-value for that gene.
+#' The idea is to detect genes for which at least \eqn{k} barcodes are significantly differentially abundant, requiring some level of agreement between barcodes to reduce the influence of off-target guides.
+#' We also report the log-counts-per-million and log-fold changes of the best barcode within each gene.
+#'
+#' When \code{method="simes"}, we use Simes' method in \code{\link{combineBarcodeTest}} to combine barcode-level p-values.
+#' This is fast, statistically rigorous and robust to correlations between guides for the same gene.
 #' It is able to detect genes with only a minority of differentially abundant barcodes, though it will favor genes with many significant barcodes.
-#' We also report the abundance and log-fold changes of the best barcode within each gene.
+#' This tends to be the most sensitive approach but is also more susceptible to off-target effects where one outlier guide drives the gene-level result.
+#' Again, we report the log-CPM and log-fold changes of the best barcode within each gene.
 #' 
 #' When \code{method="fry"}, we use the \code{\link{fry}} method to combine per-barcode statistics into a per-gene p-value.
 #' This effectively applies gene set testing machinery on the set of guides for each gene.
@@ -106,7 +111,7 @@
 #' @importFrom S4Vectors List
 #' @importFrom limma eBayes treat
 runVoomScreen <- function(se, groups, comparisons, 
-    reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "fry"),
+    reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "holm-mid", "fry"),
     ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts.fun=NULL,
     dump.norm=NULL, fname='voom-screen.Rmd', commit="auto", save.all=NULL)
 {
@@ -355,11 +360,22 @@ barcode.results[[con.desc]] <- DAScreenStatFrame(res, se, contrast=con,
         if (do.genes) {
             if (method=="simes") {
                 .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using Simes' method.
-This tests the joint null hypothesis that all barcodes for a gene are not differentially abundant.
+This tests the global null hypothesis that all barcodes for a gene are not differentially abundant.
 We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
 
 ```{r}
 gres <- combineBarcodeTests(res, gene.ids)
+gres <- gene_formatter(gres)
+head(gres[order(gres$PValue),])
+```")
+            } else if (method=="holm-mid") { 
+                .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using \"minimum Holm\" method.
+This tests the global null hypothesis that fewer than $X$ barcodes for a gene are differentially abundant, where $X$ is defined by `min.sig.n` and `min.sig.prop`.
+We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
+
+```{r}
+gres <- combineBarcodeTests(res, gene.ids, method='holm-min',
+    min.sig.n=3, min.sig.prop=0.4)                                
 gres <- gene_formatter(gres)
 head(gres[order(gres$PValue),])
 ```")

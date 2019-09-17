@@ -53,12 +53,15 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     expect_identical(colnames(out3$gene), colnames(out2$gene))
     expect_identical(colnames(out3$barcode), colnames(out2$barcode))
 
+    # Using other consolidation strategies.
     out3b <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NULL, norm.type.field=NULL, gene.field="gene", method="fry",
         commit="never", save.all=FALSE)
     expect_identical(names(out3b), names(out2))
     expect_identical(colnames(out3b$gene), colnames(out2$gene))
     expect_identical(colnames(out3b$barcode), colnames(out2$barcode))
+    expect_true(identical(out3$barcode, out3b$barcode))
+    expect_false(identical(out3$gene, out3b$gene))
 })
 
 test_that("runVoomScreen works correctly with expansion of per-gene results", {
@@ -130,6 +133,16 @@ test_that("runVoomScreen works correctly with other options", {
     expect_identical(names(alt[[1]]), "TIME")
     expect_identical(as.data.frame(alt[[1]][[1]]), as.data.frame(ref[[1]][[1]]))
     expect_identical(as.data.frame(alt[[2]][[1]]), as.data.frame(ref[[2]][[1]]))
+
+    # Checking that it uses a different consolidation strategy.
+    alt <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field="time", reference.level=0,
+        norm.type.field="class", norm.type.level="NEG",
+        gene.field="gene", method="holm-mid",
+        commit="never", save.all=FALSE
+    )
+    expect_true(identical(alt$barcode[[1]], ref$barcode[[1]]))
+    expect_false(identical(alt$gene[[1]], ref$gene[[1]]))
 })
 
 test_that("runVoomScreen saves content correctly", {
