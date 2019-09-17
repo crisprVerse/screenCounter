@@ -29,13 +29,17 @@
 #' When \code{method="simes"}, the per-gene p-value is computed by combining all p-values from the relevant barcodes with Simes' method.
 #' Here, the global null hypothesis is that no barcodes are differentially abundant for a gene.
 #' With this approach, a gene can obtain a low p-value even if only a few guides (or just one guide) are strongly differentially abundant.
+#' This is the most sensitive approach but is also more susceptible to off-target effects.
+#' It is implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
 #'
 #' When \code{method="holm"}, we apply a Holm correction across all barcodes associated with a given gene,
 #' and then set the combined p-value to the \eqn{k}-th largest Holm-corrected barcode-level p-value.
 #' Here, the global null hypothesis is that fewer than \eqn{k} barcodes are differentially abundant for a gene.
-#' Thus, a gene can only obtain a low p-value if it has at least \eqn{k} differentially abundant barcodes.
+#' Thus, a gene it can only obtain a low p-value if it has at least \eqn{k} differentially abundant barcodes.
+#' 
 #' To define \eqn{k} for any gene, we take the larger of \code{min.sig.n} and the product of \code{min.sig.prop} with the number of barcodes for that gene.
 #' This is then capped at the number of barcodes for that gene.
+#' By setting \eqn{k > 1}, we require some level of agreement between barcodes and reduce the influence of one off-target guide on the gene-level inference.
 #' 
 #' If ANOVA-like contrasts are supplied in \code{x}, \code{Direction} is not reported, 
 #' and each \code{LogFC} column name will be suffixed by the name of the relevant column of the contrast.

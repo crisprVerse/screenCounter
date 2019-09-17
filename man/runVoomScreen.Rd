@@ -6,7 +6,7 @@
 \usage{
 runVoomScreen(se, groups, comparisons, reference.field, reference.level,
   norm.type.field, norm.type.level, gene.field, method = c("simes",
-  "fry"), ..., annotation = NULL, lfc = 0, robust = TRUE,
+  "holm-mid", "fry"), ..., annotation = NULL, lfc = 0, robust = TRUE,
   dup.cor = NULL, contrasts.fun = NULL, dump.norm = NULL,
   fname = "voom-screen.Rmd", commit = "auto", save.all = NULL)
 }
@@ -28,7 +28,7 @@ Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-i
 
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
-\item{method}{Stirng specifying the consolidation method to convert per-barcode statistics into per-gene results.}
+\item{method}{String specifying the consolidation method to convert per-barcode statistics into per-gene results.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
@@ -99,11 +99,16 @@ This avoids inflated errors due to the greater variance of the distribution of e
 
 \section{Consolidating barcodes to genes}{
 
-When \code{method="simes"}, we use Simes' method to combine p-values from multiple barcodes into a single p-value per gene.
-This is done using the \code{\link{combineBarcodeTests}} function, implemented with the \code{\link{combineTests}} function from the \pkg{csaw} package.
-We use Simes' method as it is fast, statistically rigorous and robust to correlations between guides for the same gene.
+When \code{method="holm-mid"}, we use the \dQuote{minimum-Holm} method in \code{\link{combineBarcodeTests}} to combine p-values from multiple barcodes into a single p-value per gene.
+This applies a Holm-Bonferroni correction across all barcodes for each gene before taking the \eqn{k}-th largest p-value for that gene.
+The idea is to detect genes for which at least \eqn{k} barcodes are significantly differentially abundant, requiring some level of agreement between barcodes to reduce the influence of off-target guides.
+We also report the log-counts-per-million and log-fold changes of the best barcode within each gene.
+
+When \code{method="simes"}, we use Simes' method in \code{\link{combineBarcodeTest}} to combine barcode-level p-values.
+This is fast, statistically rigorous and robust to correlations between guides for the same gene.
 It is able to detect genes with only a minority of differentially abundant barcodes, though it will favor genes with many significant barcodes.
-We also report the abundance and log-fold changes of the best barcode within each gene.
+This tends to be the most sensitive approach but is also more susceptible to off-target effects where one outlier guide drives the gene-level result.
+Again, we report the log-CPM and log-fold changes of the best barcode within each gene.
 
 When \code{method="fry"}, we use the \code{\link{fry}} method to combine per-barcode statistics into a per-gene p-value.
 This effectively applies gene set testing machinery on the set of guides for each gene.
