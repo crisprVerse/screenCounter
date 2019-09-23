@@ -161,7 +161,7 @@ test_that("runVoomScreen saves content correctly", {
 
     res.dir <- file.path(proj, "report-results")
     expect_true(file.exists(file.path(res.dir, "barcode.results-1")))
-    expect_true(file.exists(getResultManifest(dir=res.dir)))
+    expect_true(length(readResultManifest(dir=res.dir))>0)
 
     # Trying to save with gene-level information now.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
@@ -174,7 +174,7 @@ test_that("runVoomScreen saves content correctly", {
     res.dir <- file.path(proj, "report-results")
     expect_true(file.exists(file.path(res.dir, "barcode.results-1")))
     expect_true(file.exists(file.path(res.dir, "gene.results-1")))
-    expect_true(file.exists(getResultManifest(dir=res.dir)))
+    expect_true(length(readResultManifest(dir=res.dir))>0)
 
     # Trying to save with fry.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
@@ -187,7 +187,7 @@ test_that("runVoomScreen saves content correctly", {
     res.dir <- file.path(proj, "report-results")
     expect_true(file.exists(file.path(res.dir, "barcode.results-1")))
     expect_true(file.exists(file.path(res.dir, "gene.results-1")))
-    expect_true(file.exists(getResultManifest(dir=res.dir)))
+    expect_true(length(readResultManifest(dir=res.dir))>0)
    
     # Dumps out normalized expression values.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",

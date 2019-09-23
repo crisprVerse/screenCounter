@@ -58,7 +58,7 @@
 #' The idea is to detect genes for which at least \eqn{k} barcodes are significantly differentially abundant, requiring some level of agreement between barcodes to reduce the influence of off-target guides.
 #' We also report the log-counts-per-million and log-fold changes of the best barcode within each gene.
 #'
-#' When \code{method="simes"}, we use Simes' method in \code{\link{combineBarcodeTest}} to combine barcode-level p-values.
+#' When \code{method="simes"}, we use Simes' method in \code{\link{combineBarcodeTests}} to combine barcode-level p-values.
 #' This is fast, statistically rigorous and robust to correlations between guides for the same gene.
 #' It is able to detect genes with only a minority of differentially abundant barcodes, though it will favor genes with many significant barcodes.
 #' This tends to be the most sensitive approach but is also more susceptible to off-target effects where one outlier guide drives the gene-level result.
