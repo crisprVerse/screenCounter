@@ -92,6 +92,7 @@ combineBarcodeTests <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", 
     output <- cbind(per.gene, best)
 
     output <- output[match(all.genes, rownames(output)),]
+    output[is.na(output$NBarcodes),"NBarcodes"] <- 0L
     rownames(output) <- all.genes
     DataFrame(output)
 }

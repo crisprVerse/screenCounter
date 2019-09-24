@@ -23,6 +23,10 @@ test_that("combineBarcodeTests handles NA's in the data.frame correctly", {
 
     chosen <- gene[1]
     expect_identical(old[chosen,"NBarcodes"], per.gene[chosen,"NBarcodes"]+1L)
+
+    stats$PValue[gene==chosen] <- NA
+    per.gene <- combineBarcodeTests(stats, gene)
+    expect_identical(0L, per.gene[chosen,"NBarcodes"])
 })
 
 test_that("combineBarcodeTests handles NA's in the genes correctly", {
