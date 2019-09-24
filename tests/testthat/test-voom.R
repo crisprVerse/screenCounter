@@ -152,7 +152,7 @@ test_that("runVoomScreen saves content correctly", {
         description="This is one of Aaron's projects")
 
     report <- file.path(proj, "report.Rmd")
-    trackinfo(se)$origin <- list(list(id="asdad"))
+    trackinfo(se)$origin <- "asdad"
 
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA,

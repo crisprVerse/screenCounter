@@ -61,7 +61,7 @@ library(gp.sa.core)
 # Mocking up an input into runVoomScreen()
 library(SummarizedExperiment)
 se.input <- SummarizedExperiment()
-trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
+trackinfo(se.input)$origin <- "SOME_ID"
 
 # Mocking up the aftermath of a DE analysis:
 de.output <- DataFrame(LogFC=1:10, LogCPM=1:10, 

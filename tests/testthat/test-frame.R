@@ -6,7 +6,7 @@ library(SummarizedExperiment)
 se.input <- SummarizedExperiment()
 
 library(gp.sa.core)
-trackinfo(se.input)$origin <- list(list(id="SOME_ID"))
+trackinfo(se.input)$origin <- "SOME_ID"
 
 test_that("constructors works as expected", {
     da.output <- DataFrame(LogFC=1:10, LogCPM=1:10, FDR=0, PValue=0:9/10)
@@ -17,7 +17,7 @@ test_that("constructors works as expected", {
     expect_s4_class(Y, "DAScreenStatFrame")
     expect_identical(trackinfo(Y)$method, "voom")
     expect_identical(trackinfo(Y)$description, "I did voom")
-    expect_identical(trackinfo(Y)$origin[[1]]$id, "SOME_ID")
+    expect_identical(trackinfo(Y)$origin[[1]], "SOME_ID")
 })
 
 test_that(".trackCheck specialization works as expected for DAScreenStatFrames", {
@@ -25,8 +25,7 @@ test_that(".trackCheck specialization works as expected for DAScreenStatFrames",
     X <- as(tmp, "DAScreenStatFrame")
     expect_error(.trackCheck(X), "origin")
 
-    trackinfo(X) <- list(origin=list(list(id="SOME_RANDOM_ID")),
-        description="blah blah blah")
+    trackinfo(X) <- list(origin="SOME_RANDOM_ID", description="blah blah blah")
     trackinfo(X)$contrast <- c(A=1, B=-1)
     expect_error(.trackCheck(X), "method")
 
