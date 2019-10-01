@@ -3,7 +3,7 @@
 #' Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
 #'
 #' @param se A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
-#' Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-inputs}"}.
+#' Alternatively, a database ID string or an \linkS4class{InputResource} object, see \code{?"\link{gp.sa.core-data-inputs}"}.
 #' @param ... Further arguments to pass to \code{\link{runVoom}}. 
 #' @param reference.field String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).
 #' @param reference.level Character vector specifying the reference levels of the column named by \code{reference.field}.
@@ -104,8 +104,8 @@
 #' out[[1]]
 #'
 #' @export
-#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .createContrasts
-#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite
+#' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .createContrasts 
+#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite .canBeSaved
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 #' @importFrom S4Vectors List
@@ -173,21 +173,13 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
 
     # Deciding whether or not we can save stuff.
     do.genes <- !is.na(gene.field)
-    if (is.null(save.all)) {
-        save.all <- !is(se, "SummarizedExperiment") || !is.null(trackinfo(se)$origin)
-    }
-    if (!save.all) {
-        saveable <- NULL
+    if (do.genes) {
+        saveable <- c("barcode.results", "gene.results")
     } else {
-        if (do.genes) {
-            saveable <- c("barcode.results", "gene.results")
-        } else {
-            saveable <- "barcode.results"
-        }
+        saveable <- "barcode.results"
     }
-
     .reportEnd(fname, msg="Created report with runVoomScreen().", 
-        commit=commit, env=env, to.save.list=saveable, temporary=holding)
+        commit=commit, env=env, to.save.list=saveable, fake.save=!.canBeSaved(se), temporary=holding)
 
     output <- List(barcode=env$barcode.results)
     if (do.genes) {

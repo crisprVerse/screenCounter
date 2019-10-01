@@ -12,7 +12,7 @@ runVoomScreen(se, groups, comparisons, reference.field, reference.level,
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
-Alternatively, a database ID string or list, see \code{?"\link{gp.sa.core-data-inputs}"}.}
+Alternatively, a database ID string or an \linkS4class{InputResource} object, see \code{?"\link{gp.sa.core-data-inputs}"}.}
 
 \item{groups}{String specifying the column of \code{colData(se)} containing the grouping factor, see \code{?"\link{gp.sa.diff-args}"}.}
 
