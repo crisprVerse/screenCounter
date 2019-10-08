@@ -12,7 +12,7 @@
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param method String specifying the consolidation method to convert per-barcode statistics into per-gene results.
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
-#' Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.
+#' Ignored if \code{se} lacks provenance information, in which case saving is never performed.
 #' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
 #' This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.
 #' @inheritParams gp.sa.diff::runVoom
@@ -113,7 +113,7 @@
 runVoomScreen <- function(se, groups, comparisons, 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "holm-mid", "fry"),
     ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts.fun=NULL,
-    dump.norm=NULL, fname='voom-screen.Rmd', commit="auto", save.all=NULL)
+    dump.norm=NULL, fname='voom-screen.Rmd', commit="auto", save.all=TRUE)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
@@ -179,7 +179,8 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
         saveable <- "barcode.results"
     }
     .reportEnd(fname, msg="Created report with runVoomScreen().", 
-        commit=commit, env=env, to.save.list=saveable, fake.save=!.canBeSaved(se), temporary=holding)
+        commit=commit, env=env, to.save.list=saveable, 
+        fake.save=!(save.all && .canBeSaved(se)), temporary=holding)
 
     output <- List(barcode=env$barcode.results)
     if (do.genes) {
@@ -286,6 +287,8 @@ gene_formatter <- function(gres) {
     shrink_eb_cmd <- sprintf("eBayes(fit2%s)", extra_eb_code)
     fry_params <- .get_fry_params(robust=robust, dup.cor=dup.cor)
 
+    subset_cmd <- if (!is.null(env$subset.info)) "subset=subset.info, " else ""
+
     for (con in seq_len(nrow(contrast.cmds))) {
         vname <- contrast.cmds$name[con]
         .justWrite(fname, sprintf('## %s', vname))
@@ -346,8 +349,8 @@ head(res[order(res$PValue),])
 ```{r}
 con.desc <- %s
 barcode.results[[con.desc]] <- DAScreenStatFrame(res, se, contrast=con, 
-    description=con.desc, method='voom', feature='barcode')
-```", deparse(vname)))
+    description=con.desc, method='voom', %sfeature='barcode')
+```", deparse(vname), subset_cmd))
 
         if (do.genes) {
             if (method=="simes") {
@@ -392,12 +395,12 @@ head(gres[order(gres$PValue),])
 %s
 ```', sum.cmd))
 
-            .knitAndWrite(fname, env, "We then save it into our result `List`.
+            .knitAndWrite(fname, env, sprintf("We then save it into our result `List`.
 
 ```{r}
 gene.results[[con.desc]] <- DAScreenStatFrame(gres, se, contrast=con, 
-    description=con.desc, method='voom', feature='gene')
-```")
+    description=con.desc, method='voom', %sfeature='gene')
+```", subset_cmd))
         }
     }
 

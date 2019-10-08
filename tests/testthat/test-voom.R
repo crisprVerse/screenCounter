@@ -64,6 +64,22 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     expect_false(identical(out3$gene, out3b$gene))
 })
 
+test_that("runVoomScreen works with subsetting", {
+    se$keep <- rep(c(TRUE, TRUE, FALSE), 3)
+    ref <- runVoomScreen(se[,se$keep], covariates="time", comparisons=list("time"), block="run",
+        reference.field=NULL, norm.type.field=NULL, gene.field="gene",
+        commit="never", save.all=FALSE)
+    out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
+        reference.field=NULL, norm.type.field=NULL, gene.field="gene",
+        commit="never", save.all=FALSE, subset.factor="keep", subset.levels=TRUE)
+
+    expect_match(trackinfo(out[[1]][[1]])$subset, "keep")
+    expect_match(trackinfo(out[[2]][[1]])$subset, "keep")
+    trackinfo(out[[1]][[1]])$subset <- NULL
+    trackinfo(out[[2]][[1]])$subset <- NULL
+    expect_identical(ref, out)
+})
+
 test_that("runVoomScreen works correctly with expansion of per-gene results", {
     se2 <- se
     discarded <- LETTERS[1:3]

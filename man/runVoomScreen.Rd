@@ -8,7 +8,7 @@ runVoomScreen(se, groups, comparisons, reference.field, reference.level,
   norm.type.field, norm.type.level, gene.field, method = c("simes",
   "holm-mid", "fry"), ..., annotation = NULL, lfc = 0, robust = TRUE,
   dup.cor = NULL, contrasts.fun = NULL, dump.norm = NULL,
-  fname = "voom-screen.Rmd", commit = "auto", save.all = NULL)
+  fname = "voom-screen.Rmd", commit = "auto", save.all = TRUE)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
@@ -52,7 +52,7 @@ This file is intended only for diagnostic inspection and should \emph{not} be us
 \item{commit}{String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.}
 
 \item{save.all}{Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
-Defaults to \code{FALSE} if \code{se} is a SummarizedExperiment without provenance information, and \code{TRUE} otherwise.}
+Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
 }
 \value{
 A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
