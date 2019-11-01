@@ -1,23 +1,18 @@
 # This tests the DAScreenStatFrame class.
 # library(testthat); library(gp.sa.screen); source("test-frame.R")
 
-# Mocking up an input into runVoom()
-library(SummarizedExperiment)
-se.input <- SummarizedExperiment()
-
 library(gp.sa.core)
-trackinfo(se.input)$origin <- "SOME_ID"
 
 test_that("constructors works as expected", {
     da.output <- DataFrame(LogFC=1:10, LogCPM=1:10, FDR=0, PValue=0:9/10)
-    Y <- DAScreenStatFrame(da.output, se.input,
+    Y <- DAScreenStatFrame(da.output, 
+        design=cbind(A=c(X=1, Y=-1), B=1),
         contrast=c(A=1, B=-1),
         method="voom", description="I did voom")
 
     expect_s4_class(Y, "DAScreenStatFrame")
     expect_identical(trackinfo(Y)$method, "voom")
     expect_identical(trackinfo(Y)$description, "I did voom")
-    expect_identical(trackinfo(Y)$origin[[1]], "SOME_ID")
 })
 
 test_that(".trackCheck specialization works as expected for DAScreenStatFrames", {
@@ -26,6 +21,11 @@ test_that(".trackCheck specialization works as expected for DAScreenStatFrames",
     expect_error(.trackCheck(X), "origin")
 
     trackinfo(X) <- list(origin="SOME_RANDOM_ID", description="blah blah blah")
+    expect_error(.trackCheck(X), "design")
+
+    trackinfo(X)$design <- cbind(A=c(X=1, Y=-1), B=1)
+    expect_error(.trackCheck(X), "contrast")
+
     trackinfo(X)$contrast <- c(A=1, B=-1)
     expect_error(.trackCheck(X), "method")
 
