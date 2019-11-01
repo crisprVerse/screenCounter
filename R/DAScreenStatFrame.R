@@ -5,7 +5,7 @@
 #' It is intended to hold results from a differential abundance analysis of barcode sequencing data from high-throughput CRISPR/siRNA screens.
 #' 
 #' @section Constructor:
-#' \code{DAScreenStatFrame(x, parent, ...)} will return a DAScreenStatFrame object, given the arguments:
+#' \code{DAScreenStatFrame(x, ...)} will return a DAScreenStatFrame object, given the arguments:
 #' \itemize{
 #' \item \code{x}, a \linkS4class{DataFrame} object or something that can be coerced into one.
 #' \item \code{...}, other named fields to add to the provenance tracking information via \code{\link{trackinfo}}.
