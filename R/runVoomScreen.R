@@ -105,7 +105,7 @@
 #'
 #' @export
 #' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .createContrasts 
-#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite .canBeSaved
+#' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 #' @importFrom S4Vectors List
@@ -180,7 +180,7 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
     }
     .reportEnd(fname, msg="Created report with runVoomScreen().", 
         commit=commit, env=env, to.save.list=saveable, 
-        fake.save=!(save.all && .canBeSaved(se)), temporary=holding)
+        fake.save=!save.all, temporary=holding)
 
     output <- List(barcode=env$barcode.results)
     if (do.genes) {
@@ -348,7 +348,7 @@ head(res[order(res$PValue),])
 
 ```{r}
 con.desc <- %s
-barcode.results[[con.desc]] <- DAScreenStatFrame(res, se, contrast=con, 
+barcode.results[[con.desc]] <- DAScreenStatFrame(res, design=design, contrast=con, 
     description=con.desc, method='voom', %sfeature='barcode')
 ```", deparse(vname), subset_cmd))
 
@@ -398,7 +398,7 @@ head(gres[order(gres$PValue),])
             .knitAndWrite(fname, env, sprintf("We then save it into our result `List`.
 
 ```{r}
-gene.results[[con.desc]] <- DAScreenStatFrame(gres, se, contrast=con, 
+gene.results[[con.desc]] <- DAScreenStatFrame(gres, design=design, contrast=con, 
     description=con.desc, method='voom', %sfeature='gene')
 ```", subset_cmd))
         }

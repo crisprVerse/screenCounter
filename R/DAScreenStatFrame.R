@@ -5,16 +5,11 @@
 #' It is intended to hold results from a differential abundance analysis of barcode sequencing data from high-throughput CRISPR/siRNA screens.
 #' 
 #' @section Constructor:
-#' \code{DAScreenStatFrame(x, parent, ...)} will return a DAScreenStatFrame object, given the arguments:
+#' \code{DAScreenStatFrame(x, ...)} will return a DAScreenStatFrame object, given the arguments:
 #' \itemize{
 #' \item \code{x}, a \linkS4class{DataFrame} object or something that can be coerced into one.
-#' \item \code{parent}, a \linkS4class{Vector}-like object from which \code{x} was derived.
-#' This is usually a \linkS4class{SummarizedExperiment}. 
 #' \item \code{...}, other named fields to add to the provenance tracking information via \code{\link{trackinfo}}.
 #' }
-#'
-#' Provenance tracking information is added from \code{trackinfo(parent)} to the output DAScreenStatFrame.
-#' Any additional fields from \code{...} are also added, overwriting existing fields if they have the same name.
 #'
 #' @section Checking metadata:
 #' \code{\link{.trackCheck}(x)} will check for the presence of correct provenance fields in a DAScreenStatFrame \code{x}
@@ -46,16 +41,12 @@
 #' @examples
 #' library(gp.sa.core)
 #'
-#' # Mocking up an input into runVoomScreen()
-#' library(SummarizedExperiment)
-#' se.input <- SummarizedExperiment()
-#' trackinfo(se.input)$origin <- "SOME_ID"
-#'
 #' # Mocking up the aftermath of a DE analysis:
 #' de.output <- DataFrame(LogFC=1:10, LogCPM=1:10, 
 #'    PValue=0:9/10, FDR=0:9/10)
 #'
-#' Y <- DAScreenStatFrame(de.output, se.input,
+#' Y <- DAScreenStatFrame(de.output, 
+#'     design=cbind(A=c(X=1, Y=-1), B=2),
 #'     contrast=c(A=1, B=-1), feature="barcode",
 #'     method="voom", description="I did voom")
 #' Y 
@@ -70,8 +61,8 @@ NULL
 
 #' @export
 #' @importFrom gp.sa.core .createTDFSubclass
-DAScreenStatFrame <- function(x, parent, ...) {
-    x <- .createTDFSubclass(x, parent, ...)
+DAScreenStatFrame <- function(x, ...) {
+    x <- .createTDFSubclass(x, ...)
     as(x, "DAScreenStatFrame")
 }
 

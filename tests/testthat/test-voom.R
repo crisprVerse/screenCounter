@@ -21,7 +21,7 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     # All missing settings.
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NA, norm.type.field=NA, gene.field=NA, 
-        commit="never", save.all=FALSE)
+        commit="never")
 
     expect_identical(names(out$barcode), NAME)
     expect_true(all(c("PValue", "FDR", "LogCPM", "LogFC") %in% colnames(out$barcode[[NAME]])))
@@ -32,7 +32,7 @@ test_that("runVoomScreen works correctly in basic scenarios", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene",
-        commit="never", save.all=FALSE
+        commit="never"
     )
     expect_identical(names(out2$barcode), NAME)
 #    expect_identical(colnames(out2$barcode[[1]])[-1], colnames(out$barcode[[1]])) # skipping auto-added gene field.
@@ -48,7 +48,7 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     # All default settings
     out3 <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NULL, norm.type.field=NULL, gene.field="gene",
-        commit="never", save.all=FALSE)
+        commit="never")
     expect_identical(names(out3), names(out2))
     expect_identical(colnames(out3$gene), colnames(out2$gene))
     expect_identical(colnames(out3$barcode), colnames(out2$barcode))
@@ -56,7 +56,7 @@ test_that("runVoomScreen works correctly in basic scenarios", {
     # Using other consolidation strategies.
     out3b <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NULL, norm.type.field=NULL, gene.field="gene", method="fry",
-        commit="never", save.all=FALSE)
+        commit="never")
     expect_identical(names(out3b), names(out2))
     expect_identical(colnames(out3b$gene), colnames(out2$gene))
     expect_identical(colnames(out3b$barcode), colnames(out2$barcode))
@@ -68,10 +68,10 @@ test_that("runVoomScreen works with subsetting", {
     se$keep <- rep(c(TRUE, TRUE, FALSE), 3)
     ref <- runVoomScreen(se[,se$keep], covariates="time", comparisons=list("time"), block="run",
         reference.field=NULL, norm.type.field=NULL, gene.field="gene",
-        commit="never", save.all=FALSE)
+        commit="never")
     out <- runVoomScreen(se, covariates="time", comparisons=list("time"), block="run",
         reference.field=NULL, norm.type.field=NULL, gene.field="gene",
-        commit="never", save.all=FALSE, subset.factor="keep", subset.levels=TRUE)
+        commit="never", subset.factor="keep", subset.levels=TRUE)
 
     expect_match(trackinfo(out[[1]][[1]])$subset, "keep")
     expect_match(trackinfo(out[[2]][[1]])$subset, "keep")
@@ -89,7 +89,7 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene",
-        commit="never", save.all=FALSE
+        commit="never"
     )
 
     expect_identical(names(out$barcode), NAME)
@@ -101,7 +101,7 @@ test_that("runVoomScreen works correctly with expansion of per-gene results", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene", method="fry",
-        commit="never", save.all=FALSE
+        commit="never"
     )
 
     expect_identical(names(out2$barcode), NAME)
@@ -115,7 +115,7 @@ test_that("runVoomScreen works correctly with other options", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene",
-        commit="never", save.all=FALSE
+        commit="never"
     )
 
     # Checking that the annotation is properly stored.
@@ -124,7 +124,7 @@ test_that("runVoomScreen works correctly with other options", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene", annotation="SEVERANCE",
-        commit="never", save.all=FALSE
+        commit="never"
     )
     expect_identical(alt[[1]][[1]]$SEVERANCE, rowData(se)$gene)
     expect_identical(alt[[2]][[1]]$SEVERANCE, rownames(alt[[2]][[1]]))
@@ -134,7 +134,7 @@ test_that("runVoomScreen works correctly with other options", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene",
-        commit="never", save.all=FALSE
+        commit="never"
     )
     expect_true(isTRUE(all.equal(alt[[1]][[1]]$LogFC, ref[[1]][[1]]$LogFC)))
     expect_false(isTRUE(all.equal(alt[[1]][[1]]$PValue, ref[[1]][[1]]$PValue)))
@@ -144,7 +144,7 @@ test_that("runVoomScreen works correctly with other options", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene", contrasts.fun=list(TIME=c(time=1)),
-        commit="never", save.all=FALSE
+        commit="never"
     )
     expect_identical(names(alt[[1]]), "TIME")
     expect_identical(as.data.frame(alt[[1]][[1]]), as.data.frame(ref[[1]][[1]]))
@@ -155,7 +155,7 @@ test_that("runVoomScreen works correctly with other options", {
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
         gene.field="gene", method="holm-mid",
-        commit="never", save.all=FALSE
+        commit="never"
     )
     expect_true(identical(alt$barcode[[1]], ref$barcode[[1]]))
     expect_false(identical(alt$gene[[1]], ref$gene[[1]]))
