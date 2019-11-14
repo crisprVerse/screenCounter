@@ -8,10 +8,10 @@ Description: Provides a standardized analysis pipeline for
 Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="luna@gene.com")
 Depends: 
     S4Vectors, 
-    SummarizedExperiment
+    SummarizedExperiment,
+    gp.sa.core
 Imports: 
     methods,
-    gp.sa.core,
     gp.sa.diff,
     Rcpp,
     IRanges,
