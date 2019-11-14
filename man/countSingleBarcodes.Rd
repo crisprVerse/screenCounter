@@ -5,12 +5,24 @@
 \alias{matrixOfSingleBarcodes}
 \title{Count single barcodes}
 \usage{
-countSingleBarcodes(fastq, choices, flank5, flank3, template = NULL,
-  substitutions = FALSE, deletions = FALSE, strand = c("both",
-  "original", "reverse"))
+countSingleBarcodes(
+  fastq,
+  choices,
+  flank5,
+  flank3,
+  template = NULL,
+  substitutions = FALSE,
+  deletions = FALSE,
+  strand = c("both", "original", "reverse")
+)
 
-matrixOfSingleBarcodes(files, choices, ..., withDimnames = TRUE,
-  BPPARAM = SerialParam())
+matrixOfSingleBarcodes(
+  files,
+  choices,
+  ...,
+  withDimnames = TRUE,
+  BPPARAM = SerialParam()
+)
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,

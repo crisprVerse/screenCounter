@@ -4,9 +4,16 @@
 \alias{barcodeSetTest}
 \title{Perform a barcode set test}
 \usage{
-barcodeSetTest(v, gene.ids, ..., stats = NULL, lcpm.col = "LogCPM",
-  lfc.col = "LogFC", subset = NULL,
-  all.genes = sort(unique(gene.ids)))
+barcodeSetTest(
+  v,
+  gene.ids,
+  ...,
+  stats = NULL,
+  lcpm.col = "LogCPM",
+  lfc.col = "LogFC",
+  subset = NULL,
+  all.genes = sort(unique(gene.ids))
+)
 }
 \arguments{
 \item{v}{Any object that can be passed to \code{\link{fry}}, e.g., a matrix of log-expression values, or an output of \code{\link{voom}}.}

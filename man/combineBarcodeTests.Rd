@@ -4,9 +4,16 @@
 \alias{combineBarcodeTests}
 \title{Combine barcode statistics}
 \usage{
-combineBarcodeTests(x, genes, pval.col = "PValue", lcpm.col = "LogCPM",
-  lfc.regex = "^LogFC", method = c("simes", "holm-min"),
-  min.sig.n = 3, min.sig.prop = 0.4)
+combineBarcodeTests(
+  x,
+  genes,
+  pval.col = "PValue",
+  lcpm.col = "LogCPM",
+  lfc.regex = "^LogFC",
+  method = c("simes", "holm-min"),
+  min.sig.n = 3,
+  min.sig.prop = 0.4
+)
 }
 \arguments{
 \item{x}{A \linkS4class{DataFrame} of per-barcode results.}
