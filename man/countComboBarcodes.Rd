@@ -5,12 +5,17 @@
 \alias{matrixOfComboBarcodes}
 \title{Count combinatorial barcodes}
 \usage{
-countComboBarcodes(fastq, template, choices, substitutions = FALSE,
-  deletions = FALSE, strand = c("both", "original", "reverse"),
-  indices = FALSE)
+countComboBarcodes(
+  fastq,
+  template,
+  choices,
+  substitutions = FALSE,
+  deletions = FALSE,
+  strand = c("both", "original", "reverse"),
+  indices = FALSE
+)
 
-matrixOfComboBarcodes(files, ..., withDimnames = TRUE,
-  BPPARAM = SerialParam())
+matrixOfComboBarcodes(files, ..., withDimnames = TRUE, BPPARAM = SerialParam())
 }
 \arguments{
 \item{fastq}{String containing the path to a FASTQ file containing single-end data,

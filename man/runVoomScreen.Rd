@@ -4,19 +4,35 @@
 \alias{runVoomScreen}
 \title{Use \code{voom} to analyze a screen}
 \usage{
-runVoomScreen(se, groups, comparisons, reference.field, reference.level,
-  norm.type.field, norm.type.level, gene.field, method = c("simes",
-  "holm-mid", "fry"), ..., annotation = NULL, lfc = 0, robust = TRUE,
-  dup.cor = NULL, contrasts.fun = NULL, dump.norm = NULL,
-  fname = "voom-screen.Rmd", commit = "auto", save.all = TRUE)
+runVoomScreen(
+  se,
+  groups,
+  comparisons,
+  reference.field,
+  reference.level,
+  norm.type.field,
+  norm.type.level,
+  gene.field,
+  method = c("simes", "holm-mid", "fry"),
+  ...,
+  annotation = NULL,
+  lfc = 0,
+  robust = TRUE,
+  dup.cor = NULL,
+  contrasts.fun = NULL,
+  dump.norm = NULL,
+  fname = "voom-screen.Rmd",
+  commit = "auto",
+  save.all = TRUE
+)
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
 Alternatively, a database ID string or an \linkS4class{InputResource} object, see \code{?"\link{gp.sa.core-data-inputs}"}.}
 
-\item{groups}{String specifying the column of \code{colData(se)} containing the grouping factor, see \code{?"\link{gp.sa.diff-args}"}.}
+\item{groups}{String specifying the column of \code{colData(se)} containing the grouping factor, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
 
-\item{comparisons}{A list of character vectors specifying simple contrasts to perform between groups, see \code{?"\link{gp.sa.diff-args}"}.}
+\item{comparisons}{A list of character vectors specifying simple contrasts to perform between groups, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
 
 \item{reference.field}{String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).}
 
@@ -34,22 +50,22 @@ Alternatively, a database ID string or an \linkS4class{InputResource} object, se
 
 \item{annotation}{Character vector specifying feature annotation to carry through into the result table.}
 
-\item{lfc}{Numeric scalar specifying a log-fold change threshold to be used in \code{\link{treat}}.
-A value of zero will default to the standard analysis with \code{\link{eBayes}}.}
+\item{lfc}{Numeric scalar specifying a log-fold change threshold to be used in \code{\link[gp.sa.diff]{treat}}.
+A value of zero will default to the standard analysis with \code{\link[gp.sa.diff]{eBayes}}.}
 
-\item{robust}{Logical scalar indicating whether robust empirical Bayes shrinkage should be used in \code{\link{eBayes}}.}
+\item{robust}{Logical scalar indicating whether robust empirical Bayes shrinkage should be used in \code{\link[gp.sa.diff]{eBayes}}.}
 
-\item{dup.cor}{String specifying the blocking factor to use in \code{\link{duplicateCorrelation}}.
+\item{dup.cor}{String specifying the blocking factor to use in \code{\link[gp.sa.diff]{duplicateCorrelation}}.
 No additional blocking is performed if \code{NULL}.}
 
-\item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link{gp.sa.diff-args}"}.}
+\item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
 
 \item{dump.norm}{String specifying a path to an output file to save normalized abundances in a CSV file.
 This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.}
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
 
-\item{commit}{String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.}
+\item{commit}{String specifying the auto-committing behavior, see \code{?"\link[gp.sa.diff]{gp.sa.core-auto-commits}"}.}
 
 \item{save.all}{Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
 Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
