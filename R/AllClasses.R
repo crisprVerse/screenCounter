@@ -1,4 +1,4 @@
 #' @export
 #' @import methods
-#' @importClassesFrom gp.sa.diff DGEStatFrame
-setClass("DAScreenStatFrame", contains="DGEStatFrame")
+#' @importClassesFrom gp.sa.diff DiffStatFrameLFC
+setClass("DiffScreenStatFrame", contains="DiffStatFrameLFC")

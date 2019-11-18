@@ -1,18 +1,18 @@
 #' DataFrame for differential abundance results
 #'
-#' The DAScreenStatFrame class is literally identical to a standard \linkS4class{DataFrame},
+#' The DiffScreenStatFrame class is literally identical to a standard \linkS4class{DataFrame},
 #' and can be used as such in all applications.
 #' It is intended to hold results from a differential abundance analysis of barcode sequencing data from high-throughput CRISPR/siRNA screens.
 #' 
 #' @section Constructor:
-#' \code{DAScreenStatFrame(x, ...)} will return a DAScreenStatFrame object, given the arguments:
+#' \code{DiffScreenStatFrame(x, ...)} will return a DiffScreenStatFrame object, given the arguments:
 #' \itemize{
 #' \item \code{x}, a \linkS4class{DataFrame} object or something that can be coerced into one.
 #' \item \code{...}, other named fields to add to the provenance tracking information via \code{\link{trackinfo}}.
 #' }
 #'
 #' @section Checking metadata:
-#' \code{\link{.trackCheck}(x)} will check for the presence of correct provenance fields in a DAScreenStatFrame \code{x}
+#' \code{\link{.trackCheck}(x)} will check for the presence of correct provenance fields in a DiffScreenStatFrame \code{x}
 #' and return a list of this information.
 #' Required fields include:
 #' \itemize{
@@ -30,9 +30,9 @@
 #' @section Checking column names:
 #' \code{\link{.trackCheck}(x)} will check that the column names of \code{x} include:
 #' \itemize{
-#' \item \code{"PValue"}, the p-value for each gene.
-#' \item \code{"FDR"}, the Benjamini-Hochberg adjusted p-value for each gene.
-#' \item \code{"LogCPM"}, the average log2-counts-per-million for each gene.
+#' \item \code{"PValue"}, the p-value for each barcode/gene.
+#' \item \code{"FDR"}, the Benjamini-Hochberg adjusted p-value for each barcode/gene.
+#' \item \code{"AveAb"}, the average abundance of each gene or barcode in log2-counts-per-million.
 #' }
 #' It should also contain either one \code{"LogFC"} field or multiple \code{"LogFC."}-prefixed fields.
 #' These contain the log2-fold changes for a single contrast vector or an ANOVA-like contrast matrix, respectively.
@@ -42,10 +42,10 @@
 #' library(gp.sa.core)
 #'
 #' # Mocking up the aftermath of a DE analysis:
-#' de.output <- DataFrame(LogFC=1:10, LogCPM=1:10, 
+#' de.output <- DataFrame(LogFC=1:10, AveAb=1:10, 
 #'    PValue=0:9/10, FDR=0:9/10)
 #'
-#' Y <- DAScreenStatFrame(de.output, 
+#' Y <- DiffScreenStatFrame(de.output, 
 #'     design=cbind(A=c(X=1, Y=-1), B=2),
 #'     contrast=c(A=1, B=-1), feature="barcode",
 #'     method="voom", description="I did voom")
@@ -55,27 +55,37 @@
 #' \linkS4class{DGEStatFrame}, from which this class is derived.
 #' 
 #' @docType class
-#' @name DAScreenStatFrame
-#' @aliases DAScreenStatFrame DAScreenStatFrame-class .trackCheck,DAScreenStatFrame-method
+#' @name DiffScreenStatFrame
+#' @aliases DiffScreenStatFrame DiffScreenStatFrame-class .trackCheck,DiffScreenStatFrame-method
 NULL
 
 #' @export
 #' @importFrom gp.sa.core .createTDFSubclass
-DAScreenStatFrame <- function(x, ...) {
+DiffScreenStatFrame <- function(x, ...) {
     x <- .createTDFSubclass(x, ...)
-    as(x, "DAScreenStatFrame")
+    as(x, "DiffScreenStatFrame")
 }
 
 #' @export
 #' @importFrom gp.sa.core .trackCheck trackinfo trackinfo<- .quickError
-setMethod(".trackCheck", "DAScreenStatFrame", function(x) {
+#' @importFrom S4Vectors isSingleString
+setMethod(".trackCheck", "DiffScreenStatFrame", function(x) {
+    trackinfo(x)$type <- "differential screen abundance"
     out <- callNextMethod()
-    out$type <- "differential screen abundance"
-    if (is.null(out$feature) || !is.character(out$feature) || length(out$feature)!=1L) {
+
+    if (!isSingleString(out$method)) {
+        .quickError(x, "method", "a string specifying the DE method that was used")
+    }
+
+    if (!isSingleString(out$feature)) {
         .quickError(x, "feature", "a string specifying the type of feature in the rows")
     }
     if (!out$feature %in% c("gene", "barcode")) {
         stop("'feature' should be either 'gene' or 'barcode'")
     }
+
     out
 })
+
+#' @importFrom gp.sa.core .trackReqCols
+setMethod(".trackReqCols", "DiffScreenStatFrame", function(x) c(callNextMethod(), "AveAb"))
