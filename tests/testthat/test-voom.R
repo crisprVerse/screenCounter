@@ -24,7 +24,7 @@ test_that("runVoomScreen works correctly in basic scenarios", {
         commit="never")
 
     expect_identical(names(out$barcode), NAME)
-    expect_true(all(c("PValue", "FDR", "LogCPM", "LogFC") %in% colnames(out$barcode[[NAME]])))
+    expect_true(all(c("PValue", "FDR", "AveAb", "LogFC") %in% colnames(out$barcode[[NAME]])))
     expect_identical(rownames(out$barcode[[NAME]]), NULL) # no names in 'se'.
 
     # All proper settings.
@@ -41,7 +41,7 @@ test_that("runVoomScreen works correctly in basic scenarios", {
 
     expect_true("PValue" %in% colnames(out2$gene[[NAME]]))
     expect_true("FDR" %in% colnames(out2$gene[[NAME]]))
-    expect_true("LogCPM" %in% colnames(out2$gene[[NAME]]))
+    expect_true("AveAb" %in% colnames(out2$gene[[NAME]]))
     expect_true("LogFC" %in% colnames(out2$gene[[NAME]]))
     expect_identical(rownames(out2$gene[[NAME]]), sort(unique(rowData(se)$gene)))
 
