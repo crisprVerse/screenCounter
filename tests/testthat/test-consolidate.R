@@ -4,13 +4,13 @@
 ##################################
 ##################################
 
-stats <- DataFrame(PValue=runif(100), LogCPM=rnorm(100), LogFC=rnorm(100))
+stats <- DataFrame(PValue=runif(100), AveAb=rnorm(100), LogFC=rnorm(100))
 gene <- sample(c(letters, LETTERS), nrow(stats), replace=TRUE)
 
 test_that("combineBarcodeTests works correctly", {
     per.gene <- combineBarcodeTests(stats, gene)
     expect_identical(rownames(per.gene), sort(unique(gene)))
-    expect_true(all(c("PValue", "LogCPM", "LogFC", "FDR") %in% colnames(per.gene)))
+    expect_true(all(c("PValue", "AveAb", "LogFC", "FDR") %in% colnames(per.gene)))
     expect_true("Direction" %in% colnames(per.gene))
 })
 
@@ -41,7 +41,7 @@ test_that("combineBarcodeTests handles NA's in the genes correctly", {
 })
 
 test_that("combineBarcodeTests handles multiple LogFCs correctly", {
-    astats <- DataFrame(PValue=runif(100), LogCPM=rnorm(100), LogFC.1=rnorm(100), LogFC.2=rnorm(100))
+    astats <- DataFrame(PValue=runif(100), AveAb=rnorm(100), LogFC.1=rnorm(100), LogFC.2=rnorm(100))
     per.gene <- combineBarcodeTests(astats, gene)
     expect_identical(rownames(per.gene), sort(unique(gene)))
     expect_true(all(c("LogFC.1", "LogFC.2") %in% colnames(per.gene)))
@@ -94,7 +94,7 @@ design <- model.matrix(~g)
 v <- limma::voom(y, design=design)
 
 gene <- sample(LETTERS, N, replace=TRUE)
-results <- DataFrame(LogFC=rnorm(N), LogCPM=runif(N))
+results <- DataFrame(LogFC=rnorm(N), AveAb=runif(N))
 
 test_that("barcodeSetTest works correctly", {
     per.gene <- barcodeSetTest(v, gene, design=design, contrast=2)
@@ -106,18 +106,18 @@ test_that("barcodeSetTest works correctly", {
 test_that("barcodeSetTest works with results", {
     per.gene <- barcodeSetTest(v, gene, design=design, contrast=2, stats=results)
     expect_identical(rownames(per.gene), sort(unique(gene)))
-    expect_true(all(c("PValue", "LogCPM", "LogFC", "FDR") %in% colnames(per.gene)))
+    expect_true(all(c("PValue", "AveAb", "LogFC", "FDR") %in% colnames(per.gene)))
     expect_true("Direction" %in% colnames(per.gene))
 
     expect_identical(per.gene$LogFC[1], median(results$LogFC[rownames(per.gene)[1]==gene]))
-    expect_identical(per.gene$LogCPM[1], median(results$LogCPM[rownames(per.gene)[1]==gene]))
+    expect_identical(per.gene$AveAb[1], median(results$AveAb[rownames(per.gene)[1]==gene]))
 })
 
 test_that("barcodeSetTest works with subsets", {
     chosen <- sample(N, 20)
     per.gene <- barcodeSetTest(v[chosen,], gene, design=design, contrast=2, stats=results, subset=chosen)
     expect_identical(rownames(per.gene), sort(unique(gene)))
-    expect_true(all(c("PValue", "LogCPM", "LogFC", "FDR") %in% colnames(per.gene)))
+    expect_true(all(c("PValue", "AveAb", "LogFC", "FDR") %in% colnames(per.gene)))
     expect_true("Direction" %in% colnames(per.gene))
 
     ref <- barcodeSetTest(v[chosen,], gene[chosen], design=design, contrast=2, stats=results[chosen,])

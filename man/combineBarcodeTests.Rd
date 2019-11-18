@@ -8,7 +8,7 @@ combineBarcodeTests(
   x,
   genes,
   pval.col = "PValue",
-  lcpm.col = "LogCPM",
+  ave.col = "AveAb",
   lfc.regex = "^LogFC",
   method = c("simes", "holm-min"),
   min.sig.n = 3,
@@ -22,7 +22,7 @@ combineBarcodeTests(
 
 \item{pval.col}{String specifying the column of \code{x} containing the p-values.}
 
-\item{lcpm.col}{String specifying the column of \code{x} containing the log-CPMs.}
+\item{ave.col}{String specifying the column of \code{x} containing the average abundances (usually log-CPMs).}
 
 \item{lfc.regex}{String containing a regular expression to match the column names of \code{x} containing the log-fold changes.}
 
@@ -43,7 +43,7 @@ A \linkS4class{DataFrame} containing per-gene statistics, with one row per gene 
 This is determined from the direction of the tests with p-values small enough to contribute to the \code{PValue}.
 See \code{\link{combineTests}} for more details.
 \item \code{LogFC}: the log-fold change of the most significant barcode (i.e., lowest p-value) for each gene.
-\item \code{LogCPM}: the log-CPM of the most significant barcode (i.e., lowest p-value) for each gene.
+\item \code{AveAb}: the average abundance of the most significant barcode (i.e., lowest p-value) for each gene.
 }
 }
 \description{
@@ -69,7 +69,7 @@ If ANOVA-like contrasts are supplied in \code{x}, \code{Direction} is not report
 and each \code{LogFC} column name will be suffixed by the name of the relevant column of the contrast.
 }
 \examples{
-example(DAScreenStatFrame, echo=FALSE)
+example(DiffScreenStatFrame, echo=FALSE)
 
 genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
 combineBarcodeTests(Y, genes=genes)

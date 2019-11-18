@@ -8,7 +8,7 @@
 #' @param ... Further arguments to pass to \code{\link{fry}}.
 #' @param stats A data frame or \linkS4class{DataFrame} of per-barcode differential testing statistics, similar to that from \code{\link{topTable}}.
 #' If provided, this should correspond to the entries in \code{gene.ids}.
-#' @param lcpm.col String specifying the column of \code{stats} containing log-CPMs.
+#' @param ave.col String specifying the column of \code{stats} containing average abundances, usually log-CPMs.
 #' @param lfc.col String specifying the column of \code{stats} containing log-FCs.
 #' @param subset Integer or logical vector specifying the subset of barcodes used to create \code{v}.
 #'
@@ -18,7 +18,7 @@
 #' This contrasts with \code{\link{combineBarcodeTests}}, which is more willing to consider genes that only exhibit a change in abundance for barcode.
 #' 
 #' If \code{stats} is specified, some barcode-level statistics are added to the output DataFrame.
-#' We report the median log-fold change and median log-CPM across all barcodes for each gene, using \code{lcpm.col} and \code{lfc.col}.
+#' We report the median log-fold change and median log-CPM across all barcodes for each gene, using \code{ave.col} and \code{lfc.col}.
 #' This aims to provide some additional information about the magnitude and abundance of the barcodes associated with each gene.
 #' 
 #' If \code{subset} is specified, rows of \code{v} are assumed to map to \code{gene.ids[subset]} and \code{res[subset,]}.
@@ -54,7 +54,7 @@
 #' @importFrom limma fry
 #' @importFrom S4Vectors DataFrame
 barcodeSetTest <- function(v, gene.ids, ..., 
-    stats=NULL, lcpm.col="LogCPM", lfc.col="LogFC", subset=NULL,
+    stats=NULL, ave.col="AveAb", lfc.col="LogFC", subset=NULL,
     all.genes=sort(unique(gene.ids)))
 {
     if (!is.null(subset)) {
@@ -70,7 +70,7 @@ barcodeSetTest <- function(v, gene.ids, ...,
         if (!is.null(subset)) {
             stats <- stats[subset,]
         }
-        gres[[lcpm.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,lcpm.col], na.rm=TRUE), 0)[rownames(gres)]
+        gres[[ave.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,ave.col], na.rm=TRUE), 0)[rownames(gres)]
         gres[[lfc.col]] <- vapply(barcode.sets, FUN=function(i) median(stats[i,lfc.col], na.rm=TRUE), 0)[rownames(gres)]
     }
 

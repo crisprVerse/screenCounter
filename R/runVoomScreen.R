@@ -11,14 +11,14 @@
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param method String specifying the consolidation method to convert per-barcode statistics into per-gene results.
-#' @param save.all Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
+#' @param save.all Logical scalar indicating whether the returned \linkS4class{DiffScreenStatFrame}s should also be saved to file.
 #' Ignored if \code{se} lacks provenance information, in which case saving is never performed.
 #' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
 #' This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.
 #' @inheritParams gp.sa.diff::runVoom
 #'
 #' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-#' Each list contains barcode- and gene-level result tables as \linkS4class{DAScreenStatFrame}s from all contrasts.
+#' Each list contains barcode- and gene-level result tables as \linkS4class{DiffScreenStatFrame}s from all contrasts.
 #' If \code{gene.field=NA}, only the \code{barcode} List is returned.
 #' 
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
@@ -251,7 +251,7 @@ so as to distinguish between filtered barcodes and those that were not in `se` i
 library(gp.sa.diff)
 library(gp.sa.screen)
 barcode_formatter <- function(res, ...) {
-    res <- cleanDataFrame(res, se, subset=res$origin,
+    res <- cleanDataFrame(res, se, subset=res$origin, ave.name="AveAb",
         anno.fields=%s)
     res$origin <- NULL
     res
@@ -348,7 +348,7 @@ head(res[order(res$PValue),])
 
 ```{r}
 con.desc <- %s
-barcode.results[[con.desc]] <- DAScreenStatFrame(res, design=design, contrast=con, 
+barcode.results[[con.desc]] <- DiffScreenStatFrame(res, design=design, contrast=con, 
     description=con.desc, method='voom', %sfeature='barcode')
 ```", deparse(vname), subset_cmd))
 
@@ -398,7 +398,7 @@ head(gres[order(gres$PValue),])
             .knitAndWrite(fname, env, sprintf("We then save it into our result `List`.
 
 ```{r}
-gene.results[[con.desc]] <- DAScreenStatFrame(gres, design=design, contrast=con, 
+gene.results[[con.desc]] <- DiffScreenStatFrame(gres, design=design, contrast=con, 
     description=con.desc, method='voom', %sfeature='gene')
 ```", subset_cmd))
         }

@@ -5,7 +5,7 @@
 #' @param x A \linkS4class{DataFrame} of per-barcode results. 
 #' @param genes A character vector or factor containing the gene ID for each barcode.
 #' @param pval.col String specifying the column of \code{x} containing the p-values.
-#' @param lcpm.col String specifying the column of \code{x} containing the log-CPMs.
+#' @param ave.col String specifying the column of \code{x} containing the average abundances (usually log-CPMs).
 #' @param lfc.regex String containing a regular expression to match the column names of \code{x} containing the log-fold changes.
 #' @param method String specifying the method to use to combine barcode-level p-values into a per-gene p-value.
 #' @param min.sig.n Integer scalar containing the minimum number of significant barcodes when \code{method="holm-min"}.
@@ -22,7 +22,7 @@
 #' This is determined from the direction of the tests with p-values small enough to contribute to the \code{PValue}.
 #' See \code{\link{combineTests}} for more details.
 #' \item \code{LogFC}: the log-fold change of the most significant barcode (i.e., lowest p-value) for each gene.
-#' \item \code{LogCPM}: the log-CPM of the most significant barcode (i.e., lowest p-value) for each gene.
+#' \item \code{AveAb}: the average abundance of the most significant barcode (i.e., lowest p-value) for each gene.
 #' }
 #' 
 #' @details
@@ -49,7 +49,7 @@
 #' \code{\link{combineTests}} and \code{\link{getBestTest}}, for the actual statistical calculations.
 #'
 #' @examples
-#' example(DAScreenStatFrame, echo=FALSE)
+#' example(DiffScreenStatFrame, echo=FALSE)
 #'
 #' genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
 #' combineBarcodeTests(Y, genes=genes)
@@ -61,7 +61,7 @@
 #' @importFrom csaw combineTests getBestTest
 #' @importFrom S4Vectors DataFrame
 #' @importFrom stats p.adjust
-combineBarcodeTests <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", lfc.regex="^LogFC", 
+combineBarcodeTests <- function(x, genes, pval.col="PValue", ave.col="AveAb", lfc.regex="^LogFC", 
     method=c("simes", "holm-min"), min.sig.n=3, min.sig.prop=0.4)
 {
     lost <- is.na(genes)
@@ -88,7 +88,7 @@ combineBarcodeTests <- function(x, genes, pval.col="PValue", lcpm.col="LogCPM", 
     }
 
     best <- getBestTest(genes, x, pval.col=pval.col)
-    best <- best[,c(which(colnames(best)==lcpm.col), grep(lfc.regex, colnames(best))),drop=FALSE]
+    best <- best[,c(which(colnames(best)==ave.col), grep(lfc.regex, colnames(best))),drop=FALSE]
     output <- cbind(per.gene, best)
 
     output <- output[match(all.genes, rownames(output)),]

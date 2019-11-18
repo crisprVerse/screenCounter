@@ -50,12 +50,12 @@ Alternatively, a database ID string or an \linkS4class{InputResource} object, se
 
 \item{annotation}{Character vector specifying feature annotation to carry through into the result table.}
 
-\item{lfc}{Numeric scalar specifying a log-fold change threshold to be used in \code{\link[gp.sa.diff]{treat}}.
-A value of zero will default to the standard analysis with \code{\link[gp.sa.diff]{eBayes}}.}
+\item{lfc}{Numeric scalar specifying a log-fold change threshold to be used in \code{\link[limma]{treat}}.
+A value of zero will default to the standard analysis with \code{\link[limma]{eBayes}}.}
 
-\item{robust}{Logical scalar indicating whether robust empirical Bayes shrinkage should be used in \code{\link[gp.sa.diff]{eBayes}}.}
+\item{robust}{Logical scalar indicating whether robust empirical Bayes shrinkage should be used in \code{\link[limma]{eBayes}}.}
 
-\item{dup.cor}{String specifying the blocking factor to use in \code{\link[gp.sa.diff]{duplicateCorrelation}}.
+\item{dup.cor}{String specifying the blocking factor to use in \code{\link[limma]{duplicateCorrelation}}.
 No additional blocking is performed if \code{NULL}.}
 
 \item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
@@ -67,12 +67,12 @@ This file is intended only for diagnostic inspection and should \emph{not} be us
 
 \item{commit}{String specifying the auto-committing behavior, see \code{?"\link[gp.sa.diff]{gp.sa.core-auto-commits}"}.}
 
-\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DAScreenStatFrame}s should also be saved to file.
+\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DiffScreenStatFrame}s should also be saved to file.
 Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
 }
 \value{
 A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-Each list contains barcode- and gene-level result tables as \linkS4class{DAScreenStatFrame}s from all contrasts.
+Each list contains barcode- and gene-level result tables as \linkS4class{DiffScreenStatFrame}s from all contrasts.
 If \code{gene.field=NA}, only the \code{barcode} List is returned.
 
 A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
