@@ -9,7 +9,7 @@ barcodeSetTest(
   gene.ids,
   ...,
   stats = NULL,
-  lcpm.col = "LogCPM",
+  ave.col = "AveAb",
   lfc.col = "LogFC",
   subset = NULL,
   all.genes = sort(unique(gene.ids))
@@ -25,7 +25,7 @@ barcodeSetTest(
 \item{stats}{A data frame or \linkS4class{DataFrame} of per-barcode differential testing statistics, similar to that from \code{\link{topTable}}.
 If provided, this should correspond to the entries in \code{gene.ids}.}
 
-\item{lcpm.col}{String specifying the column of \code{stats} containing log-CPMs.}
+\item{ave.col}{String specifying the column of \code{stats} containing average abundances, usually log-CPMs.}
 
 \item{lfc.col}{String specifying the column of \code{stats} containing log-FCs.}
 
@@ -48,7 +48,7 @@ The aim is to determine whether there is a consistent change in abundance across
 This contrasts with \code{\link{combineBarcodeTests}}, which is more willing to consider genes that only exhibit a change in abundance for barcode.
 
 If \code{stats} is specified, some barcode-level statistics are added to the output DataFrame.
-We report the median log-fold change and median log-CPM across all barcodes for each gene, using \code{lcpm.col} and \code{lfc.col}.
+We report the median log-fold change and median log-CPM across all barcodes for each gene, using \code{ave.col} and \code{lfc.col}.
 This aims to provide some additional information about the magnitude and abundance of the barcodes associated with each gene.
 
 If \code{subset} is specified, rows of \code{v} are assumed to map to \code{gene.ids[subset]} and \code{res[subset,]}.
