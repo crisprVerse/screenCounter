@@ -65,7 +65,7 @@ This file is intended only for diagnostic inspection and should \emph{not} be us
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
 
-\item{commit}{String specifying the auto-committing behavior, see \code{?"\link[gp.sa.diff]{gp.sa.core-auto-commits}"}.}
+\item{commit}{String specifying the auto-committing behavior, see \code{?"\link[gp.sa.core]{gp.sa.core-auto-commits}"}.}
 
 \item{save.all}{Logical scalar indicating whether the returned \linkS4class{DiffScreenStatFrame}s should also be saved to file.
 Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
