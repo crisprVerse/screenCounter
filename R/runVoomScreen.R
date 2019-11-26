@@ -112,7 +112,7 @@
 #' @importFrom limma eBayes treat
 runVoomScreen <- function(se, groups, comparisons, 
     reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "holm-mid", "fry"),
-    ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts.fun=NULL,
+    ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts=NULL,
     dump.norm=NULL, fname='voom-screen.Rmd', commit="auto", save.all=TRUE)
 {
     # Disable graphics devices to avoid showing a whole bunch of plots.
@@ -159,14 +159,14 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
 
     env <- .runVoomCore(holding, se, groups=groups, comparisons=comparisons,
         lfc=lfc, robust=robust, dup.cor=dup.cor, 
-        annotation=annotation, ..., contrasts.fun=contrasts.fun,
+        annotation=annotation, ..., contrasts=contrasts,
         filter=filt, normalize=norm, 
         feature=c("barcode", "barcodes"), analysis="abundance",
         diagnostics=.screen_edgeR_diag_plots(norm.type.field, norm.type.level),
         skip.contrasts=TRUE
     )
 
-    contrast.cmds <- .createContrasts(comparisons, contrasts.fun)
+    contrast.cmds <- .createContrasts(comparisons, contrasts)
     .screen_contrast_prep(holding, env, gene.field, method=match.arg(method), annotation=annotation)
     .screen_contrast_loop(holding, env, gene.field, lfc=lfc, robust=robust, dup.cor=dup.cor, 
         method=match.arg(method), contrast.cmds=contrast.cmds)
