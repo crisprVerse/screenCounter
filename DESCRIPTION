@@ -38,4 +38,4 @@ LinkingTo:
 License: Genentech, Inc.
 VignetteBuilder: knitr
 SystemRequirements: C++11
-RoxygenNote: 7.0.0
+RoxygenNote: 7.0.1

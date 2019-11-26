@@ -139,11 +139,11 @@ test_that("runVoomScreen works correctly with other options", {
     expect_true(isTRUE(all.equal(alt[[1]][[1]]$LogFC, ref[[1]][[1]]$LogFC)))
     expect_false(isTRUE(all.equal(alt[[1]][[1]]$PValue, ref[[1]][[1]]$PValue)))
 
-    # Checking that it responds to contrasts.fun.
+    # Checking that it responds to contrasts=.
     alt <- runVoomScreen(se, covariates="time", block="run", 
         reference.field="time", reference.level=0,
         norm.type.field="class", norm.type.level="NEG",
-        gene.field="gene", contrasts.fun=list(TIME=c(time=1)),
+        gene.field="gene", contrasts=list(TIME=c(time=1)),
         commit="never"
     )
     expect_identical(names(alt[[1]]), "TIME")

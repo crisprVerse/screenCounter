@@ -19,7 +19,7 @@ runVoomScreen(
   lfc = 0,
   robust = TRUE,
   dup.cor = NULL,
-  contrasts.fun = NULL,
+  contrasts = NULL,
   dump.norm = NULL,
   fname = "voom-screen.Rmd",
   commit = "auto",
@@ -58,7 +58,7 @@ A value of zero will default to the standard analysis with \code{\link[limma]{eB
 \item{dup.cor}{String specifying the blocking factor to use in \code{\link[limma]{duplicateCorrelation}}.
 No additional blocking is performed if \code{NULL}.}
 
-\item{contrasts.fun}{A list of custom contrasts information, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
+\item{contrasts}{A list of custom contrasts information, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
 
 \item{dump.norm}{String specifying a path to an output file to save normalized abundances in a CSV file.
 This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.}
