@@ -1,0 +1,4 @@
+INTERNAL_*
+*.o
+*.so
+*.html
