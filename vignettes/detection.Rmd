@@ -4,9 +4,9 @@ author:
 - name: Aaron Lun
   affiliation: Genentech gRED B&CB
   email: luna@gene.com
+date: "Revised: December 2, 2019"  
 output:
-  BiocStyle::html_document:
-    toc_float: yes
+  BiocStyle::html_document
 package: gp.sa.screen
 vignette: >
   %\VignetteIndexEntry{2. Differential abundance}
@@ -15,7 +15,7 @@ vignette: >
 ---
 
 ```{r, echo=FALSE, results="hide"}
-knitr::opts_chunk$set(error=FALSE, message=FALSE)
+knitr::opts_chunk$set(error=FALSE, message=FALSE, warning=FALSE)
 ```
 
 ```{r, echo=FALSE, results="hide"}
@@ -26,7 +26,7 @@ library(gp.sa.core)
 # Overview
 
 The `r GRANpkg("gp.sa.screen")` package implements a pipeline function to detect differentially abundant barcodes in a sequencing screen experiment.
-This is based on the `voom` method in the `r Biocpkg("limma")` package, operating on a matrix of barcode-by-sample counts.
+This is based on the `voom()` method in the `r Biocpkg("limma")` package, operating on a matrix of barcode-by-sample counts.
 The basic philosophy is the same as that described in the documentation for the `r GRANpkg("gp.sa.diff")` package - thus, we will mainly focus on the screen-specific parameters in this vignette.
 
 # Setting up
@@ -95,7 +95,7 @@ se
 
 # Running the pipeline
 
-The `runVoomScreen()` function will, as its name suggests, run `voom` on the sequencing screen count matrix to identify barcodes that change in abundance across a contrast of interest.
+The `runVoomScreen()` function will, as its name suggests, run `voom()` on the sequencing screen count matrix to identify barcodes that change in abundance across a contrast of interest.
 In our example, we want to identify barcodes that change in abundance over time.
 Assuming a linear response in the log-abundance over time, we can do:
 
@@ -107,25 +107,33 @@ out <- runVoomScreen(se, covariates="time", comparisons=list("time"),
 out
 ```
 
-In addition to the standard differential analysis arguments passed to `runVoom()`,
-we require several screen-specific arguemnts:
+In addition to the standard differential analysis arguments passed to `runVoom()`, we require several screen-specific arguemnts:
 
-- `reference.field` and `reference.level`, which specifies the samples that belong to the reference group (i.e., prior to any barcode selection).
+- `reference.field` and `reference.level`, which specify the samples that belong to the reference group (i.e., prior to any selection process over time).
 This information is used for filtering out low-abundance barcodes that were not generated in the same quantities as the other barcodes during library manufacture.
-In this case, our reference samples are those that are at zero in the `time` column metadata field.
-- `norm.type.field` and `norm.type.level`, which specifies the negative control barcodes.
+In this case, our reference samples are those that are at time zero.
+- `norm.type.field` and `norm.type.level`, which specify the negative control barcodes.
 These barcodes should not change during the course of an experiment and thus can be used for normalization.
-In this case, our negative controls are specified as `NEG`s (i.e., non-essential genes) in the `Type` row metadata field.
+In this case, our negative controls are specified as `"NEG"`s (i.e., non-essential genes) in the `Type` row metadata field.
+One may alternatively see `"NTC"`s (i.e., non-targeting controls) in real experiments.
 - `gene.field`, which specifies the barcode-to-gene mappings.
 In this case, the relevant row metadata field is `ID`.
 
 The `runVoomScreen()` function will produce two result tables per comparison.
-One table refers to the barcode-level results, while the other table contains gene-level results from consolidating the statistics across barcodes for each gene.
-We combine $p$-values across barcodes using Simes' method, which tests the null hypothesis that all barcodes for a given gene are not differentially abundant.
-Log-fold changes and log-counts-per-million are reported for the "best" barcode (i.e., with the lowest $p$-value) in each gene's pool.
+The first table refers to the barcode-level results and contains the typical fields that one might expect from a `voom()` analysis
+(see also `?runVoom` from the `r GRANpkg("gp.sa.diff")` package).
 
 ```{r}
 out$barcode[[1]]
+```
+
+The other table contains gene-level results from consolidating the statistics across barcodes for each gene.
+In this case, we combine $p$-values across barcodes using Simes' method, which tests the null hypothesis that all barcodes for a given gene are not differentially abundant.
+The number of barcodes changing in each direction and the net direction of the change for a gene is reported, though the latter may not be well-defined if multiple barcodes change strongly in different directions.
+Log-fold changes and log-counts-per-million are also reported for the "best" barcode (i.e., with the lowest $p$-value) in each gene's pool.
+Alternatively, we can switch to a different consolidation strategy with the `method` argument - see below. 
+
+```{r}
 out$gene[[1]]
 ```
 
@@ -151,6 +159,15 @@ If `reference.field=NA`, no filtering is performed, which may be useful for debu
 - If `norm.type.field=NULL`, we default to TMM normalization across all barcodes (see `?calcNormFactors`). 
 If `norm.type.field=NA`, no normalization is performed beyond library size normalization - this may be the "least worst" option in experiments with large systematic changes in abundance and no negative controls.
 - If `gene.field=NA`, no post-contrast consoliation of the barcode-level statistics is performed.
+
+The `method` argument supports different consolidation strategies that favor detection of different genes:
+
+- `method="simes"` will reject the null if any barcode has a strong effect.
+  This makes it sensitive to off-target effects, which is useful for identifying affected genes.
+- `method="holm-mid"` will only reject the null if at least 3 or 40% of barcodes for a gene have a strong effect.
+  This improves robustness to off-target effects without requiring a response in every barcode.
+- `method="fry"` will apply a `fry()` gene set analysis to the set of barcodes for a given gene.
+  This improves detection of genes with a small but consistent effect across all barcodes.
 
 Further customization can take place by directly modifying the Rmarkdown report.
 Be sure to track any changes using Git!

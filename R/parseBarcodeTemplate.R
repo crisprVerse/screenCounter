@@ -13,6 +13,7 @@
 #'
 #' @details
 #' The barcode template should contain runs of N's to mark the variable regions.
+#' The first run of N's is the first variable region, the second run of N's is the second variable region, and so on.
 #' The template is \dQuote{realized} into a barcode when the N's are replaced with actual DNA sequence.
 #' The use of a template provides a convenient format to express the general structure of the barcode while avoiding confusion about barcode-specific variable regions.
 #' 

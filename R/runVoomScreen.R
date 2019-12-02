@@ -167,7 +167,7 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
     )
 
     contrast.cmds <- .createContrasts(comparisons, contrasts)
-    .screen_contrast_prep(holding, env, gene.field, method=match.arg(method), annotation=annotation)
+    .screen_contrast_prep(holding, env, gene.field, annotation=annotation)
     .screen_contrast_loop(holding, env, gene.field, lfc=lfc, robust=robust, dup.cor=dup.cor, 
         method=match.arg(method), contrast.cmds=contrast.cmds)
 
@@ -189,9 +189,23 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
     output
 }
 
-####################################
-####################################
-
+#' Create screen-related diagnostic plots
+#'
+#' Create \pkg{edgeR}-based diagnostic plots for the analysis of functional screen data.
+#'
+#' @inheritParams runVoomScreen
+#'
+#' @details
+#' MD plots are generated using the control barcodes only, if \code{norm.type.field} is provided.
+#' Otherwise, the plots are generated using all available barcodes.
+#'
+#' MDS plots are generated using \code{\link{.defaultEdgeRMDS}}.
+#' 
+#' @return String containing an Rmarkdown chunk to generate the required plots.
+#'
+#' @author Aaron Lun
+#'
+#' @rdname INTERNAL_screen_edgeR_diag_plots
 #' @importFrom gp.sa.diff .defaultEdgeRMDS .defaultEdgeRMD
 .screen_edgeR_diag_plots <- function(norm.type.field, norm.type.level) {
     if (is.null(norm.type.field)) {
@@ -220,11 +234,30 @@ for (i in seq_len(n)) {
         sep="\n\n")
 }
 
-####################################
-####################################
-
+#' Prepare for screen contrasts 
+#'
+#' Construct and execute code to prepare for the differential abundance contrasts.
+#'
+#' @inheritParams runVoomScreen
+#' @param env An environment containing the current state of the analysis.
+#' 
+#' @details
+#' This function assumes that \code{env} contains \code{se}, a SummarizedExperiment object containing the barcode count data and associated metadata.
+#'
+#' @return 
+#' The function adds a number of variables to \code{env}:
+#' \itemize{
+#' \item \code{gene.ids}, a vector containing the gene associated with each barcode in \code{se}.
+#' \item \code{gene_formatter} and \code{barcode_formatter}, functions that clean up per-gene and per-barcode result DataFrames.
+#' \item \code{barcode.list} and \code{gene.list}, \linkS4class{List}s to hold the results of each contrast.
+#' }
+#' Code to perform the above is written to \code{fname}, and a \code{NULL} is invisibly returned. 
+#'
+#' @author Aaron Lun
+#'
+#' @rdname INTERNAL_screen_contrast_prep
 #' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .evalAndWrite
-.screen_contrast_prep <- function(fname, env, gene.field, method="simes", annotation=NULL) {
+.screen_contrast_prep <- function(fname, env, gene.field, annotation=NULL) {
     do.genes <- !is.na(gene.field)
     if (do.genes) {
         gene_txt <- "\nWe also create a function to convert per-barcode results into per-gene results."
@@ -277,11 +310,34 @@ gene_formatter <- function(gres) {
     .closeChunk(fname)
 }
 
+#' Perform screen contrasts 
+#'
+#' Construct and execute code to perform the differential abundance contrasts.
+#'
+#' @inheritParams runVoomScreen
+#' @param env An environment containing the current state of the analysis.
+#' @param contrast.cmds A list of contrast information equivalent to that produced by \code{\link{.createContrasts}}.
+#' 
+#' @details
+#' This function assumes that \code{env} contains:
+#' \itemize{
+#' \item \code{fit}, an MArrayLM object produced by fitting a linear model to the log-abundance values.
+#' \item \code{gene_formatter} and \code{barcode_formatter}, functions produced by \code{\link{.screen_contrast_prep}}.
+#' \item \code{barcode.list} and \code{gene.list}, \linkS4class{List}s to hold the results of each contrast.
+#' }
+#'
+#' The code in thie function was Code mostly lifted from \code{\link{.limma_contrast_chunk}}, 
+#' which was necessary to smoothly handle the barcode-to-gene result conversion.
+#'
+#' @return 
+#' The function adds a \linkS4class{DiffScreenStatFrame} to both \code{barcode.list} and \code{gene.list} for each contrast in \code{contrast.cmds}.
+#' Code to perform the above is written to \code{fname}, and a \code{NULL} is invisibly returned. 
+#'
+#' @author Aaron Lun
+#'
+#' @rdname INTERNAL_screen_contrast_loop
 #' @importFrom gp.sa.core .openChunk .closeChunk .justWrite .knitAndWrite .evalAndWrite
-.screen_contrast_loop <- function(fname, env, gene.field, method="simes", lfc=0, robust=TRUE, dup.cor=NULL, contrast.cmds) 
-# Code mostly lifted from limma_contrast_chunk, which was necessary
-# to smoothly handle the barcode -> gene result conversion.
-{
+.screen_contrast_loop <- function(fname, env, gene.field, method="simes", lfc=0, robust=TRUE, dup.cor=NULL, contrast.cmds) {
     do.genes <- !is.na(gene.field)
     extra_eb_code <- if (robust) ", robust=TRUE" else ""
     shrink_eb_cmd <- sprintf("eBayes(fit2%s)", extra_eb_code)
@@ -407,6 +463,17 @@ gene.results[[con.desc]] <- DiffScreenStatFrame(gres, design=design, contrast=co
     invisible(NULL)
 }
 
+#' Extract \code{fry} parameters
+#'
+#' Determine the parameters required to run \code{\link{fry}} (usually via \code{\link{barcodeSetTest}} in \code{\link{.screen_contrast_loop}}).
+#'
+#' @inheritParams runVoomScreen
+#'
+#' @return String containing additional arguments for \code{\link{fry}}.
+#'
+#' @author Aaron Lun
+#'
+#' @rdname INTERNAL_get_fry_params
 .get_fry_params <- function(dup.cor, robust) {
     included <- character(0)
     if (!is.null(dup.cor)) {
