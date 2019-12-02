@@ -4,10 +4,9 @@ author:
 - name: Aaron Lun
   affiliation: Genentech gRED B&CB
   email: luna@gene.com
-date: "Revised: May 10, 2019"  
+date: "Revised: December 2, 2019"  
 output:
-  BiocStyle::html_document:
-    toc_float: yes
+  BiocStyle::html_document
 package: gp.sa.screen
 vignette: >
   %\VignetteIndexEntry{1. Counting barcodes}
@@ -26,15 +25,14 @@ library(gp.sa.core)
 
 # Overview
 
-The `r GRANpkg("gp.sa.screen")` package implements several methods to quantify the frequency of barcodes in a sequencing screen experiment.
-These operate on the raw FASTQ files, yielding a matrix of counts for each barcode in each sample for downstream analysis.
+The `r GRANpkg("gp.sa.screen")` package implements several functions to quantify the frequency of barcodes in a sequencing screen experiment.
+These functions on the raw FASTQ files, yielding a matrix of counts for each barcode in each sample for downstream analysis.
 Quantification can be performed for both single and combinatorial barcodes, though only single-end sequencing data are currently supported.
 
 # Counting single barcodes
 
 The "barcode" is considered to be the entire sequence structure that is used to label a particular molecular or biological entity.
-This obviously includes regions of variable sequence that distinguish one barcode from another,
-as well as constant sequences that flank or separate the variable regions.
+This includes regions of variable sequence that distinguish one barcode from another as well as constant sequences that flank or separate the variable regions.
 The most common barcode design uses only one variable region, which we refer to as a "single barcode".
 
 ```
@@ -79,11 +77,11 @@ assay(out)
 ```
 
 We specify the constant sequences that immediately flank the variable region^[A template structure can also be specified in `template=`, which may be more convenient.].
-This improves stringency of barcode identification, as the barcode will not be recognized in the read sequence unless the constant sequences match perfectly.
+This improves stringency of barcode identification as the barcode will not be recognized in the read sequence unless the constant sequences match perfectly.
 It also improves speed as the matching of the variable sequence is only performed at positions along the read where the flanking constant sequences have matched.
 
 Obviously, users should not supply the full length of the flanking sequence if that sequence is not captured in the read.
-For example, the 3' flanking sequence may be lost in experiments using short reads.
+For example, the 3' flanking sequence may be lost in experiments using short reads that only reach to the end of the variable region.
 In such cases, an empty string should be specified as `flank3=`.
 
 # Counting combinatorial barcodes
@@ -164,8 +162,8 @@ Nonetheless, this setting may be useful for debugging experiments with low mappi
 
 ## Searching the other strand
 
-By default, the counting functions will only search the read sequence on the original strand reported by the sequencer.
-It is possible to change this behaviour with the `strand=` argument, to search the reverse strand instead or to search both strands.
+By default, the counting functions will search the read sequence on both the original strand reported by the sequencer and on the reverse complement.
+It is possible to change this behaviour with the `strand=` argument to only search one of the strands.
 The most appropriate setting requires knowledge of the sequencing protocol and the barcode design.
 For example:
 
@@ -174,7 +172,7 @@ For example:
   If the sequencing is performed from a randomly chosen end, only 50% of the reads will contain barcodes.
 - Single-end sequencing of a construct where the barcode can be covered by reads from either end.
   This requires `strand="both"` to search both strands of each read.
-  Note that users should make sure that the constant regions are captured by reads from both ends.
+  This avoids loss of 50% of reads provided that the constant regions are captured by reads from both ends.
 
 Paired-end sequencing requires some more consideration:
 
@@ -187,7 +185,7 @@ Paired-end sequencing requires some more consideration:
   so each read pair will not contribute more than once to the final count.)
 - Paired-end sequencing of a construct where the barcode can be covered by both reads.
   In this case, one of the files can be chosen for use with `strand="both"`.
-Alternatively, users can consolidate read pairs into a consensus read^[For example, see [_FLASh_](https://ccb.jhu.edu/software/FLASH/) or [_vsearch_](https://github.com/torognes/) with `--fastq_mergepairs`.] prior to using `strand="both"`.
+  Alternatively, users can consolidate read pairs into a consensus read^[For example, see [_FLASh_](https://ccb.jhu.edu/software/FLASH/) or [_vsearch_](https://github.com/torognes/) with `--fastq_mergepairs`.] prior to using `strand="both"`.
 
 ## Parallelization across files
 
@@ -207,7 +205,7 @@ out
 ```
 
 Users are advised to read the `r Biocpkg("BiocParallel", "Introduction_To_BiocParallel.pdf", "relevant documentation")` to determine the most effective parallelization approach for their system.
-For example, users working on a cluster should use `BatchJobsParam()`, while users on a local non-Windows machines may prefer to use `MulticoreParam()`.
+For example, users working on a cluster should use `BatchToolsParam()`, while users on a local non-Windows machines may prefer to use `MulticoreParam()`.
 
 # Session information
 
