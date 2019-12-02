@@ -6,7 +6,8 @@
 #' or a connection object to such a file.
 #' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
 #' @param choices A \linkS4class{List} of character vectors, one per variable region in \code{template}.
-#' Each vector should contain the potential sequences for the corresponding variable region.
+#' The first vector should contain the potential sequences for the first variable region, 
+#' the second vector for the second variable region and so on.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
 #' @param strand String specifying which strand of the read to search.

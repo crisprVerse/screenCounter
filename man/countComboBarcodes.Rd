@@ -24,7 +24,8 @@ or a connection object to such a file.}
 \item{template}{A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.}
 
 \item{choices}{A \linkS4class{List} of character vectors, one per variable region in \code{template}.
-Each vector should contain the potential sequences for the corresponding variable region.}
+The first vector should contain the potential sequences for the first variable region, 
+the second vector for the second variable region and so on.}
 
 \item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
 
