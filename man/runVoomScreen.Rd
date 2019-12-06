@@ -67,12 +67,12 @@ This file is intended only for diagnostic inspection and should \emph{not} be us
 
 \item{commit}{String specifying the auto-committing behavior, see \code{?"\link[gp.sa.core]{gp.sa.core-auto-commits}"}.}
 
-\item{save.all}{Logical scalar indicating whether the returned \linkS4class{DiffScreenStatFrame}s should also be saved to file.
+\item{save.all}{Logical scalar indicating whether the returned \linkS4class{ScreenStatFrame}s should also be saved to file.
 Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
 }
 \value{
 A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-Each list contains barcode- and gene-level result tables as \linkS4class{DiffScreenStatFrame}s from all contrasts.
+Each list contains barcode- and gene-level result tables as \linkS4class{ScreenStatFrame}s from all contrasts.
 If \code{gene.field=NA}, only the \code{barcode} List is returned.
 
 A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
