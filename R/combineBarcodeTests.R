@@ -49,7 +49,7 @@
 #' \code{\link{combineTests}} and \code{\link{getBestTest}}, for the actual statistical calculations.
 #'
 #' @examples
-#' example(DiffScreenStatFrame, echo=FALSE)
+#' example(ScreenBarcodeStatFrame, echo=FALSE)
 #'
 #' genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
 #' combineBarcodeTests(Y, genes=genes)

@@ -11,14 +11,14 @@
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
 #' @param method String specifying the consolidation method to convert per-barcode statistics into per-gene results.
-#' @param save.all Logical scalar indicating whether the returned \linkS4class{DiffScreenStatFrame}s should also be saved to file.
+#' @param save.all Logical scalar indicating whether the returned \linkS4class{ScreenStatFrame}s should also be saved to file.
 #' Ignored if \code{se} lacks provenance information, in which case saving is never performed.
 #' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
 #' This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.
 #' @inheritParams gp.sa.diff::runVoom
 #'
 #' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-#' Each list contains barcode- and gene-level result tables as \linkS4class{DiffScreenStatFrame}s from all contrasts.
+#' Each list contains barcode- and gene-level result tables as \linkS4class{ScreenStatFrame}s from all contrasts.
 #' If \code{gene.field=NA}, only the \code{barcode} List is returned.
 #' 
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
@@ -106,6 +106,7 @@
 #' @export
 #' @importFrom gp.sa.diff .runVoomCore .defaultEdgeRFilter .defaultEdgeRNormalize .createContrasts 
 #' @importFrom gp.sa.core .reportStart .reportEnd .createTempRmd .knitAndWrite
+#' .prePreambleValues .postPreambleValues
 #' @importFrom grDevices pdf dev.list dev.off
 #' @importFrom methods as
 #' @importFrom S4Vectors List
@@ -118,11 +119,13 @@ runVoomScreen <- function(se, groups, comparisons,
     # Disable graphics devices to avoid showing a whole bunch of plots.
     if (is.null(dev.list())) {
         pdf(file=NULL)
-        on.exit(dev.off())
+        on.exit(dev.off(), add=TRUE)
     }
 
     holding <- .createTempRmd(fname)
-    on.exit(unlink(holding))
+    on.exit(unlink(holding), add=TRUE)
+    pre <- .prePreambleValues()
+    on.exit(.postPreambleValues(pre), add=TRUE)
 
     .reportStart(fname,
         title="Differential abundance analysis of barcode count data with `voom` and _limma_",
@@ -330,7 +333,7 @@ gene_formatter <- function(gres) {
 #' which was necessary to smoothly handle the barcode-to-gene result conversion.
 #'
 #' @return 
-#' The function adds a \linkS4class{DiffScreenStatFrame} to both \code{barcode.list} and \code{gene.list} for each contrast in \code{contrast.cmds}.
+#' The function adds an appropriate \linkS4class{ScreenStatFrame} to both \code{barcode.list} and \code{gene.list} for each contrast in \code{contrast.cmds}.
 #' Code to perform the above is written to \code{fname}, and a \code{NULL} is invisibly returned. 
 #'
 #' @author Aaron Lun
@@ -400,13 +403,14 @@ head(res[order(res$PValue),])
 %s
 ```', sum.cmd))
 
+        dpv <- deparse(vname)
         .knitAndWrite(fname, env, sprintf("We save the results in our output `List` for later use.
 
 ```{r}
-con.desc <- %s
-barcode.results[[con.desc]] <- DiffScreenStatFrame(res, design=design, contrast=con, 
-    description=con.desc, method='voom', %sfeature='barcode')
-```", deparse(vname), subset_cmd))
+barcode.results[[%s]] <- ScreenBarcodeStatFrame(res, 
+    %sdesign=design, contrast=con, method='voom',
+    description=%s)
+```", dpv, subset_cmd, dpv))
 
         if (do.genes) {
             if (method=="simes") {
@@ -454,9 +458,10 @@ head(gres[order(gres$PValue),])
             .knitAndWrite(fname, env, sprintf("We then save it into our result `List`.
 
 ```{r}
-gene.results[[con.desc]] <- DiffScreenStatFrame(gres, design=design, contrast=con, 
-    description=con.desc, method='voom', %sfeature='gene')
-```", subset_cmd))
+gene.results[[%s]] <- ScreenFeatureStatFrame(gres, 
+    %sdesign=design, contrast=con, method='voom',
+    description=%s)
+```", dpv, subset_cmd, dpv))
         }
     }
 
