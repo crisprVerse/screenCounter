@@ -81,4 +81,5 @@ setMethod(".trackCheck", "ScreenBarcodeStatFrame", function(x) {
 })
 
 #' @export
+#' @importFrom gp.sa.core .trackRowIds
 setMethod(".trackRowIds", "ScreenBarcodeStatFrame", function(x) "features")

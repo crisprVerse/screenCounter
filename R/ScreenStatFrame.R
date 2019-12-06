@@ -2,7 +2,7 @@
 #'
 #' The ScreenStatFrame class is a virtual class that inherits from the \linkS4class{DiffStatFrame} class.
 #' It is intended to hold results from a differential abundance analysis of barcode sequencing data from high-throughput CRISPR/siRNA screens,
-#' with the concrete subclasses \linkS4class{BarcodeScreenStatFrame} and \linkS4class{FeatureScreenStatFrame}.
+#' with the concrete subclasses \linkS4class{ScreenBarcodeStatFrame} and \linkS4class{ScreenFeatureStatFrame}.
 #'
 #' @section Checking metadata:
 #' \code{\link{.trackCheck}(x)} will check for the presence of correct provenance fields in a ScreenStatFrame \code{x}
@@ -35,7 +35,7 @@
 #' de.output <- DataFrame(LogFC=1:10, AveAb=1:10, 
 #'    PValue=0:9/10, FDR=0:9/10)
 #'
-#' Y <- BarcodeScreenStatFrame(de.output, 
+#' Y <- ScreenBarcodeStatFrame(de.output, 
 #'     design=cbind(A=c(X=1, Y=-1), B=2),
 #'     contrast=c(A=1, B=-1), 
 #'     method="voom", description="I did voom")
