@@ -1,4 +1,10 @@
 #' @export
 #' @import methods
-#' @importClassesFrom gp.sa.diff DiffStatFrameLFC
-setClass("DiffScreenStatFrame", contains="DiffStatFrameLFC")
+#' @importClassesFrom gp.sa.diff DiffStatFrame
+setClass("ScreenStatFrame", contains="DiffStatFrame")
+
+#' @export
+setClass("ScreenBarcodeStatFrame", contains="ScreenStatFrame")
+
+#' @export
+setClass("ScreenFeatureStatFrame", contains="ScreenStatFrame")

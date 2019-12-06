@@ -1,0 +1,70 @@
+#' DataFrame for differential screen abundance results
+#'
+#' The ScreenStatFrame class is a virtual class that inherits from the \linkS4class{DiffStatFrame} class.
+#' It is intended to hold results from a differential abundance analysis of barcode sequencing data from high-throughput CRISPR/siRNA screens,
+#' with the concrete subclasses \linkS4class{BarcodeScreenStatFrame} and \linkS4class{FeatureScreenStatFrame}.
+#'
+#' @section Checking metadata:
+#' \code{\link{.trackCheck}(x)} will check for the presence of correct provenance fields in a ScreenStatFrame \code{x}
+#' and return a list of this information.
+#' Required fields include:
+#' \itemize{
+#' \item \code{origin}, the sources from which \code{x} was derived - see \linkS4class{TrackedDataFrame}.
+#' \item \code{type}, the type of result - see \linkS4class{TrackedDataFrame}.
+#' \item \code{description}, a plain-English description - see \linkS4class{TrackedDataFrame}.
+#' \item \code{design}, the numeric design matrix - see \linkS4class{DiffStatFrame}.
+#' \item \code{contrast}, the contrast vector/matrix - see \linkS4class{DiffStatFrame}.
+#' \item \code{method}, a string specifying the DE analysis method that was used - see \linkS4class{DGEStatFrame}.
+#' }
+#'
+#' @section Checking column names:
+#' \code{\link{.trackCheck}(x)} will check that the column names of \code{x} include:
+#' \itemize{
+#' \item \code{"PValue"}, a numeric field containing the p-value for each barcode or feature.
+#' \item \code{"FDR"}, a numeric field containing the Benjamini-Hochberg adjusted p-value for each barcode or feature.
+#' \item \code{"AveAb"}, a numeric field containing the average abundance of each gene or feature in log2-counts-per-million.
+#' }
+#' It should also contain either one \code{"LogFC"} field or multiple \code{"LogFC."}-prefixed fields.
+#' These contain the log2-fold changes for a single contrast vector or an ANOVA-like contrast matrix, respectively.
+#'
+#' @author Aaron Lun
+#' @examples
+#' library(gp.sa.core)
+#'
+#' # Mocking up the aftermath of a DE analysis:
+#' de.output <- DataFrame(LogFC=1:10, AveAb=1:10, 
+#'    PValue=0:9/10, FDR=0:9/10)
+#'
+#' Y <- BarcodeScreenStatFrame(de.output, 
+#'     design=cbind(A=c(X=1, Y=-1), B=2),
+#'     contrast=c(A=1, B=-1), 
+#'     method="voom", description="I did voom")
+#' Y 
+#' 
+#' @seealso
+#' \linkS4class{DiffStatFrame}, from which this class is derived.
+#' 
+#' @docType class
+#' @name ScreenStatFrame
+#' @aliases ScreenStatFrame-class .trackCheck,ScreenStatFrame-method .trackReqCols,ScreenStatFrame-method 
+NULL
+
+#' @export
+#' @importFrom gp.sa.core .trackCheck .quickError
+#' @importFrom S4Vectors isSingleString
+setMethod(".trackCheck", "ScreenStatFrame", function(x) {
+    out <- callNextMethod()
+    if (!isSingleString(out$method)) {
+        .quickError(x, "method", "a string specifying the DE method that was used")
+    }
+    out
+})
+
+#' @export
+#' @importFrom gp.sa.core .trackReqCols
+setMethod(".trackReqCols", "ScreenStatFrame", function(x) {
+    out <- callNextMethod()
+    out[[1]] <- c(out[[1]], "AveAb")
+    out[[2]] <- c(out[[2]], "numeric")
+    out
+})
