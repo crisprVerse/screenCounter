@@ -37,6 +37,10 @@
 #' It should also contain either one \code{"LogFC"} field or multiple \code{"LogFC."}-prefixed fields.
 #' These contain the log2-fold changes for a single contrast vector or an ANOVA-like contrast matrix, respectively.
 #'
+#' The feature corresponding to each barcode is not mandatory here, as this may not exist for some experiments.
+#' If it does exist, the mapping can be determined from the data and need not be stored in the result Frame.
+#' Nonetheless, pipelines may consider adding the feature name for user convenience.
+#'
 #' @section Checking row names:
 #' \code{\link{.trackCheck}(x)} will also check that the row names of \code{x} are a subset of the permissible feature names.
 #' These globally permissible names are automatically added upon importing a \linkS4class{SummarizedExperiment} with \pkg{gp.sa.io} functions.
