@@ -69,7 +69,7 @@ If ANOVA-like contrasts are supplied in \code{x}, \code{Direction} is not report
 and each \code{LogFC} column name will be suffixed by the name of the relevant column of the contrast.
 }
 \examples{
-example(DiffScreenStatFrame, echo=FALSE)
+example(ScreenBarcodeStatFrame, echo=FALSE)
 
 genes <- sample(LETTERS[1:3], nrow(Y), replace=TRUE)
 combineBarcodeTests(Y, genes=genes)
