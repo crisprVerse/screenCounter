@@ -25,7 +25,7 @@ library(gp.sa.core)
 
 # Overview
 
-The `r GRANpkg("gp.sa.screen")` package implements a pipeline function to detect differentially abundant barcodes in a sequencing screen experiment.
+The `r GRANpkg("gp.sa.screen")` package implements a pipeline function to detect differentially abundant barcodes in a (usually CRISPR) sequencing screen experiment.
 This is based on the `voom()` method in the `r Biocpkg("limma")` package, operating on a matrix of barcode-by-sample counts.
 The basic philosophy is the same as that described in the documentation for the `r GRANpkg("gp.sa.diff")` package - thus, we will mainly focus on the screen-specific parameters in this vignette.
 
@@ -33,19 +33,21 @@ The basic philosophy is the same as that described in the documentation for the 
 
 ## The project
 
-First, we need to set up an analysis project, as defined by the `r GRANpkg("gp.sa.core")` package.
+First, we need to set up an analysis project directory using the `newProject()` function from the `r GRANpkg("gp.sa.core")` package.
+This is simply a Git repository that will contain all the analysis scripts.
 
 ```{r}
 library(gp.sa.core)
 
 # Change the directory location as needed:
-proj.dir <- file.path(tempdir(), "Screen")
+proj.dir <- file.path(tempdir(), "ScreenAnalysis")
 
 newProject(proj.dir, title="Screening for barcodes",
     description="I'm testing for differences!")           
 ```
 
 We change our working directory to this location.
+Rstudio users may find it helpful to define a new project at the same path, which will automatically change the working directory.
 
 ```{r, eval=FALSE}
 setwd(proj.dir)
@@ -58,8 +60,8 @@ knitr::opts_knit$set(root.dir=proj.dir)
 
 ## The data
 
-We will mock up an example data set for demonstration purposes.
-This will contain three replicate screens with three time points per sample.
+We will mock up an example sequencing screen dataset for demonstration purposes.
+Our mock dataset will contain three replicate screens with three time points per sample, as represented in the experimental design below.
 
 ```{r}
 run <- gl(3, 3)
@@ -67,23 +69,29 @@ time <- rep(0:2, 3)
 data.frame(run, time)
 ```
 
-We assume we have 1000 barcodes that have assignments to 100 genes.
-Of these, a small fraction are control genes that should not exhibit any change over time.
+We assume that we have 1000 barcodes, each of which targets one of 100 genes.
+Of these, a small fraction are known control genes that should not exhibit any change over time.
+The gene type is made available to us via the `gene.type` vector.
 
 ```{r}
-# Generating a random count matrix, assuming barcodes
-# were added in equimolar quantities.
-N <- 1000
-y <- matrix(rnbinom(N * length(run), mu=100, size=10), ncol=length(run))
+Nbarcodes <- 1000
 
 # Generating random assignments of barcodes to genes.
-gene.id <- sample(paste0("GENE_", seq_len(100)), N, replace=TRUE)
+gene.id <- sample(paste0("GENE_", seq_len(100)), Nbarcodes, replace=TRUE)
 
 # First 10 genes are non-essential controls.
 gene.type <- ifelse(gene.id %in% paste0("GENE_", seq_len(10)), "NEG", ".")
 ```
 
+Finally, we generate a random count matrix under the assumption that barcodes were added in equimolar quantities.
+
+```{r}
+y <- matrix(rnbinom(Nbarcodes * length(run), mu=100, size=10), ncol=length(run))
+```
+
 We use this information to construct a `SummarizedExperiment` object for input to our pipeline function.
+Of course, in analyses of real data, we can just pull an object out of DataSetDB using `r GRANpkg("gdbR")`, 
+or just pass a DataSetDB identifier as input into the pipeline.
 
 ```{r}
 library(SummarizedExperiment)
@@ -101,9 +109,15 @@ Assuming a linear response in the log-abundance over time, we can do:
 
 ```{r, fig.show="hide"}
 library(gp.sa.screen)
-out <- runVoomScreen(se, covariates="time", comparisons=list("time"),
-    block="run", reference.field="time", reference.level=0,
-    norm.type.field="Type", norm.type.level="NEG", gene.field="ID")   
+out <- runVoomScreen(se, 
+
+    # Set up the experimental design and comparison of interest:
+    covariates="time", comparisons="time", block="run", 
+    
+    # Screen-specific fields, see below:
+    reference.field="time", reference.level=0,
+    norm.type.field="Type", norm.type.level="NEG", gene.field="ID"
+)
 out
 ```
 
@@ -128,7 +142,7 @@ out$barcode[[1]]
 ```
 
 The other table contains gene-level results from consolidating the statistics across barcodes for each gene.
-In this case, we combine $p$-values across barcodes using Simes' method, which tests the null hypothesis that all barcodes for a given gene are not differentially abundant.
+By default, we combine $p$-values across barcodes using Simes' method, which tests the null hypothesis that all barcodes for a given gene are not differentially abundant.
 The number of barcodes changing in each direction and the net direction of the change for a gene is reported, though the latter may not be well-defined if multiple barcodes change strongly in different directions.
 Log-fold changes and log-counts-per-million are also reported for the "best" barcode (i.e., with the lowest $p$-value) in each gene's pool.
 Alternatively, we can switch to a different consolidation strategy with the `method` argument - see below. 
@@ -138,15 +152,15 @@ out$gene[[1]]
 ```
 
 As with `runVoom()`, the `runVoomScreen()` function will produce a Rmarkdown report describing the exact steps that were performed.
-We recommend tracking this file using Git as described `r GRANpkg("gp.sa.diff", "userguide.html", "here")` and `r GRANpkg("gp.sa.core", "users.html", "here")`.
+This will be automatically tracked using Git to preserve the history of the analyses.
 
 # Further options
 
 Any option that is supported by `runVoom()` can also be used here.
-For example, we might prefer to analyze our data by treating `run` as a random effect:
+For example, we might prefer to analyze our data by treating `run` as a random effect via `duplicateCorrelation()`:
 
 ```{r, fig.show="hide"}
-out.dc <- runVoomScreen(se, covariates="time", comparisons=list('time'),
+out.dc <- runVoomScreen(se, covariates="time", comparisons='time',
     dup.cor="run", reference.field="time", reference.level=0,
     norm.type.field="Type", norm.type.level="NEG", gene.field="ID")                        
 out.dc$barcode
@@ -155,10 +169,12 @@ out.dc$barcode
 The screen-specific options can also be fine-tuned:
 
 - If `reference.field=NULL`, we default to `r Biocpkg("edgeR")`'s default filtering (see `?filterByExpr`). 
-If `reference.field=NA`, no filtering is performed, which may be useful for debugging purposes.
+  This simply removes low-abundance barcodes using a CPM-based threshold.
+  If `reference.field=NA`, no filtering is performed, which may be useful for debugging purposes.
 - If `norm.type.field=NULL`, we default to TMM normalization across all barcodes (see `?calcNormFactors`). 
-If `norm.type.field=NA`, no normalization is performed beyond library size normalization - this may be the "least worst" option in experiments with large systematic changes in abundance and no negative controls.
-- If `gene.field=NA`, no post-contrast consoliation of the barcode-level statistics is performed.
+  This makes the assumption that most barcodes do not change the abundance, which may or may not be reasonable.
+  If `norm.type.field=NA`, no normalization is performed beyond library size normalization - this may be the "least worst" option in experiments with large systematic changes in abundance and no negative controls.
+- If `gene.field=NA`, no post-contrast gene-level consoliation is performed and only the barcode-level statistics are reported.
 
 The `method` argument supports different consolidation strategies that favor detection of different genes:
 

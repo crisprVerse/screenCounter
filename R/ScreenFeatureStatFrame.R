@@ -31,6 +31,7 @@
 #' \code{\link{.trackCheck}(x)} will check that the column names of \code{x} include:
 #' \itemize{
 #' \item \code{"NBarcodes"}, an integer field containing the number of barcodes for each feature.
+#' Note that this cannot be determined from the annotation as not all barcodes may be retained after abundance filtering.
 #' \item \code{"PValue"}, a numeric field containing the p-value for each feature.
 #' \item \code{"FDR"}, a numeric field containing the Benjamini-Hochberg adjusted p-value for each feature.
 #' \item \code{"AveAb"}, a numeric field containing the average abundance of each feature in log2-counts-per-million.
