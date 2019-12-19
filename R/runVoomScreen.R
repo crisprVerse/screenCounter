@@ -169,7 +169,7 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
         skip.contrasts=TRUE
     )
 
-    contrast.cmds <- .createContrasts(comparisons, contrasts)
+    contrast.cmds <- .createContrasts(comparisons, contrasts, groups=groups)
     .screen_contrast_prep(holding, env, gene.field, annotation=annotation)
     .screen_contrast_loop(holding, env, gene.field, lfc=lfc, robust=robust, dup.cor=dup.cor, 
         method=match.arg(method), contrast.cmds=contrast.cmds)
