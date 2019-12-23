@@ -10,16 +10,20 @@
 #' @param norm.type.field String specifying the field of \code{rowData(se)} containing the gene type for each barcode.
 #' @param norm.type.level Character vector specifying the gene types on which to perform normalization.
 #' @param gene.field String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.
-#' @param method String specifying the consolidation method to convert per-barcode statistics into per-gene results.
+#' @param method Character vector specifying the consolidation method(s) to convert per-barcode statistics into per-gene results.
 #' @param save.all Logical scalar indicating whether the returned \linkS4class{ScreenStatFrame}s should also be saved to file.
 #' Ignored if \code{se} lacks provenance information, in which case saving is never performed.
 #' @param dump.norm String specifying a path to an output file to save normalized abundances in a CSV file.
 #' This file is intended only for diagnostic inspection and should \emph{not} be used as input into further GPSA pipeline.
 #' @inheritParams gp.sa.diff::runVoom
 #'
-#' @return A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-#' Each list contains barcode- and gene-level result tables as \linkS4class{ScreenStatFrame}s from all contrasts.
+#' @return A \linkS4class{List} containing two named Lists, \code{barcode} and \code{gene}.
+#' The \code{barcode} List contains barcode-level result tables as \code{ScreenBarcodeStatFrame} objects, one per contrast.
 #' If \code{gene.field=NA}, only the \code{barcode} List is returned.
+#'
+#' The \code{gene} List contains internal Lists, one per contrast.
+#' Each internal List itself contains one \linkS4class{ScreenFeatureStatFrame} per choice of \code{method},
+#' which contains the per-gene consolidation statistics for that method and contrast.
 #' 
 #' A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 #' This also provides a basis for further customization.
@@ -112,7 +116,7 @@
 #' @importFrom S4Vectors List
 #' @importFrom limma eBayes treat
 runVoomScreen <- function(se, groups, comparisons, 
-    reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method=c("simes", "holm-mid", "fry"),
+    reference.field, reference.level, norm.type.field, norm.type.level, gene.field, method="simes",
     ..., annotation=NULL, lfc=0, robust=TRUE, dup.cor=NULL, contrasts=NULL,
     dump.norm=NULL, fname='voom-screen.Rmd', commit="auto", save.all=TRUE)
 {
@@ -171,26 +175,33 @@ write.csv(file=%s, cpm(y, log=TRUE, prior.count=3))
 
     contrast.cmds <- .createContrasts(comparisons, contrasts, groups=groups)
     .screen_contrast_prep(holding, env, gene.field, annotation=annotation)
+
+    method <- match.arg(method, c("simes", "holm-mid", "fry"), several.ok=TRUE) 
     .screen_contrast_loop(holding, env, gene.field, lfc=lfc, robust=robust, dup.cor=dup.cor, 
-        method=match.arg(method), contrast.cmds=contrast.cmds)
+        method=method, contrast.cmds=contrast.cmds)
 
     # Deciding whether or not we can save stuff.
     do.genes <- !is.na(gene.field)
     if (do.genes) {
-        saveable <- c("barcode.results", "gene.results")
+        saveable <- c("barcode.results", .to_object(method))
     } else {
         saveable <- "barcode.results"
     }
     .reportEnd(fname, msg="Created report with runVoomScreen().", 
-        commit=commit, env=env, to.save.list=saveable, 
+        commit=commit, env=env, to.save.list=saveable,
         fake.save=!save.all, temporary=holding)
 
     output <- List(barcode=env$barcode.results)
     if (do.genes) {
-        output$gene <- env$gene.results
+        output$gene <- List()
+        for (m in method) {
+            output$gene[[m]] <- env[[.to_object(m)]]
+        }
     }
     output
 }
+
+.to_object <- function(method) sprintf("all.%s", sub("-", ".", method))
 
 #' Create screen-related diagnostic plots
 #'
@@ -252,7 +263,7 @@ for (i in seq_len(n)) {
 #' \itemize{
 #' \item \code{gene.ids}, a vector containing the gene associated with each barcode in \code{se}.
 #' \item \code{gene_formatter} and \code{barcode_formatter}, functions that clean up per-gene and per-barcode result DataFrames.
-#' \item \code{barcode.list} and \code{gene.list}, \linkS4class{List}s to hold the results of each contrast.
+#' \item \code{barcode.list}, a \linkS4class{List} to hold the results of each contrast.
 #' }
 #' Code to perform the above is written to \code{fname}, and a \code{NULL} is invisibly returned. 
 #'
@@ -303,13 +314,10 @@ gene_formatter <- function(gres) {
     .closeChunk(fname)
 
     # Setting up output lists.
-    .justWrite(fname, "We set up a `List` to hold all of our output results.
+    .justWrite(fname, "We set up a `List` to hold all of our barcode-level output results.
 
 ```{r}")
     .evalAndWrite(fname, env, "barcode.results <- List()")
-    if (do.genes) {
-        .evalAndWrite(fname, env, "gene.results <- List()")
-    }
     .closeChunk(fname)
 }
 
@@ -326,14 +334,16 @@ gene_formatter <- function(gres) {
 #' \itemize{
 #' \item \code{fit}, an MArrayLM object produced by fitting a linear model to the log-abundance values.
 #' \item \code{gene_formatter} and \code{barcode_formatter}, functions produced by \code{\link{.screen_contrast_prep}}.
-#' \item \code{barcode.list} and \code{gene.list}, \linkS4class{List}s to hold the results of each contrast.
+#' \item \code{barcode.list}, a \linkS4class{List} to hold the results of each contrast.
 #' }
 #'
-#' The code in thie function was Code mostly lifted from \code{\link{.limma_contrast_chunk}}, 
-#' which was necessary to smoothly handle the barcode-to-gene result conversion.
+#' The code in thie function was mostly lifted from \code{\link{.limma_contrast_chunk}}.
+#' We use a separate function to smoothly handle the barcode-to-gene result conversion.
 #'
 #' @return 
-#' The function adds an appropriate \linkS4class{ScreenStatFrame} to both \code{barcode.list} and \code{gene.list} for each contrast in \code{contrast.cmds}.
+#' The function adds \linkS4class{ScreenBarcodeStatFrame}s to \code{barcode.list} for each contrast in \code{contrast.cmds}.
+#' It also creates the variables \code{all.simes}, \code{all.holm.mid} and \code{all.fry} (depending on the entries in \code{method}),
+#' each of which are a List of \linkS4class{ScreenFeatureeStatFrame}s for all contrasts.
 #' Code to perform the above is written to \code{fname}, and a \code{NULL} is invisibly returned. 
 #'
 #' @author Aaron Lun
@@ -413,8 +423,11 @@ barcode.results[[%s]] <- ScreenBarcodeStatFrame(res,
 ```", dpv, subset_cmd, dpv))
 
         if (do.genes) {
-            if (method=="simes") {
-                .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using Simes' method.
+            for (m in method) {
+                if ("simes" %in% method) {
+                    .knitAndWrite(fname, env, "### Gene-level consolidation with Simes 
+
+We also consolidate per-barcode statistics into per-gene results using a variety of methods.
 This tests the global null hypothesis that all barcodes for a gene are not differentially abundant.
 We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
 
@@ -423,10 +436,11 @@ gres <- combineBarcodeTests(res, gene.ids)
 gres <- gene_formatter(gres)
 head(gres[order(gres$PValue),])
 ```")
-            } else if (method=="holm-mid") { 
-                .knitAndWrite(fname, env, "We also consolidate per-barcode statistics into per-gene results using \"minimum Holm\" method.
+                } else if (method=="holm-mid") { 
+                    .knitAndWrite(fname, env, "### Gene-level consolidation with median-Holm
+
+We also consolidate per-barcode statistics into per-gene results using \"minimum Holm\" method.
 This tests the global null hypothesis that fewer than $X$ barcodes for a gene are differentially abundant, where $X$ is defined by `min.sig.n` and `min.sig.prop`.
-We also add the statistics for the best barcode (i.e., that with the lowest $p$-value) for reporting purposes.
 
 ```{r}
 gres <- combineBarcodeTests(res, gene.ids, method='holm-min',
@@ -434,8 +448,10 @@ gres <- combineBarcodeTests(res, gene.ids, method='holm-min',
 gres <- gene_formatter(gres)
 head(gres[order(gres$PValue),])
 ```")
-            } else {
-                .knitAndWrite(fname, env, sprintf("We also consolidate per-barcode statistics into per-gene results using the `fry` method.
+                } else {
+                    .knitAndWrite(fname, env, sprintf("### Gene-level consolidation with `fry`
+
+We also consolidate per-barcode statistics into per-gene results using the `fry` method.
 This uses the machinery for performing a self-contained gene set test, and applies it to 'barcode sets' corresponding to a single gene.
 The null hypothesis is that no barcodes for a given gene are differentially abundant, but favoring genes where most barcodes are DA.
 We also add the median log-FC and log-CPM across all barcodes for the each gene.
@@ -446,22 +462,29 @@ gres <- barcodeSetTest(v, gene.ids, design=design, contrast=con,
 gres <- gene_formatter(gres)
 head(gres[order(gres$PValue),])
 ```", fry_params))
-            }
+                }
 
-            sum.cmd <- if (solo) "table(Sig=gres$FDR <= 0.05, Direction=gres$Direction)" else "summary(gres$FDR <= 0.05)"
-            .knitAndWrite(fname, env, sprintf('We report summary statistics for this comparison at the gene level.
+                .justWrite(fname, 'We report summary statistics for this comparison at the gene level.')
+                .openChunk(fname)
+                if (solo) {
+                    .evalAndWrite(fname, env, "table(Sig=gres$FDR <= 0.05, Direction=gres$Direction)")
+                } else {
+                    .evalAndWrite(fname, env, "summary(gres$FDR <= 0.05)")
+                }
+                .closeChunk(fname)
 
-```{r}
-%s
-```', sum.cmd))
-
-            .knitAndWrite(fname, env, sprintf("We then save it into our result `List`.
-
-```{r}
-gene.results[[%s]] <- ScreenFeatureStatFrame(gres, 
+                .justWrite(fname, "We then save it into our result `List`.")
+                .openChunk(fname)
+                object <- .to_object(m)
+                if (con==1) {
+                    .evalAndWrite(fname, env, sprintf("%s <- List()", object))
+                }
+                .evalAndWrite(fname, env, sprintf("%s[[%s]] <- ScreenFeatureStatFrame(gres, 
     %sdesign=design, contrast=con, method='voom',
-    description=%s)
-```", dpv, subset_cmd, dpv))
+    description=%s)", object, dpv, subset_cmd, 
+                    deparse(paste0(vname, ", generated by ", m, "."))))
+                .closeChunk(fname)
+            }
         }
     }
 
