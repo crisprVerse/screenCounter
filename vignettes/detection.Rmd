@@ -145,10 +145,10 @@ The other table contains gene-level results from consolidating the statistics ac
 By default, we combine $p$-values across barcodes using Simes' method, which tests the null hypothesis that all barcodes for a given gene are not differentially abundant.
 The number of barcodes changing in each direction and the net direction of the change for a gene is reported, though the latter may not be well-defined if multiple barcodes change strongly in different directions.
 Log-fold changes and log-counts-per-million are also reported for the "best" barcode (i.e., with the lowest $p$-value) in each gene's pool.
-Alternatively, we can switch to a different consolidation strategy with the `method` argument - see below. 
+Other consolidation strategies can be used by setting the `method` argument, as described below.
 
 ```{r}
-out$gene[[1]]
+out$gene$simes[[1]]
 ```
 
 As with `runVoom()`, the `runVoomScreen()` function will produce a Rmarkdown report describing the exact steps that were performed.
@@ -176,7 +176,8 @@ The screen-specific options can also be fine-tuned:
   If `norm.type.field=NA`, no normalization is performed beyond library size normalization - this may be the "least worst" option in experiments with large systematic changes in abundance and no negative controls.
 - If `gene.field=NA`, no post-contrast gene-level consoliation is performed and only the barcode-level statistics are reported.
 
-The `method` argument supports different consolidation strategies that favor detection of different genes:
+Different strategies are available to consolidate barcode-level statistics into per-gene results.
+This is controlled via the `method` argument, where one or more strategies can be specified:
 
 - `method="simes"` will reject the null if any barcode has a strong effect.
   This makes it sensitive to off-target effects, which is useful for identifying affected genes.
