@@ -13,7 +13,7 @@ runVoomScreen(
   norm.type.field,
   norm.type.level,
   gene.field,
-  method = c("simes", "holm-mid", "fry"),
+  method = "simes",
   ...,
   annotation = NULL,
   lfc = 0,
@@ -44,7 +44,7 @@ Alternatively, a database ID string or an \linkS4class{InputResource} object, se
 
 \item{gene.field}{String specifying the field of \code{rowData(se)} that contains the gene identifier for each barcode.}
 
-\item{method}{String specifying the consolidation method to convert per-barcode statistics into per-gene results.}
+\item{method}{Character vector specifying the consolidation method(s) to convert per-barcode statistics into per-gene results.}
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
@@ -71,9 +71,13 @@ This file is intended only for diagnostic inspection and should \emph{not} be us
 Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
 }
 \value{
-A \linkS4class{List} containing two Lists, \code{barcode} and \code{gene}.
-Each list contains barcode- and gene-level result tables as \linkS4class{ScreenStatFrame}s from all contrasts.
+A \linkS4class{List} containing two named Lists, \code{barcode} and \code{gene}.
+The \code{barcode} List contains barcode-level result tables as \code{ScreenBarcodeStatFrame} objects, one per contrast.
 If \code{gene.field=NA}, only the \code{barcode} List is returned.
+
+The \code{gene} List contains internal Lists, one per contrast.
+Each internal List itself contains one \linkS4class{ScreenFeatureStatFrame} per choice of \code{method},
+which contains the per-gene consolidation statistics for that method and contrast.
 
 A Rmarkdown file is also created at \code{fname}, containing the steps required to reproduce the analysis.
 This also provides a basis for further customization.
