@@ -3,7 +3,7 @@
 #' Perform a \code{voom} analysis on a count matrix from a sequencing screen to detect differentially abundant barcodes across samples.
 #'
 #' @param se A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
-#' Alternatively, a database ID string or an \linkS4class{InputResource} object, see \code{?"\link{gp.sa.core-data-inputs}"}.
+#' Alternatively, an \linkS4class{InputResource} object pointing to a SummarizedExperiment, see \code{?"\link{gp.sa.core-inputs}"}.
 #' @param ... Further arguments to pass to \code{\link{runVoom}}. 
 #' @param reference.field String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).
 #' @param reference.level Character vector specifying the reference levels of the column named by \code{reference.field}.
@@ -337,13 +337,13 @@ gene_formatter <- function(gres) {
 #' \item \code{barcode.list}, a \linkS4class{List} to hold the results of each contrast.
 #' }
 #'
-#' The code in thie function was mostly lifted from \code{\link{.limma_contrast_chunk}}.
+#' The code in this function was mostly lifted from \code{\link{limma_contrast_chunk}}.
 #' We use a separate function to smoothly handle the barcode-to-gene result conversion.
 #'
 #' @return 
 #' The function adds \linkS4class{ScreenBarcodeStatFrame}s to \code{barcode.list} for each contrast in \code{contrast.cmds}.
 #' It also creates the variables \code{all.simes}, \code{all.holm.mid} and \code{all.fry} (depending on the entries in \code{method}),
-#' each of which are a List of \linkS4class{ScreenFeatureeStatFrame}s for all contrasts.
+#' each of which are a List of \linkS4class{ScreenFeatureStatFrame}s for all contrasts.
 #' Code to perform the above is written to \code{fname}, and a \code{NULL} is invisibly returned. 
 #'
 #' @author Aaron Lun

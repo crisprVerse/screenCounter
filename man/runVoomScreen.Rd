@@ -28,11 +28,11 @@ runVoomScreen(
 }
 \arguments{
 \item{se}{A \linkS4class{SummarizedExperiment} object containing read counts for each barcode (row) and sample (column).
-Alternatively, a database ID string or an \linkS4class{InputResource} object, see \code{?"\link{gp.sa.core-data-inputs}"}.}
+Alternatively, an \linkS4class{InputResource} object pointing to a SummarizedExperiment, see \code{?"\link{gp.sa.core-inputs}"}.}
 
 \item{groups}{String specifying the column of \code{colData(se)} containing the grouping factor, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
 
-\item{comparisons}{A list of character vectors specifying simple contrasts to perform between groups, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
+\item{comparisons}{A list of character vectors specifying the comparisons to perform between groups, see \code{?"\link[gp.sa.diff]{gp.sa.diff-args}"}.}
 
 \item{reference.field}{String specifying the column of \code{colData(se)} containing the type of each sample (i.e., reference or not).}
 
@@ -48,7 +48,7 @@ Alternatively, a database ID string or an \linkS4class{InputResource} object, se
 
 \item{...}{Further arguments to pass to \code{\link{runVoom}}.}
 
-\item{annotation}{Character vector specifying feature annotation to carry through into the result table.}
+\item{annotation}{Character vector specifying gene annotation to carry through into the result table.}
 
 \item{lfc}{Numeric scalar specifying a log-fold change threshold to be used in \code{\link[limma]{treat}}.
 A value of zero will default to the standard analysis with \code{\link[limma]{eBayes}}.}
@@ -65,7 +65,7 @@ This file is intended only for diagnostic inspection and should \emph{not} be us
 
 \item{fname}{String containing the path to an output Rmarkdown file.}
 
-\item{commit}{String specifying the auto-committing behavior, see \code{?"\link[gp.sa.core]{gp.sa.core-auto-commits}"}.}
+\item{commit}{String specifying the auto-committing behavior, see \code{?"\link{gp.sa.core-auto-commits}"}.}
 
 \item{save.all}{Logical scalar indicating whether the returned \linkS4class{ScreenStatFrame}s should also be saved to file.
 Ignored if \code{se} lacks provenance information, in which case saving is never performed.}
