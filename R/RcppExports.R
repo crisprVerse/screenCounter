@@ -2,46 +2,46 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 setup_barcodes_combo_dual <- function(constants, guide_list, allowSub, allowDel) {
-    .Call('_gp_sa_screen_setup_barcodes_combo_dual', PACKAGE = 'gp.sa.screen', constants, guide_list, allowSub, allowDel)
+    .Call('_screenCounter_setup_barcodes_combo_dual', PACKAGE = 'screenCounter', constants, guide_list, allowSub, allowDel)
 }
 
 count_barcodes_combo_dual <- function(seqs, xptr, use_forward, use_reverse) {
-    .Call('_gp_sa_screen_count_barcodes_combo_dual', PACKAGE = 'gp.sa.screen', seqs, xptr, use_forward, use_reverse)
+    .Call('_screenCounter_count_barcodes_combo_dual', PACKAGE = 'screenCounter', seqs, xptr, use_forward, use_reverse)
 }
 
 report_barcodes_combo_dual <- function(xptr) {
-    .Call('_gp_sa_screen_report_barcodes_combo_dual', PACKAGE = 'gp.sa.screen', xptr)
+    .Call('_screenCounter_report_barcodes_combo_dual', PACKAGE = 'screenCounter', xptr)
 }
 
 setup_barcodes_single <- function(constants, guide_list, allowS, allowD) {
-    .Call('_gp_sa_screen_setup_barcodes_single', PACKAGE = 'gp.sa.screen', constants, guide_list, allowS, allowD)
+    .Call('_screenCounter_setup_barcodes_single', PACKAGE = 'screenCounter', constants, guide_list, allowS, allowD)
 }
 
 count_barcodes_single <- function(seqs, xptr, use_forward, use_reverse) {
-    .Call('_gp_sa_screen_count_barcodes_single', PACKAGE = 'gp.sa.screen', seqs, xptr, use_forward, use_reverse)
+    .Call('_screenCounter_count_barcodes_single', PACKAGE = 'screenCounter', seqs, xptr, use_forward, use_reverse)
 }
 
 report_barcodes_single <- function(xptr) {
-    .Call('_gp_sa_screen_report_barcodes_single', PACKAGE = 'gp.sa.screen', xptr)
+    .Call('_screenCounter_report_barcodes_single', PACKAGE = 'screenCounter', xptr)
 }
 
 basic_hash <- function(input) {
-    .Call('_gp_sa_screen_basic_hash', PACKAGE = 'gp.sa.screen', input)
+    .Call('_screenCounter_basic_hash', PACKAGE = 'screenCounter', input)
 }
 
 shift_hash <- function(input, coming) {
-    .Call('_gp_sa_screen_shift_hash', PACKAGE = 'gp.sa.screen', input, coming)
+    .Call('_screenCounter_shift_hash', PACKAGE = 'screenCounter', input, coming)
 }
 
 substitute_hash <- function(input) {
-    .Call('_gp_sa_screen_substitute_hash', PACKAGE = 'gp.sa.screen', input)
+    .Call('_screenCounter_substitute_hash', PACKAGE = 'screenCounter', input)
 }
 
 delete_hash <- function(input) {
-    .Call('_gp_sa_screen_delete_hash', PACKAGE = 'gp.sa.screen', input)
+    .Call('_screenCounter_delete_hash', PACKAGE = 'screenCounter', input)
 }
 
 build_dict <- function(guides, allowS, allowD) {
-    .Call('_gp_sa_screen_build_dict', PACKAGE = 'gp.sa.screen', guides, allowS, allowD)
+    .Call('_screenCounter_build_dict', PACKAGE = 'screenCounter', guides, allowS, allowD)
 }
 
