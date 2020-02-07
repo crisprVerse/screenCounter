@@ -1,28 +1,22 @@
-Package: gp.sa.screen
-Version: 1.1.10
+Package: screenCounter
+Version: 0.99.0
 Date: 2020-02-06
-Title: Standardized Analytics for Sequencing Screens
-Description: Provides a standardized analysis pipeline for 
-    analyzing data from high-throughput sequencing screens
-    involving shRNA silencing or various flavors of CRISPR.
+Title: Counting Reads in High-Throughput Sequencing Screens
+Description: Provides functions for counting reads from high-throughput
+    sequencing screen data (e.g., CRISPR, shRNA) to quantify barcode 
+    abundance. Currently supports single barcodes in single- or paired-end
+    data, and combinatorial barcodes in paired-end data.
 Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="luna@gene.com")
 Depends: 
     S4Vectors, 
-    SummarizedExperiment,
-    gp.sa.core
+    SummarizedExperiment
 Imports: 
-    methods,
-    gp.sa.diff,
     Rcpp,
     IRanges,
     XVector,
     Biostrings,
     ShortRead,
-    BiocParallel,
-    edgeR,
-    limma,
-    csaw,
-    grDevices
+    BiocParallel
 Suggests: 
     BiocStyle,
     knitr,

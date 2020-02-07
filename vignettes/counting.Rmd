@@ -4,12 +4,12 @@ author:
 - name: Aaron Lun
   affiliation: Genentech gRED B&CB
   email: luna@gene.com
-date: "Revised: December 2, 2019"  
+date: "Revised: February 6, 2020"  
 output:
   BiocStyle::html_document
 package: gp.sa.screen
 vignette: >
-  %\VignetteIndexEntry{1. Counting barcodes}
+  %\VignetteIndexEntry{Counting barcodes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -25,7 +25,7 @@ library(gp.sa.core)
 
 # Overview
 
-The `r GRANpkg("gp.sa.screen")` package implements several functions to quantify the frequency of barcodes in a sequencing screen experiment.
+The `r GRANpkg("screenCounter")` package implements several functions to quantify the frequency of barcodes in a sequencing screen experiment.
 These functions on the raw FASTQ files, yielding a matrix of counts for each barcode in each sample for downstream analysis.
 Quantification can be performed for both single and combinatorial barcodes, though only single-end sequencing data are currently supported.
 

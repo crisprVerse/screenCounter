@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // setup_barcodes_combo_dual
 SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list, Rcpp::LogicalVector allowSub, Rcpp::LogicalVector allowDel);
-RcppExport SEXP _gp_sa_screen_setup_barcodes_combo_dual(SEXP constantsSEXP, SEXP guide_listSEXP, SEXP allowSubSEXP, SEXP allowDelSEXP) {
+RcppExport SEXP _screenCounter_setup_barcodes_combo_dual(SEXP constantsSEXP, SEXP guide_listSEXP, SEXP allowSubSEXP, SEXP allowDelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type constants(constantsSEXP);
@@ -20,7 +20,7 @@ END_RCPP
 }
 // count_barcodes_combo_dual
 SEXP count_barcodes_combo_dual(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
-RcppExport SEXP _gp_sa_screen_count_barcodes_combo_dual(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
+RcppExport SEXP _screenCounter_count_barcodes_combo_dual(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
@@ -33,7 +33,7 @@ END_RCPP
 }
 // report_barcodes_combo_dual
 SEXP report_barcodes_combo_dual(SEXP xptr);
-RcppExport SEXP _gp_sa_screen_report_barcodes_combo_dual(SEXP xptrSEXP) {
+RcppExport SEXP _screenCounter_report_barcodes_combo_dual(SEXP xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
@@ -43,7 +43,7 @@ END_RCPP
 }
 // setup_barcodes_single
 SEXP setup_barcodes_single(SEXP constants, SEXP guide_list, Rcpp::LogicalVector allowS, Rcpp::LogicalVector allowD);
-RcppExport SEXP _gp_sa_screen_setup_barcodes_single(SEXP constantsSEXP, SEXP guide_listSEXP, SEXP allowSSEXP, SEXP allowDSEXP) {
+RcppExport SEXP _screenCounter_setup_barcodes_single(SEXP constantsSEXP, SEXP guide_listSEXP, SEXP allowSSEXP, SEXP allowDSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type constants(constantsSEXP);
@@ -56,7 +56,7 @@ END_RCPP
 }
 // count_barcodes_single
 SEXP count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
-RcppExport SEXP _gp_sa_screen_count_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
+RcppExport SEXP _screenCounter_count_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
@@ -69,7 +69,7 @@ END_RCPP
 }
 // report_barcodes_single
 SEXP report_barcodes_single(SEXP xptr);
-RcppExport SEXP _gp_sa_screen_report_barcodes_single(SEXP xptrSEXP) {
+RcppExport SEXP _screenCounter_report_barcodes_single(SEXP xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
@@ -79,7 +79,7 @@ END_RCPP
 }
 // basic_hash
 SEXP basic_hash(Rcpp::StringVector input);
-RcppExport SEXP _gp_sa_screen_basic_hash(SEXP inputSEXP) {
+RcppExport SEXP _screenCounter_basic_hash(SEXP inputSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::StringVector >::type input(inputSEXP);
@@ -89,7 +89,7 @@ END_RCPP
 }
 // shift_hash
 SEXP shift_hash(Rcpp::StringVector input, Rcpp::StringVector coming);
-RcppExport SEXP _gp_sa_screen_shift_hash(SEXP inputSEXP, SEXP comingSEXP) {
+RcppExport SEXP _screenCounter_shift_hash(SEXP inputSEXP, SEXP comingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::StringVector >::type input(inputSEXP);
@@ -100,7 +100,7 @@ END_RCPP
 }
 // substitute_hash
 SEXP substitute_hash(Rcpp::StringVector input);
-RcppExport SEXP _gp_sa_screen_substitute_hash(SEXP inputSEXP) {
+RcppExport SEXP _screenCounter_substitute_hash(SEXP inputSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::StringVector >::type input(inputSEXP);
@@ -110,7 +110,7 @@ END_RCPP
 }
 // delete_hash
 SEXP delete_hash(Rcpp::StringVector input);
-RcppExport SEXP _gp_sa_screen_delete_hash(SEXP inputSEXP) {
+RcppExport SEXP _screenCounter_delete_hash(SEXP inputSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::StringVector >::type input(inputSEXP);
@@ -120,7 +120,7 @@ END_RCPP
 }
 // build_dict
 SEXP build_dict(Rcpp::StringVector guides, bool allowS, bool allowD);
-RcppExport SEXP _gp_sa_screen_build_dict(SEXP guidesSEXP, SEXP allowSSEXP, SEXP allowDSEXP) {
+RcppExport SEXP _screenCounter_build_dict(SEXP guidesSEXP, SEXP allowSSEXP, SEXP allowDSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Rcpp::StringVector >::type guides(guidesSEXP);
@@ -132,21 +132,21 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gp_sa_screen_setup_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_setup_barcodes_combo_dual, 4},
-    {"_gp_sa_screen_count_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_count_barcodes_combo_dual, 4},
-    {"_gp_sa_screen_report_barcodes_combo_dual", (DL_FUNC) &_gp_sa_screen_report_barcodes_combo_dual, 1},
-    {"_gp_sa_screen_setup_barcodes_single", (DL_FUNC) &_gp_sa_screen_setup_barcodes_single, 4},
-    {"_gp_sa_screen_count_barcodes_single", (DL_FUNC) &_gp_sa_screen_count_barcodes_single, 4},
-    {"_gp_sa_screen_report_barcodes_single", (DL_FUNC) &_gp_sa_screen_report_barcodes_single, 1},
-    {"_gp_sa_screen_basic_hash", (DL_FUNC) &_gp_sa_screen_basic_hash, 1},
-    {"_gp_sa_screen_shift_hash", (DL_FUNC) &_gp_sa_screen_shift_hash, 2},
-    {"_gp_sa_screen_substitute_hash", (DL_FUNC) &_gp_sa_screen_substitute_hash, 1},
-    {"_gp_sa_screen_delete_hash", (DL_FUNC) &_gp_sa_screen_delete_hash, 1},
-    {"_gp_sa_screen_build_dict", (DL_FUNC) &_gp_sa_screen_build_dict, 3},
+    {"_screenCounter_setup_barcodes_combo_dual", (DL_FUNC) &_screenCounter_setup_barcodes_combo_dual, 4},
+    {"_screenCounter_count_barcodes_combo_dual", (DL_FUNC) &_screenCounter_count_barcodes_combo_dual, 4},
+    {"_screenCounter_report_barcodes_combo_dual", (DL_FUNC) &_screenCounter_report_barcodes_combo_dual, 1},
+    {"_screenCounter_setup_barcodes_single", (DL_FUNC) &_screenCounter_setup_barcodes_single, 4},
+    {"_screenCounter_count_barcodes_single", (DL_FUNC) &_screenCounter_count_barcodes_single, 4},
+    {"_screenCounter_report_barcodes_single", (DL_FUNC) &_screenCounter_report_barcodes_single, 1},
+    {"_screenCounter_basic_hash", (DL_FUNC) &_screenCounter_basic_hash, 1},
+    {"_screenCounter_shift_hash", (DL_FUNC) &_screenCounter_shift_hash, 2},
+    {"_screenCounter_substitute_hash", (DL_FUNC) &_screenCounter_substitute_hash, 1},
+    {"_screenCounter_delete_hash", (DL_FUNC) &_screenCounter_delete_hash, 1},
+    {"_screenCounter_build_dict", (DL_FUNC) &_screenCounter_build_dict, 3},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_gp_sa_screen(DllInfo *dll) {
+RcppExport void R_init_screenCounter(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
