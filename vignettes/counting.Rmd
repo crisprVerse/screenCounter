@@ -7,7 +7,7 @@ author:
 date: "Revised: February 6, 2020"  
 output:
   BiocStyle::html_document
-package: gp.sa.screen
+package: screenCounter
 vignette: >
   %\VignetteIndexEntry{Counting barcodes}
   %\VignetteEngine{knitr::rmarkdown}
@@ -20,12 +20,11 @@ knitr::opts_chunk$set(error=FALSE, message=FALSE)
 
 ```{r, echo=FALSE, results="hide"}
 library(BiocStyle)
-library(gp.sa.core)
 ```
 
 # Overview
 
-The `r GRANpkg("screenCounter")` package implements several functions to quantify the frequency of barcodes in a sequencing screen experiment.
+The _screenCounter_ package implements several functions to quantify the frequency of barcodes in a sequencing screen experiment.
 These functions on the raw FASTQ files, yielding a matrix of counts for each barcode in each sample for downstream analysis.
 Quantification can be performed for both single and combinatorial barcodes, though only single-end sequencing data are currently supported.
 
@@ -69,7 +68,7 @@ This produces a `SummarizedExperiment` containing a count matrix of frequencies 
 The order of rows corresponds to the order of variable regions in `known` that distinguishes each barcode.
 
 ```{r}
-library(gp.sa.screen)
+library(screenCounter)
 out <- matrixOfSingleBarcodes(single.fq, 
     flank5="GTAC", flank3="CATG", choices=known)
 out
