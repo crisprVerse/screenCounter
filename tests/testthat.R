@@ -1,3 +1,3 @@
 library(testthat)
-library(gp.sa.screen)
-test_check("gp.sa.screen")
+library(screenCounter)
+test_check("screenCounter")
