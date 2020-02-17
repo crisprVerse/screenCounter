@@ -1,5 +1,5 @@
 # This tests countSingleBarcodes().
-# library(testthat); library(gp.sa.screen); source("setup.R"); source("test-single.R")
+# library(testthat); library(screenCounter); source("setup.R"); source("test-single.R")
 
 library(Biostrings)
 nbarcodes <- 20

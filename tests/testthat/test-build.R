@@ -1,5 +1,5 @@
 # Tests the dictionary building capabilities for barcode searching.
-# library(gp.sa.screen); library(testthat); source("setup.R"); source("test-build.R")
+# library(screenCounter); library(testthat); source("setup.R"); source("test-build.R")
 
 MANUAL_DICT <- function(barcodes, sub=FALSE, del=FALSE) {
     # Doesn't do anything special about clashes,
@@ -10,7 +10,7 @@ MANUAL_DICT <- function(barcodes, sub=FALSE, del=FALSE) {
         keys <- lapply(barcodes, MANUAL_HASH)
 
         if (sub) {
-            skeys <- lapply(barcodes, gp.sa.screen:::substitute_hash)
+            skeys <- lapply(barcodes, screenCounter:::substitute_hash)
             sidx <- rep(seq_along(skeys), lengths(skeys))
 
             keys <- c(keys, unlist(skeys, recursive=FALSE))
@@ -18,7 +18,7 @@ MANUAL_DICT <- function(barcodes, sub=FALSE, del=FALSE) {
             priority <- c(priority, rep(1L, length(sidx)))
         }
     } else {
-        keys <- lapply(barcodes, gp.sa.screen:::delete_hash)
+        keys <- lapply(barcodes, screenCounter:::delete_hash)
         idx <- rep(seq_along(keys), lengths(keys))
         keys <- unlist(keys, recursive=FALSE)
         priority <- rep(1L, length(idx))
@@ -48,30 +48,30 @@ test_that("dictionary building works correctly in the basic case", {
     for (n in c(10, 20, 40)) { 
         barcodes <- strrep(BASES, n) # avoid error from overlap.
         ref <- MANUAL_DICT(barcodes)
-        out <- gp.sa.screen:::build_dict(barcodes, FALSE, FALSE)
+        out <- screenCounter:::build_dict(barcodes, FALSE, FALSE)
         expect_identical(as.integer(n), out[[2]])
         COMPARE_DICT(ref, out[[1]])
     }
 
     # Clashes cause errors.
-    expect_error(gp.sa.screen:::build_dict(c("AAAA", "AAAA"), FALSE, FALSE), "duplicated")
+    expect_error(screenCounter:::build_dict(c("AAAA", "AAAA"), FALSE, FALSE), "duplicated")
 
     # Variable length causes errors.
-    expect_error(gp.sa.screen:::build_dict(c("AAA", "AAAA"), FALSE, FALSE), "variable length")
+    expect_error(screenCounter:::build_dict(c("AAA", "AAAA"), FALSE, FALSE), "variable length")
 })
 
 test_that("dictionary building works correctly with substitutions", {
     for (n in c(10, 20, 40)) { 
         barcodes <- strrep(BASES, n)
         ref <- MANUAL_DICT(barcodes, sub=TRUE)
-        out <- gp.sa.screen:::build_dict(barcodes, TRUE, FALSE)
+        out <- screenCounter:::build_dict(barcodes, TRUE, FALSE)
         expect_identical(as.integer(n), out[[2]])
         COMPARE_DICT(ref, out[[1]])
     }
 
     # Clashes between mismatch and perfect sequences from different barcodes are handled properly.
     truseq <- c("ACGTA", "ACGTG")
-    out <- gp.sa.screen:::build_dict(truseq, TRUE, FALSE)
+    out <- screenCounter:::build_dict(truseq, TRUE, FALSE)
     expect_identical(length(out[[1]][[1]]), sum(1L + 3L * nchar(truseq)) - 4L)
 
     for (i in seq_along(truseq)) {
@@ -84,7 +84,7 @@ test_that("dictionary building works correctly with substitutions", {
 
     # Clashes between two mismatch sequences are handled properly.
     truseq <- c("AAAAAACA", "AAAAAAAC")
-    out <- gp.sa.screen:::build_dict(truseq, TRUE, FALSE)
+    out <- screenCounter:::build_dict(truseq, TRUE, FALSE)
 
     for (conflict in c("AAAAAAAA", "AAAAAACC")) {
         conflictor <- MANUAL_HASH(conflict)
@@ -101,14 +101,14 @@ test_that("dictionary building works correctly with deletions", {
         # would result in two deletions clashing with each other.
         barcodes <- strrep(c("ACGT", "GCAT", "TACA", "GCTC"), n)
         ref <- MANUAL_DICT(barcodes, del=TRUE)
-        out <- gp.sa.screen:::build_dict(barcodes, FALSE, TRUE)
+        out <- screenCounter:::build_dict(barcodes, FALSE, TRUE)
         expect_identical(unique(nchar(barcodes))-1L, out[[2]])
         COMPARE_DICT(ref, out[[1]])
     }
 
     # Clashes between two mismatch sequences are handled properly.
     truseq <- c("AAAAAACA", "AAAAAAAC")
-    out <- gp.sa.screen:::build_dict(truseq, FALSE, TRUE)
+    out <- screenCounter:::build_dict(truseq, FALSE, TRUE)
 
     for (conflict in c("AAAAAAA", "AAAAAAC")) {
         conflictor <- MANUAL_HASH(conflict)
@@ -119,12 +119,12 @@ test_that("dictionary building works correctly with deletions", {
 
     # Clashes between two mismatch sequences of the same barcode do not create '-1's.
     truseq <- c("AAAAAAAA", "TTTTTTTT")
-    out <- gp.sa.screen:::build_dict(truseq, FALSE, TRUE)
+    out <- screenCounter:::build_dict(truseq, FALSE, TRUE)
 
     expect_identical(out[[1]][[2]][[2]], rep(1L, length(truseq)))
     out[[1]][[2]][[2]][] <- 0L
     COMPARE_DICT(out[[1]], MANUAL_DICT(c("AAAAAAA", "TTTTTTT")))
 
     # Variable length causes errors.
-    expect_error(gp.sa.screen:::build_dict(c("AAA", "AAAA"), FALSE, TRUE), "variable length")
+    expect_error(screenCounter:::build_dict(c("AAA", "AAAA"), FALSE, TRUE), "variable length")
 })

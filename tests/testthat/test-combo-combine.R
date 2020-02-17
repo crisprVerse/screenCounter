@@ -1,5 +1,5 @@
 # This tests the combineComboCounts function.
-# library(testthat); library(gp.sa.screen); source("test-combo-combine.R")
+# library(testthat); library(screenCounter); source("test-combo-combine.R")
 
 GENERATOR <- function(nsamples, npool, nreads) {
     output <- vector("list", nsamples)

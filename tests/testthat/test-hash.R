@@ -1,9 +1,9 @@
 # Tests the basic hashing capabilities for barcode searching.
-# library(gp.sa.screen); library(testthat); source("setup.R"); source("test-hash.R")
+# library(screenCounter); library(testthat); source("setup.R"); source("test-hash.R")
 
 test_that("basic hashing works correctly", {
     BASIC_COMPARE <- function(barcode) {
-        out <- gp.sa.screen:::basic_hash(barcode)
+        out <- screenCounter:::basic_hash(barcode)
         ref <- MANUAL_HASH(barcode)
         expect_identical(out, ref)
     }
@@ -16,7 +16,7 @@ test_that("basic hashing works correctly", {
 
 test_that("shifted hashing works correctly", {
     SHIFT_COMPARE <- function(barcode, ensuing) {
-        out <- gp.sa.screen:::shift_hash(barcode, ensuing)
+        out <- screenCounter:::shift_hash(barcode, ensuing)
         
         ensuing <- strsplit(ensuing, "")[[1]]
         collected <- vector("list", length(ensuing))
@@ -50,7 +50,7 @@ test_that("substituted hashing works correctly", {
             }
         }
 
-        out <- gp.sa.screen:::substitute_hash(barcode)
+        out <- screenCounter:::substitute_hash(barcode)
         expect_identical(collected, out)
     }
 
@@ -70,7 +70,7 @@ test_that("deleted hashing works correctly", {
             collected <- c(collected, list(MANUAL_HASH(B2, split=TRUE)))
         }
 
-        out <- gp.sa.screen:::delete_hash(barcode)
+        out <- screenCounter:::delete_hash(barcode)
         expect_identical(collected, out)
     }
 
