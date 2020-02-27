@@ -4,7 +4,7 @@
 \alias{ngsScreenAlignment}
 \title{Process reads from CRISPR and ORF screens}
 \usage{
-ngsScreenAlignment(ngs, libname, flank5, flank3, ...)
+ngsScreenAlignment(ngs, libname, flank5, flank3, runs = NULL, ...)
 }
 \arguments{
 \item{ngs}{String specyfing the NGS number (eg. "ngs3096").}
@@ -14,6 +14,8 @@ ngsScreenAlignment(ngs, libname, flank5, flank3, ...)
 \item{flank5}{String containing the constant sequence on the 5' flank of the variable region.}
 
 \item{flank3}{String containing the constant sequence on the 3' flank of the variable region.}
+
+\item{runs}{Character string indicating which sequencing runs should be considered.}
 
 \item{...}{Further arguments to pass to \code{matrixOfSingleBarcodes}.}
 }
@@ -34,7 +36,8 @@ Process reads from CRISPR and ORF screens and return a SummarizedExperiment obje
 \dontrun{
 ngsScreenAlignment(ngs="ngs3096",
     libname="crispra.cas9.human.transylvania1",
-    flank5="TACCG", flank3="GTTT")
+    flank5="TACCG", flank3="GTTT"
+)
 }
 }
 \author{
