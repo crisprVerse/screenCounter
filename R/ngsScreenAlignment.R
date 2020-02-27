@@ -177,7 +177,7 @@ ngsComboBarcodingAlignment <- function(ngs, choices, template, runs=runs,...){
         template=template,
         strand="both",
         BPPARAM=RosalindParam(length(files)),
-        withDimnames=TRUE
+        withDimnames=TRUE,
         ... 
     )      
     counts <- assays(se)[[1]]
