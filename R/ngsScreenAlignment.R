@@ -69,12 +69,18 @@ ngsScreenAlignment <- function(ngs, libname, flank5, flank3, runs=NULL,...){
     ann <- getCrisprLibraryAnnotation(libname)
     choices <- unique(ann$barcode)
 
+    BPPARAM <- RosalindParam(length(files),
+            resources = list(walltime=36000, 
+                memory=8000, 
+                ncpus=1
+            )
+    )
     se <- matrixOfSingleBarcodes(files,
         choices=choices, 
         flank5=flank5, 
         flank3=flank3,
         withDimnames=TRUE,
-        BPPARAM=RosalindParam(length(files)),
+        BPPARAM=BPPARAM,
         ...
     )
     counts <- assays(se)[[1]]
@@ -172,12 +178,18 @@ ngsComboBarcodingAlignment <- function(ngs, choices, template, runs=runs,...){
         stop("Only dual barcodes supported at the moment. ")
     }
     files <- .getFastqFiles(ngs,runs=runs)
+    BPPARAM <- RosalindParam(length(files),
+            resources = list(walltime=36000, 
+                memory=8000, 
+                ncpus=1
+            )
+    )
     se <- matrixOfComboBarcodes(files,
         choices=choices, 
         template=template,
         strand="both",
-        BPPARAM=RosalindParam(length(files)),
         withDimnames=TRUE,
+        BPPARAM=BPPARAM,
         ... 
     )      
     counts <- assays(se)[[1]]
