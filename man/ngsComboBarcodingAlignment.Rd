@@ -4,7 +4,14 @@
 \alias{ngsComboBarcodingAlignment}
 \title{Process reads for cell barcoding experiment}
 \usage{
-ngsComboBarcodingAlignment(ngs, choices, template, runs = runs, ...)
+ngsComboBarcodingAlignment(
+  ngs,
+  choices,
+  template,
+  runs = runs,
+  aggregateBy = c("samid", "libid"),
+  ...
+)
 }
 \arguments{
 \item{ngs}{String specyfing the NGS number (eg. "ngs3096").}
@@ -16,6 +23,8 @@ the second vector for the second variable region and so on.}
 \item{template}{A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.}
 
 \item{runs}{Character string indicating which sequencing runs should be considered.}
+
+\item{aggregateBy}{String specifying which id (samid or libid) should be used as sample unit.}
 
 \item{...}{Further arguments to pass to \code{matrixOfSingleBarcodes}.}
 }

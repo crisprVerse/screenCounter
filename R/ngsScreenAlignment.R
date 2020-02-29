@@ -71,7 +71,7 @@ ngsScreenAlignment <- function(ngs, libname, flank5, flank3, runs=NULL,...){
 
     BPPARAM <- RosalindParam(length(files),
             resources = list(walltime=36000, 
-                memory=8000, 
+                memory=20000, 
                 ncpus=1
             )
     )
@@ -137,6 +137,7 @@ ngsScreenAlignment <- function(ngs, libname, flank5, flank3, runs=NULL,...){
 #' the second vector for the second variable region and so on.
 #' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
 #' @param runs Character string indicating which sequencing runs should be considered.
+#' @param aggregateBy String specifying which id (samid or libid) should be used as sample unit.
 #' @param ... Further arguments to pass to \code{matrixOfSingleBarcodes}.
 #'
 #' @return 
@@ -173,14 +174,21 @@ ngsScreenAlignment <- function(ngs, libname, flank5, flank3, runs=NULL,...){
 #' @importFrom SummarizedExperiment colData
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom SummarizedExperiment assays
-ngsComboBarcodingAlignment <- function(ngs, choices, template, runs=runs,...){
+ngsComboBarcodingAlignment <- function(ngs, choices, template,
+    runs=runs, aggregateBy = c("samid", "libid"), ...){
+    aggregateBy <- match.arg(aggregateBy)
+    if (aggregateBy=="samid"){
+        pattern <- "SAM[0-9]+"
+    } else {
+        pattern <- "LIB[0-9]+"
+    }
     if (length(choices)!=2){
         stop("Only dual barcodes supported at the moment. ")
     }
     files <- .getFastqFiles(ngs,runs=runs)
     BPPARAM <- RosalindParam(length(files),
             resources = list(walltime=36000, 
-                memory=8000, 
+                memory=20000, 
                 ncpus=1
             )
     )
@@ -196,8 +204,7 @@ ngsComboBarcodingAlignment <- function(ngs, choices, template, runs=runs,...){
 
     # Sample key:
     sample <- colnames(counts)
-    sample <- str_extract(sample, "SAM[0-9]+_R[1-2]")
-    sample <- gsub("_R1|_R2","",sample)
+    sample <- str_extract(sample, pattern)    
     samples <- unique(sample)
     Y <- lapply(samples, function(x){
         wh <- which(sample==x)
@@ -216,10 +223,16 @@ ngsComboBarcodingAlignment <- function(ngs, choices, template, runs=runs,...){
     rownames(Z) <- samples
    
     # Let's get the phenotype information:
-    sinfo <- annotateSAMIDs(rownames(Z))[colnames(Y),]
-    sinfo[is.na(sinfo)] <- ""
-    sinfo <- cbind(sinfo, Z)
-
+    if (aggregateBy=="samid"){
+        
+        sinfo <- annotateSAMIDs(rownames(Z))[colnames(Y),]
+        sinfo[is.na(sinfo)] <- ""
+        sinfo <- cbind(sinfo, Z)
+    } else {
+        sinfo <- data.frame(libid=colnames(Y))
+        rownames(sinfo) <- colnames(Y)
+    }
+  
     # Let's create the rowData:
     ann <- rowData(se)
     colnames(ann) <- c("barcode1", "barcode2")
