@@ -11,31 +11,10 @@ extern "C" {
 #include "search_sequence.h"
 #include "utils.h"
 
-#include <stdexcept>
 #include <vector>
-#include <sstream>
-#include <map>
+#include <deque>
 
-/* Single guide parser. */
-
-struct result_store {
-    std::vector<int> counts;
-    void operator()(const combination<1>& input) {
-        ++(counts[input.indices[0]]);
-        return;
-    }
-};
-
-struct se_single_info {
-    se_single_info(Rcpp::List g, Rcpp::StringVector c, Rcpp::LogicalVector s, Rcpp::LogicalVector d) :
-        info(g, c, s, d)
-    {
-        size_t ref=info.nbarcodes.front();
-        output.counts.resize(ref);
-    }
-    search_info<1> info;
-    result_store output;
-};
+typedef search_info<1> se_single_info;
 
 // [[Rcpp::export(rng=false)]]
 SEXP setup_barcodes_single(SEXP constants, SEXP guide_list, Rcpp::LogicalVector allowS, Rcpp::LogicalVector allowD) 
@@ -44,15 +23,24 @@ SEXP setup_barcodes_single(SEXP constants, SEXP guide_list, Rcpp::LogicalVector 
     return Rcpp::XPtr<se_single_info>(ptr, true);
 }
 
-// [[Rcpp::export(rng=false)]]
-SEXP count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
+/* This template function assumes that the STORE class implements:
+ *
+ * - A constructor accepting the number of barcodes and the number of sequences.
+ * - A () method that fulfills the requirements of search_sequence<1>.
+ * - An advance() method that is run in the loop body.
+ * - A yield() method to return an IntegerVector back to R.
+ */
+
+template<class STORE>
+Rcpp::IntegerVector search_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
     Rcpp::XPtr<se_single_info> ptr(xptr);
-    const auto& search_info=ptr->info;
-    auto& output=ptr->output;
+    const auto& search_info=*ptr;
 
     auto Seqs=hold_XStringSet(seqs);
     size_t nseqs=get_length_from_XStringSet_holder(&Seqs);
     std::vector<char> curseq;
+
+    STORE output(search_info.nbarcodes.front(), nseqs);
 
     for (size_t i=0; i<nseqs; ++i) {
         auto current=get_elt_from_XStringSet_holder(&Seqs, i);
@@ -77,15 +65,53 @@ SEXP count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reve
             reverse_complement(curseq.data(), len);
             search_sequence<1>(curseq.data(), len, search_info, output);
         }
+
+        output.advance();
     }
 
-    return R_NilValue;
+    return output.yield();
 }
+
+/*** Counting the instances of each barcode ***/
+
+struct result_count_store {
+    result_count_store(int nbarcodes, int nsequences) : counts(nbarcodes) {}
+    void operator()(const combination<1>& input) {
+        ++(counts[input.indices[0]]);
+        return;
+    }
+    void advance() {}
+    Rcpp::IntegerVector yield() const {
+        return counts;
+    }
+    Rcpp::IntegerVector counts;
+};
 
 // [[Rcpp::export(rng=false)]]
-SEXP report_barcodes_single(SEXP xptr) {
-    Rcpp::XPtr<se_single_info> ptr(xptr);
-    const auto& out_store=ptr->output;
-    return Rcpp::IntegerVector(out_store.counts.begin(), out_store.counts.end());
-}
+Rcpp::IntegerVector count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
+    return search_barcodes_single<result_count_store>(seqs, xptr, use_forward, use_reverse);
+} 
 
+/*** Listing the barcode for each sequence ***/
+
+struct result_identity_store {
+    result_identity_store(int nbarcodes, int nsequences) : ids(nsequences) {}
+    void operator()(const combination<1>& input) {
+        ids[counter]=input.indices[0]+1;
+        return;
+    }
+    void advance() { 
+        ++counter;
+        return;
+    }
+    Rcpp::IntegerVector yield() const {
+        return ids;
+    }
+    Rcpp::IntegerVector ids;
+    int counter=0;
+};
+
+// [[Rcpp::export(rng=false)]]
+Rcpp::IntegerVector identify_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
+    return search_barcodes_single<result_identity_store>(seqs, xptr, use_forward, use_reverse);
+} 

@@ -55,7 +55,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // count_barcodes_single
-SEXP count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
+Rcpp::IntegerVector count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
 RcppExport SEXP _screenCounter_count_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -67,13 +67,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// report_barcodes_single
-SEXP report_barcodes_single(SEXP xptr);
-RcppExport SEXP _screenCounter_report_barcodes_single(SEXP xptrSEXP) {
+// identify_barcodes_single
+Rcpp::IntegerVector identify_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse);
+RcppExport SEXP _screenCounter_identify_barcodes_single(SEXP seqsSEXP, SEXP xptrSEXP, SEXP use_forwardSEXP, SEXP use_reverseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(report_barcodes_single(xptr));
+    Rcpp::traits::input_parameter< bool >::type use_forward(use_forwardSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_reverse(use_reverseSEXP);
+    rcpp_result_gen = Rcpp::wrap(identify_barcodes_single(seqs, xptr, use_forward, use_reverse));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -137,7 +140,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_screenCounter_report_barcodes_combo_dual", (DL_FUNC) &_screenCounter_report_barcodes_combo_dual, 1},
     {"_screenCounter_setup_barcodes_single", (DL_FUNC) &_screenCounter_setup_barcodes_single, 4},
     {"_screenCounter_count_barcodes_single", (DL_FUNC) &_screenCounter_count_barcodes_single, 4},
-    {"_screenCounter_report_barcodes_single", (DL_FUNC) &_screenCounter_report_barcodes_single, 1},
+    {"_screenCounter_identify_barcodes_single", (DL_FUNC) &_screenCounter_identify_barcodes_single, 4},
     {"_screenCounter_basic_hash", (DL_FUNC) &_screenCounter_basic_hash, 1},
     {"_screenCounter_shift_hash", (DL_FUNC) &_screenCounter_shift_hash, 2},
     {"_screenCounter_substitute_hash", (DL_FUNC) &_screenCounter_substitute_hash, 1},

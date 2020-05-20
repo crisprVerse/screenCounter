@@ -21,8 +21,8 @@ count_barcodes_single <- function(seqs, xptr, use_forward, use_reverse) {
     .Call('_screenCounter_count_barcodes_single', PACKAGE = 'screenCounter', seqs, xptr, use_forward, use_reverse)
 }
 
-report_barcodes_single <- function(xptr) {
-    .Call('_screenCounter_report_barcodes_single', PACKAGE = 'screenCounter', xptr)
+identify_barcodes_single <- function(seqs, xptr, use_forward, use_reverse) {
+    .Call('_screenCounter_identify_barcodes_single', PACKAGE = 'screenCounter', seqs, xptr, use_forward, use_reverse)
 }
 
 basic_hash <- function(input) {
