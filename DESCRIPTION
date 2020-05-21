@@ -17,11 +17,7 @@ Imports:
     BiocGenerics,
     Biostrings,
     ShortRead,
-    BiocParallel,
-    gneDB,
-    crisprAnnotation,
-    stringr,
-    gp.sa.utils
+    BiocParallel
 Suggests: 
     BiocStyle,
     knitr,
@@ -37,4 +33,4 @@ LinkingTo:
 License: Genentech, Inc.
 VignetteBuilder: knitr
 SystemRequirements: C++11
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
