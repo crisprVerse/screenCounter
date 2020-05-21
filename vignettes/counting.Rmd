@@ -141,6 +141,105 @@ which contains the variable sequences in `known1` and `known2` that define each 
 rowData(out)
 ```
 
+# Counting dual barcodes
+
+Another experimental design involves the use of dual barcodes, often to modulate the expression of two genes at once.
+The aim is to, again, count the frequency of each combination of barcodes among the observed read pairs.
+This differs from the combinatorial barcodes in that the dual barcodes are present on paired reads, with one barcode per read;
+in addition, not all combinations of two barcodes may be valid.
+
+```
+# Example of a dual barcode:
+
+# READ 1:
+CAGCTANNNNNNNNNNCACG
+------^^^^^^^^^^----
+      variable
+
+# READ 2:
+CACGGTTNNNNNNNNNNCAGC
+------^^^^^^^^^^-----
+      variable
+```
+
+To demonstrate, let's mock up another FASTQ file of single-end read data.
+Again, for simplicity, we will assume that each read sequence contains only the barcode.
+
+```{r}
+# Creating an example dual barcode sequencing experiment.
+known.pool1 <- c("AGAGAGAGA", "CTCTCTCTC",
+    "GTGTGTGTG", "CACACACAC")
+known.pool2 <- c("ATATATATA", "CGCGCGCGC",
+    "GAGAGAGAG", "CTCTCTCTC")
+
+# Mocking up the barcode sequences.
+N <- 1000
+read1 <- sprintf("CAGCTACGTACG%sCCAGCTCGATCG",
+   sample(known.pool1, N, replace=TRUE))
+names(read1) <- seq_len(N)
+
+read2 <- sprintf("TGGGCAGCGACA%sACACGAGGGTAT",
+   sample(known.pool2, N, replace=TRUE))
+names(read2) <- seq_len(N)
+
+# Writing them to FASTQ files.
+tmp <- tempfile()
+tmp1 <- paste0(tmp, "_1.fastq")
+writeXStringSet(DNAStringSet(read1), filepath=tmp1, format="fastq")
+tmp2 <- paste0(tmp, "_2.fastq")
+writeXStringSet(DNAStringSet(read2), filepath=tmp2, format="fastq")
+```
+
+Let us imagine that only a subset of the barcode combinations are actually valid.
+This is often the case because, in these studies, 
+the combinations are explicitly designed to refer to known phenomena (e.g., gene combinations)
+rather than being randomized as described for combinatorial barcodes.
+
+```{r}
+choices <- expand.grid(known.pool1, known.pool2)
+choices <- DataFrame(barcode1=choices[,1], barcode2=choices[,2])
+choices <- choices[sample(nrow(choices), nrow(choices)*0.9),]
+```
+
+We quantify dual barcodes across one or more _pairs_ of files using the `matrixOfDualBarcodes()` function.
+This requires templates for the barcode structure to specify how the variable sequences are used to construct each final barcode;
+the first template corresponds to the first barcode, while the second template corresponds to the second barcode.
+Many of the options available for single barcode matching in `matrixOfSingleBarcodes()` are also available here
+and can be specificed separately for each barcode.
+
+```{r}
+out <- matrixOfDualBarcodes(list(c(tmp1, tmp2)), 
+    choices=choices,
+    template=c("CAGCTACGTACGNNNNNNNNNCCAGCTCGATCG",
+               "TGGGCAGCGACANNNNNNNNNACACGAGGGTAT"))
+out
+```
+
+This function yields a `SummarizedExperiment` object containing a matrix of frequencies 
+of each barcode pair (row) in each pair of files (column).
+
+```{r}
+assay(out)
+```
+
+Further diagnostics about the mapping are provided in the `colData`:
+
+```{r}
+colData(out)
+```
+
+The identities of the variable regions corresponding to each row are specified in the `rowData`, 
+which contains the variable sequences in `barcode1` and `barcode1` that define each barcode combination.
+
+```{r}
+rowData(out)
+```
+
+By default, we assume that the read sequence in the first FASTQ file contains the first barcode (i.e., `choices[,1]`)
+and the second FASTQ file contains the second barcode.
+If the arrangement is randomized, we can set `randomized=TRUE` to search the first FASTQ file for the second barcode and vice versa.
+Note that this will filter out read pairs that match different valid combinations in both arrangements.
+
 # Further options
 
 ## Supporting mismatches and deletions
@@ -173,18 +272,24 @@ For example:
   This requires `strand="both"` to search both strands of each read.
   This avoids loss of 50% of reads provided that the constant regions are captured by reads from both ends.
 
-Paired-end sequencing requires some more consideration:
+Paired-end sequencing of single or combinatorial barcodes requires some more consideration:
 
-- A construct where the barcode can only be covered by a read sequenced from one of the ends, where that end is known in advance.
+- A construct where the barcode can only be covered by a read sequenced from one of the ends _and_ that end is known in advance.
   In this case, the data can be treated as single-end.
   Counting can be performed using the file containing reads from that end with `strand="original"` or `strand="reverse"`.
-- A construct where the barcode can only be covered by a read sequenced from one of the ends, where that end is randomly chosen.
+- A construct where the barcode can only be covered by a read sequenced from one of the ends _and_ that end is randomly chosen.
   Users can run the counting functions on each file separately with `strand="original"` or `strand="reverse"` and sum the counts.
   (We assume that the chance of randomly encountering the barcode sequence and its flanking constant regions is negligible,
   so each read pair will not contribute more than once to the final count.)
 - Paired-end sequencing of a construct where the barcode can be covered by both reads.
   In this case, one of the files can be chosen for use with `strand="both"`.
   Alternatively, users can consolidate read pairs into a consensus read^[For example, see [_FLASh_](https://ccb.jhu.edu/software/FLASH/) or [_vsearch_](https://github.com/torognes/) with `--fastq_mergepairs`.] prior to using `strand="both"`.
+
+For paired-end sequencing of dual barcodes, each paired barcode is covered by exactly one paired read in the same direction.
+This means that we should never have to set `strand="both"` as the strand orientation should be known ahead of time.
+The most that should need to be done is to set `strand` separately for each barcode,
+which is achieved by passing a vector of length 2 to specify the orientation for the first and second barcodes, respectively;
+or to set `randomized=TRUE` as described above.
 
 ## Parallelization across files
 
