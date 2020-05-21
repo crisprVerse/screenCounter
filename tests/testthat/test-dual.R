@@ -1,6 +1,7 @@
 # This tests the dual counting capability.
 # library(testthat); library(screenCounter); source("setup.R"); source("test-dual.R")
 
+set.seed(100000)
 library(Biostrings)
 nbarcodes1 <- 20
 POOL1 <- vapply(rep(10, nbarcodes1), GENERATE_RANDOM_SEQ, FUN.VALUE="")
@@ -62,7 +63,8 @@ test_that("dual counting works as expected for combinations", {
 
     output <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2))
     expect_identical(as.data.frame(output[,1:2]), as.data.frame(choices))
-    expect_identical(output$counts, tabulate(match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices)))
+    m <- match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices)
+    expect_identical(output$counts, tabulate(m, nbins=nrow(choices))) # NA's are dismissed.
 
     # Works when only a subset of the combinations are valid.
     keep <- sample(nrow(choices), nrow(choices)/2)
@@ -95,7 +97,7 @@ test_that("dual counting reports diagnostic values correctly", {
 
     output <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2))
     expect_identical(as.data.frame(output[,1:2]), as.data.frame(choices))
-    expect_identical(output$counts, tabulate(match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices))) # NA's are dismissed.
+    expect_identical(output$counts, tabulate(match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices), nbins=nrow(choices))) 
 
     # Checking diagnostics:
     collated <- metadata(output)
