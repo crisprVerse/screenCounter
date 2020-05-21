@@ -8,10 +8,9 @@
 /* OVERVIEW:
  *
  * This file contains methods to convert a DNA sequence into a hash.
- * Each base can be stored in 2 bits, and we use a std::vector 
- * pack multiple bases into a 64-bit word. We use a string
- * in order to take advantage of the C++ standard's 
- * in-built support for string hashing in an unordered_map.
+ * Each base can be stored in 2 bits, and we pack multiple bases 
+ * into a 64-bit word. We then create a vector of these words
+ * to enable hashing of barcodes that are longer than 32 bp.
  *
  * We also implement classes to modify a pre-built hash for a 
  * given sequence, by performing substitutions or deletions.
