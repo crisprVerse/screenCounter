@@ -185,7 +185,7 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
 
     original$counts <- tabulate(assignments, nbins=nrow(original))
     metadata(original) <- list(none=sum(status==0L), barcode1.only=sum(status==1L),
-        barcode2.only=sum(status==2L), invalid.combo=sum(invalid.combo))
+        barcode2.only=sum(status==2L), invalid.pair=sum(invalid.combo & status==3L))
     original
 }
 
