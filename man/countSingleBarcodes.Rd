@@ -34,7 +34,7 @@ or a connection object to such a file.}
 
 \item{flank3}{String containing the constant sequence on the 3' flank of the variable region.}
 
-\item{template}{A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.}
+\item{template}{String containing the template for the barcode structure.}
 
 \item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
 
