@@ -57,6 +57,7 @@ Rcpp::IntegerVector search_barcodes_single(SEXP seqs, SEXP xptr, bool use_forwar
         // Searching one or both strands.
         if (use_forward) {
             if (search_sequence<1>(curseq.data(), len, search_info, output)) {
+                output.advance();
                 continue;
             }
         }
