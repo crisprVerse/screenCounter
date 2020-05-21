@@ -7,7 +7,7 @@
 #' @param choices A character vector of sequences for the variable regions, one per barcode.
 #' @param flank5 String containing the constant sequence on the 5' flank of the variable region.
 #' @param flank3 String containing the constant sequence on the 3' flank of the variable region.
-#' @param template A template for the barcode structure, see \code{?\link{parseBarcodeTemplate}} for details.
+#' @param template String containing the template for the barcode structure.
 #' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
 #' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
 #' @param strand String specifying which strand of the read to search.
@@ -101,12 +101,13 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
     on.exit(close(incoming))
 
     N <- 0L
+    all.available <- integer(length(choices))
     while (length(fq <- yield(incoming))) {
-        count_barcodes_single(sread(fq), ptr, use.forward, use.reverse)
+        current <- count_barcodes_single(sread(fq), ptr, use.forward, use.reverse)
+        all.available <- all.available + current
         N <- N + length(fq)
     }
 
-    all.available <- report_barcodes_single(ptr)
     out <- DataFrame(choices=choices, counts=all.available)
     metadata(out)$nreads <- N
     out
