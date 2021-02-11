@@ -14,7 +14,8 @@ countDualBarcodes(
   substitutions = FALSE,
   deletions = FALSE,
   strand = "original",
-  randomized = FALSE
+  randomized = FALSE,
+  include.invalid = FALSE
 )
 
 matrixOfDualBarcodes(
@@ -22,6 +23,7 @@ matrixOfDualBarcodes(
   choices,
   ...,
   withDimnames = TRUE,
+  include.invalid = FALSE,
   BPPARAM = SerialParam()
 )
 }
@@ -134,7 +136,7 @@ tmp2 <- paste0(tmp, "_2.fastq")
 writeXStringSet(DNAStringSet(read2), filepath=tmp2, format="fastq")
 
 # Counting the combinations.
-countDualBarcodes(c(tmp1, tmp2), choices=choices,
+countDualBarcodes(c(tmp1, tmp2), choices=choices, 
     template=c("CAGCTACGTACGNNNNNNNNNCCAGCTCGATCG",
                "TGGGCAGCGACANNNNNNNNNACACGAGGGTAT"))
 

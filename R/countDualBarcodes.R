@@ -96,7 +96,7 @@
 #' writeXStringSet(DNAStringSet(read2), filepath=tmp2, format="fastq")
 #'
 #' # Counting the combinations.
-#' countDualBarcodes(c(tmp1, tmp2), choices=choices,
+#' countDualBarcodes(c(tmp1, tmp2), choices=choices, 
 #'     template=c("CAGCTACGTACGNNNNNNNNNCCAGCTCGATCG",
 #'                "TGGGCAGCGACANNNNNNNNNACACGAGGGTAT"))
 #'
@@ -109,11 +109,11 @@
 #'     flank5=c("CAGCTACGTACG", "TGGGCAGCGACA"),
 #'     flank3=c("CCAGCTCGATCG", "ACACGAGGGTAT"))
 #' @export
-#' @importFrom S4Vectors DataFrame metadata<-
+#' @importFrom S4Vectors DataFrame metadata<- countMatches selfmatch
 #' @importFrom BiocGenerics anyDuplicated match
 countDualBarcodes <- function(fastq, choices, flank5="", flank3="", 
     template=NULL, substitutions=FALSE, deletions=FALSE,
-    strand="original", randomized=FALSE)
+    strand="original", randomized=FALSE, include.invalid=FALSE)
 {
     # Checking the choices.
     original <- choices
@@ -164,6 +164,7 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
     invalid.combo <- is.na(assignments)
 
     # Handling the inverted case.
+    extra.qc <- list()
     if (randomized) {
         r1.alt <- .solo_identifier(fastq[[2]], choices=condensed[[1]], flank5=flank5[1], flank3=flank3[1],
             substitutions=substitutions[1], deletions=deletions[1], strand=strand[1])
@@ -181,12 +182,39 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
         replace <- is.na(assignments) & !is.na(assignments.alt)
         assignments[replace] <- assignments.alt[replace]
         assignments[has.both] <- NA
+
+        extra.qc <- list(
+             original.orientation=sum(!replace),
+             reverse.orientation=sum(replace),
+             ambiguous.orientation=sum(has.both)
+        )
+
+        if (include.invalid) {
+            observed[replace,] <- observed.alt[replace,]
+        }
     }
 
-    original$counts <- tabulate(assignments, nbins=nrow(original))
-    metadata(original) <- list(none=sum(status==0L), barcode1.only=sum(status==1L),
-        barcode2.only=sum(status==2L), invalid.pair=sum(invalid.combo & status==3L))
-    original
+    if (include.invalid) {
+        m <- selfmatch(observed)
+        keep <- !duplicated(m)
+        output <- observed[keep,,drop=FALSE]
+        output$counts <- countMatches(m[keep], m)
+    } else {
+        output <- original
+        output$counts <- tabulate(assignments, nbins=nrow(original))
+    }
+
+    metadata(output) <- c(
+        list(
+            none=sum(status==0L), 
+            barcode1.only=sum(status==1L),
+            barcode2.only=sum(status==2L), 
+            invalid.pair=sum(invalid.combo & status==3L)
+        ),
+        extra.qc
+    )
+
+    output
 }
 
 #' @importFrom ShortRead FastqStreamer yield sread
@@ -214,9 +242,22 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
 #' @importFrom BiocParallel bplapply SerialParam
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame metadata
-matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, BPPARAM=SerialParam()) {
-    out <- bplapply(files, FUN=countDualBarcodes, choices=choices, ..., BPPARAM=BPPARAM)
-    mat <- do.call(cbind, lapply(out, "[[", "counts"))
+matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, include.invalid=FALSE, BPPARAM=SerialParam()) {
+    out <- bplapply(files, FUN=countDualBarcodes, choices=choices, ..., include.invalid=include.invalid, BPPARAM=BPPARAM)
+
+    if (include.invalid) {
+        tmp <- out
+        for (i in seq_along(out)) {
+            current <- out[[i]]
+            df <- DataFrame(counts=current$counts)
+            df$combinations <- current[,1:2]
+            tmp[[i]] <- df
+        }
+        mat <- do.call(combineComboCounts, tmp)
+
+    } else {
+        mat <- do.call(cbind, lapply(out, "[[", "counts"))
+    }
 
     fields <- names(metadata(out[[1]]))
     output <- list()
