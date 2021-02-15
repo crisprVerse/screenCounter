@@ -109,7 +109,7 @@ test_that("dual counting reports diagnostic values correctly", {
 })
 
 test_that("dual counting handles randomization correctly", {
-    N <- 5000
+    N <- 5000L
 
     i <- sample(nbarcodes1, N, replace=TRUE)
     barcodes <- sprintf(barcode.fmt1, POOL1[i])
@@ -129,6 +129,73 @@ test_that("dual counting handles randomization correctly", {
 
     expect_identical(as.data.frame(output[,1:2]), as.data.frame(output2[,1:2]))
     expect_identical(output$counts*2L, output2$counts)
+
+    # Checking diagnostics:
+    collated <- metadata(output)
+    expect_identical(collated$none, N)
+    collated <- metadata(output2)
+    expect_identical(collated$none, 0L)
+    expect_identical(collated$original.orientation, N)
+    expect_identical(collated$reverse.orientation, N)
+
+    # Trying with a symmetric construct.
+    i <- sample(nbarcodes1, N, replace=TRUE)
+    barcodes <- sprintf(barcode.fmt1, POOL1[i])
+    names(barcodes) <- seq_len(N)
+    barcodes2 <- sprintf(barcode.fmt2, POOL1[i])
+    names(barcodes2) <- seq_len(N)
+
+    writeXStringSet(DNAStringSet(c(barcodes, barcodes2)), filepath=tmp, format="fastq")
+    writeXStringSet(DNAStringSet(c(barcodes2, barcodes)), filepath=tmp2, format="fastq")
+
+    choices <- DataFrame(X=POOL1, Y=POOL1)
+    output <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2))
+    expect_identical(as.data.frame(output[,1:2]), as.data.frame(choices))
+    expect_identical(output$counts, tabulate(i, nbins=length(POOL1)))
+})
+
+test_that("dual counting reports invalid pairs correctly", {
+    N <- 5000
+
+    i <- sample(nbarcodes1, N, replace=TRUE)
+    barcodes <- sprintf(barcode.fmt1, POOL1[i])
+    names(barcodes) <- seq_len(N)
+
+    j <- sample(nbarcodes2, N, replace=TRUE)
+    barcodes2 <- sprintf(barcode.fmt2, POOL2[j])
+    names(barcodes2) <- seq_len(N)
+
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+    tmp2 <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes2), filepath=tmp2, format="fastq")
+
+    ref <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2))
+    sub <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2), include.invalid=TRUE)
+    expect_true(all(sub$valid))
+    sub$valid <- NULL
+    expect_identical(ref, sub)
+
+    # Mocking up a situation with only a subset of combinations, but all barcodes present.
+    N <- max(length(POOL1), length(POOL2))
+    subchoices <- DataFrame(X=factor(rep(POOL1, length.out=N)), Y=factor(rep(POOL2, length.out=N)))
+    sub <- countDualBarcodes(c(tmp, tmp2), choices=subchoices, template=c(template1, template2), include.invalid=TRUE)
+
+    expect_true(all(sub$valid[1:nrow(subchoices)]))
+    expect_false(any(sub$valid[(nrow(subchoices)+1):nrow(sub)]))
+    m <- match(ref[,1:2], sub[,1:2])
+    nzero <- ref$counts!=0
+    expect_identical(ref$counts[nzero], sub$counts[m[nzero]])
+    expect_identical(sum(nzero), nrow(sub))
+
+    # Working up a situation involving randomization.
+    writeXStringSet(DNAStringSet(c(barcodes, barcodes2)), filepath=tmp, format="fastq")
+    writeXStringSet(DNAStringSet(c(barcodes2, barcodes)), filepath=tmp2, format="fastq")
+
+    output2 <- countDualBarcodes(c(tmp, tmp2), choices=subchoices, template=c(template1, template2), include.invalid=TRUE, randomized=TRUE)
+    expect_identical(as.data.frame(sub[,1:2]), as.data.frame(output2[,1:2]))
+    expect_identical(sub$counts*2L, output2$counts)
+    expect_identical(sub$valid, output2$valid)
 })
 
 test_that("matrix summarization works as expected", {
@@ -157,4 +224,13 @@ test_that("matrix summarization works as expected", {
     se <- matrixOfDualBarcodes(collected, choices=choices, template=c(template1, template2))
     expect_true(all(c("none", "barcode1.only", "barcode2.only", "invalid.pair") %in% colnames(colData(se))))
     expect_equivalent(colSums(assay(se)), Nchoices)
+
+    # Same result after including invalid pairs.
+    se2 <- matrixOfDualBarcodes(collected, choices=choices, template=c(template1, template2), include.invalid=TRUE)
+    expect_true(length(rowData(se2)$valid) && all(rowData(se2)$valid))
+    rowData(se2)$valid <- NULL
+
+    o1 <- order(rowData(se))
+    o2 <- order(rowData(se2))
+    expect_identical(se[o1,], se2[o2,])
 })
