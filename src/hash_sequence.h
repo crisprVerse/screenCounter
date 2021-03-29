@@ -1,5 +1,5 @@
-#ifndef HASH_SEQUENCE_H
-#define HASH_SEQUENCE_H
+#ifndef SEQHASH_H
+#define SEQHASH_H
 
 #include <cstdint>
 #include <vector>
@@ -42,26 +42,21 @@ seqhash hash_sequence(const char*, const size_t);
 
 void shift_sequence(seqhash&, const size_t, char);
 
-struct rolling_substitution {
-public:
-    rolling_substitution(const seqhash&, size_t);
-    bool advance();
-    const seqhash& get() const;
-private:
-    seqhash hash;
-    size_t len, word, pos;
-    seqhash::word current, state, original;
+#include <boost/functional/hash.hpp>
+
+namespace std {
+
+/* Defines a hashing function for the seqhash,
+ * using Boost's hash_range function.
+ */
+
+template <>
+struct hash<seqhash>{
+    size_t operator()(const seqhash& k) const {
+        return boost::hash_range(k.begin(), k.end());
+    }
 };
 
-struct rolling_deletion {
-public:
-    rolling_deletion(const seqhash&, size_t);
-    bool advance();
-    const seqhash& get() const;
-private:
-    seqhash hash;
-    size_t word, pos;
-    seqhash::word current, discarded;
-};
+}
 
 #endif

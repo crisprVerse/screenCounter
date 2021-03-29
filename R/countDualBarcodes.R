@@ -6,18 +6,20 @@
 #' Alternatively, a list of length two containing connection objects to such files.
 #' @param choices A \linkS4class{DataFrame} with two character columns specifying valid combinations of variable regions.
 #' The first column contains sequences for barcode 1 while the second column contains sequences for barcode 2.
-#' @param flank5 Character vector of length 2 containing the constant sequence on the 5' flank of the variable region on each barcode.
+#' @param flank5 Character vector of length 2 containing the constant sequence on the 5' flank of the variable region for barcodes 1 and 2, respectively.
 #' Alternatively, a string can be supplied if the constant sequence is the same for each barcode.
-#' @param flank3 Character vector of length 2 containing the constant sequence on the 3' flank of the variable region on each barcode.
+#' @param flank3 Character vector of length 2 containing the constant sequence on the 3' flank of the variable region for barcodes 1 and 2, respectively.
 #' Alternatively, a string can be supplied if the constant sequence is the same for each barcode.
-#' @param template Character vector of length 2 containing the template for the barcode structure.
+#' @param template Character vector of length 2 containing the template for the structure of barcodes 1 and 2, respectively.
 #' Alternatively, a string can be supplied if the template is the same for each barcode.
-#' @param substitutions Logical vector of length 2 specifying 
-#' whether substitutions should be allowed when matching to variable regions for each barcode.
-#' Alternatively, a logical scalar can be supplied if this is the same for each barcode.
-#' @param deletions Logical vector of length 2 specifying 
-#' whether deletions should be allowed when matching to variable regions for each barcode.
-#' Alternatively, a logical scalar can be supplied if this is the same for each barcode.
+#' @param substitutions Integer vector of length 2 specifying how many substitutions should be allowed for barcodes 1 and 2, respectively.
+#' Alternatively, an integer scalar can be supplied if this is the same for each barcode.
+#' @param insertions Integer vector of length 2 specifying how many insertions should be allowed for barcodes 1 and 2, respectively.
+#' Alternatively, an integer scalar can be supplied if this is the same for each barcode.
+#' @param deletions Integer vector of length 2 specifying how many deletions should be allowed for barcodes 1 and 2, respectively.
+#' Alternatively, an integer scalar can be supplied if this is the same for each barcode.
+#' @param total.edits Integer vector of length 2 specifying how many total edits should be allowed for barcodes 1 and 2, respectively.
+#' Alternatively, an integer scalar can be supplied if this is the same for each barcode.
 #' @param strand Character vector of length 2 specifying which strand of the read to search 
 #' (\code{"both"}, \code{"original"}, \code{"reverse"}) for each barcode.
 #' Alternatively, a string can be supplied if this is the same for each barcode.
@@ -47,6 +49,11 @@
 #' the first FASTQ file may contain the second barcode and so on.
 #' In such cases, both orientations will be searched to identify a valid combination.
 #' (If both orientations yield a different valid combination, no count will be assigned.)
+#'
+#' We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
+#' by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
+#' If \code{total.edits} is specified, the total number of edits is capped regardless of the individual values for each edit type.
+#' The default of \code{total.edits=2} means that only 2 edits are allowed for a match, even if \code{substitutions + insertions + deletions} is greater than 2.
 #'
 #' @return 
 #' By default, \code{countDualBarcodes} will return \code{choices} with an additional \code{counts} column
@@ -121,8 +128,8 @@
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<- countMatches selfmatch
 #' @importFrom BiocGenerics anyDuplicated match %in%
-countDualBarcodes <- function(fastq, choices, flank5="", flank3="", 
-    template=NULL, substitutions=FALSE, deletions=FALSE,
+countDualBarcodes <- function(fastq, choices, flank5="", flank3="", template=NULL, 
+    substitutions=0, insertions=0, deletions=0, total.edits=2,
     strand="original", randomized=FALSE, include.invalid=FALSE)
 {
     # Checking the choices.
@@ -156,14 +163,18 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
     }
 
     substitutions <- rep(substitutions, length.out=2)
+    insertions <- rep(insertions, length.out=2)
     deletions <- rep(deletions, length.out=2)
+    total.edits <- rep(total.edits, length.out=2)
     strand <- rep(strand, length.out=2)
 
     # Searching two sequences for the matches.
     r1 <- .solo_identifier(fastq[[1]], choices=condensed[[1]], flank5=flank5[1], flank3=flank3[1],
-        substitutions=substitutions[[1]], deletions=deletions[1], strand=strand[1])
+        substitutions=substitutions[1], insertions=insertions[1], deletions=deletions[1], total.edits=total.edits[1],
+        strand=strand[1])
     r2 <- .solo_identifier(fastq[[2]], choices=condensed[[2]], flank5=flank5[2], flank3=flank3[2],
-        substitutions=substitutions[[2]], deletions=deletions[2], strand=strand[2])
+        substitutions=substitutions[2], insertions=insertions[2], deletions=deletions[2], total.edits=total.edits[2],
+        strand=strand[2])
 
     observed <- DataFrame(r1, r2)
     colnames(observed) <- colnames(choices)
@@ -176,9 +187,11 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
     extra.qc <- list()
     if (randomized) {
         r1.alt <- .solo_identifier(fastq[[2]], choices=condensed[[1]], flank5=flank5[1], flank3=flank3[1],
-            substitutions=substitutions[1], deletions=deletions[1], strand=strand[1])
+            substitutions=substitutions[1], insertions=insertions[1], deletions=deletions[1], total.edits=total.edits[1],
+            strand=strand[1])
         r2.alt <- .solo_identifier(fastq[[1]], choices=condensed[[2]], flank5=flank5[2], flank3=flank3[2],
-            substitutions=substitutions[2], deletions=deletions[2], strand=strand[2])
+            substitutions=substitutions[2], insertions=insertions[2], deletions=deletions[2], total.edits=total.edits[2],
+            strand=strand[2])
 
         observed.alt <- DataFrame(r1.alt, r2.alt)
         colnames(observed.alt) <- colnames(choices)
@@ -241,12 +254,12 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="",
 }
 
 #' @importFrom ShortRead FastqStreamer yield sread
-.solo_identifier <- function(fastq, choices, flank5, flank3, substitutions, deletions, strand) {
+.solo_identifier <- function(fastq, choices, flank5, flank3, substitutions, insertions, deletions, total.edits, strand) {
     strand <- match.arg(strand, c("original", "both", "reverse"))
     use.forward <- strand %in% c("original", "both")
     use.reverse <- strand %in% c("reverse", "both")
 
-    ptr <- setup_barcodes_single(c(flank5, flank3), list(choices), substitutions, deletions)
+    ptr <- setup_barcodes_single(c(flank5, flank3), choices, substitutions, insertions, deletions, total.edits)
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
 

@@ -11,8 +11,10 @@ countDualBarcodes(
   flank5 = "",
   flank3 = "",
   template = NULL,
-  substitutions = FALSE,
-  deletions = FALSE,
+  substitutions = 0,
+  insertions = 0,
+  deletions = 0,
+  total.edits = 2,
   strand = "original",
   randomized = FALSE,
   include.invalid = FALSE
@@ -34,22 +36,26 @@ Alternatively, a list of length two containing connection objects to such files.
 \item{choices}{A \linkS4class{DataFrame} with two character columns specifying valid combinations of variable regions.
 The first column contains sequences for barcode 1 while the second column contains sequences for barcode 2.}
 
-\item{flank5}{Character vector of length 2 containing the constant sequence on the 5' flank of the variable region on each barcode.
+\item{flank5}{Character vector of length 2 containing the constant sequence on the 5' flank of the variable region for barcodes 1 and 2, respectively.
 Alternatively, a string can be supplied if the constant sequence is the same for each barcode.}
 
-\item{flank3}{Character vector of length 2 containing the constant sequence on the 3' flank of the variable region on each barcode.
+\item{flank3}{Character vector of length 2 containing the constant sequence on the 3' flank of the variable region for barcodes 1 and 2, respectively.
 Alternatively, a string can be supplied if the constant sequence is the same for each barcode.}
 
-\item{template}{Character vector of length 2 containing the template for the barcode structure.
+\item{template}{Character vector of length 2 containing the template for the structure of barcodes 1 and 2, respectively.
 Alternatively, a string can be supplied if the template is the same for each barcode.}
 
-\item{substitutions}{Logical vector of length 2 specifying 
-whether substitutions should be allowed when matching to variable regions for each barcode.
-Alternatively, a logical scalar can be supplied if this is the same for each barcode.}
+\item{substitutions}{Integer vector of length 2 specifying how many substitutions should be allowed for barcodes 1 and 2, respectively.
+Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
 
-\item{deletions}{Logical vector of length 2 specifying 
-whether deletions should be allowed when matching to variable regions for each barcode.
-Alternatively, a logical scalar can be supplied if this is the same for each barcode.}
+\item{insertions}{Integer vector of length 2 specifying how many insertions should be allowed for barcodes 1 and 2, respectively.
+Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
+
+\item{deletions}{Integer vector of length 2 specifying how many deletions should be allowed for barcodes 1 and 2, respectively.
+Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
+
+\item{total.edits}{Integer vector of length 2 specifying how many total edits should be allowed for barcodes 1 and 2, respectively.
+Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
 
 \item{strand}{Character vector of length 2 specifying which strand of the read to search 
 (\code{"both"}, \code{"original"}, \code{"reverse"}) for each barcode.
@@ -120,6 +126,11 @@ However, if \code{randomized=TRUE}, the orientation is assumed to be random such
 the first FASTQ file may contain the second barcode and so on.
 In such cases, both orientations will be searched to identify a valid combination.
 (If both orientations yield a different valid combination, no count will be assigned.)
+
+We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
+by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
+If \code{total.edits} is specified, the total number of edits is capped regardless of the individual values for each edit type.
+The default of \code{total.edits=2} means that only 2 edits are allowed for a match, even if \code{substitutions + insertions + deletions} is greater than 2.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.

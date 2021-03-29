@@ -1,32 +1,11 @@
-#ifndef SEARCH_SEQUENCE_H
-#define SEARCH_SEQUENCE_H
+#ifndef COMPONENT_SEARCH_H 
+#define COMPONENT_SEARCH_H
 
 #include "Rcpp.h"
-
-#include "build_dictionary.h"
+#include "build_basic_dictionary.h"
 #include "hash_sequence.h"
-
-#include <array>
-#include <sstream>
-#include <stdexcept>
-
-bool is_valid (char);
-
-int is_valid (const char*, size_t);
-
-class hash_scanner {
-public:
-    hash_scanner() = default;
-    hash_scanner(const char*, size_t);
-    void advance ();
-    const seqhash& hash() const;
-    bool valid() const;
-private:
-    const char* ptr = NULL;
-    size_t len = 0;
-    seqhash hashed;
-    size_t nvalid = 0;
-};
+#include "hash_scanner.h"
+#include "utils.h"
 
 /* Sets up search information. */
 
@@ -37,15 +16,7 @@ struct combination {
 
 template<size_t nvariable, size_t nconstant=nvariable+1>
 struct search_info {
-    search_info(Rcpp::List Guides, Rcpp::StringVector Constants,
-        Rcpp::LogicalVector allow_subs, Rcpp::LogicalVector allow_dels) 
-    {   
-        if (allow_subs.size()!=1) {
-            throw std::runtime_error("should be a logical scalar");
-        }
-        const bool allow_sub=allow_subs[0];
-        allow_del=allow_dels[0];
-
+    search_info(Rcpp::List Guides, Rcpp::StringVector Constants) {   
         // Setting up the guides.
         if (nvariable!=Guides.size()) {
             std::stringstream err;
@@ -56,11 +27,11 @@ struct search_info {
         for (size_t g=0; g<nvariable; ++g) {
             Rcpp::StringVector guides(Guides[g]);
             nbarcodes[g]=guides.size();
-            perfect[g]=build_dictionary(guides, allow_sub);
-            variable_lengths[g]=perfect[g].len;
-            if (allow_del) {
-                deleted[g]=build_deleted_dictionary(guides);
-            }
+
+            size_t reflen = check_length(guides);
+            variable_lengths[g]=reflen;
+
+            perfect[g]=build_basic_dictionary(guides);
         }
 
         // Setting up the constant regions.
@@ -89,7 +60,7 @@ struct search_info {
         return;
     }
 
-    std::array<sequence_dictionary, nvariable> perfect, deleted;
+    std::array<basic_dictionary, nvariable> perfect;
     std::array<int, nvariable> variable_lengths;
     std::array<size_t, nvariable> variable_starts;
     std::array<size_t, nvariable> nbarcodes;
@@ -99,7 +70,6 @@ struct search_info {
     std::array<size_t, nconstant> constant_starts;
 
     size_t total_len;
-    bool allow_del;
 };
 
 /* Searches a sequence and does some kind of operation to "OP". */
@@ -107,7 +77,7 @@ struct search_info {
 template<size_t nvariable, class OP, size_t nconstant=nvariable+1>
 bool search_sequence_internal(const char* seq, size_t len, 
         
-    const std::array<const sequence_dictionary*, nvariable>& variable_dicts,
+    const std::array<basic_dictionary, nvariable>& variable_dicts,
     const std::array<int, nvariable>& variable_lengths,
     const std::array<size_t, nvariable>& variable_starts,
 
@@ -151,29 +121,14 @@ bool search_sequence_internal(const char* seq, size_t len,
 
             if (is_equal) {
                 bool has_match=true;
-                bool used_mismatch=false;
                 combination<nvariable> tmp;
 
                 for (size_t j=0; j<nvariable; ++j) {
-                    const auto& curdict=*variable_dicts[j];
-                    auto it=curdict.mapping.find(variable_scan[j].hash());
-
-                    bool okay=false;
-                    if (it!=curdict.mapping.end()) {
-                        auto idx=(it->second).first;
-                        if (idx!=-1) {
-                            auto priority=(it->second).second;
-                            if (priority==0 || !used_mismatch) {
-                                if (priority==1) {
-                                    used_mismatch=true; 
-                                }
-                                tmp.indices[j]=idx;
-                                okay=true;
-                            }
-                        }
-                    }
-
-                    if (!okay) {
+                    const auto& curdict=variable_dicts[j];
+                    auto it=curdict.find(variable_scan[j].hash());
+                    if (it!=curdict.end()) {
+                        tmp.indices[j]=it->second;
+                    } else {
                         has_match=false;
                         break;
                     }
@@ -197,65 +152,26 @@ bool search_sequence_internal(const char* seq, size_t len,
 }
 
 template<size_t nvariable, class OP, size_t nconstant=nvariable+1>
-bool search_sequence(const char* seq, size_t len, const search_info<nvariable>& info, OP& operation) 
+bool component_search(const char* seq, size_t len, const search_info<nvariable>& info, OP& operation) 
 {
     const auto& perfect=info.perfect;
-    const auto& deleted=info.deleted;
     const auto& constant_hash=info.constant_hash;
     const auto& variable_lengths=info.variable_lengths;
     const auto& constant_lengths=info.constant_lengths;
     const auto& variable_starts=info.variable_starts;
     const auto& constant_starts=info.constant_starts;
     size_t total_len=info.total_len;
-    bool allow_del=info.allow_del;
-
-    std::array<const sequence_dictionary*, nvariable> ptrs;
-    for (size_t i=0; i<nvariable; ++i) { ptrs[i]=&(perfect[i]); }
 
     // Perfect matches or mismatch.
     if (search_sequence_internal<nvariable>(seq, len, 
-        ptrs, variable_lengths, variable_starts, 
+        perfect, variable_lengths, variable_starts, 
         constant_hash, constant_lengths, constant_starts,
         total_len, operation)) 
     {
         return true;
-    } else if (!allow_del) {
+    } else {
         return false;
     }
-
-    // Single deletion; introduced in one variable region at a time,
-    // starting from the last.
-    auto vlen=variable_lengths;
-    const auto& clen=constant_lengths;
-    auto vstart=variable_starts;
-    auto cstart=constant_starts;
-
-    for (size_t i=1; i<nvariable; ++i) { --vstart[i]; } // Preparing for deletion in the first variable region.
-    for (size_t i=1; i<nconstant; ++i) { --cstart[i]; }
-
-    for (size_t i=0; i<nvariable; ++i) {
-        if (i) {
-            ++vstart[i]; 
-            ++cstart[i];
-        }
-
-        ptrs[i]=&(deleted[i]);
-        --vlen[i];
-
-        if (search_sequence_internal<nvariable>(seq, len, 
-            ptrs, vlen, vstart, 
-            constant_hash, clen, cstart,
-            total_len-1, operation))
-        {
-            return true;
-        }
-
-        ptrs[i]=&(perfect[i]);
-        ++vlen[i];
-    }
-
-
-    return false;
 }
 
 #endif

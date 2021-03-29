@@ -1,6 +1,7 @@
 #include "Rcpp.h"
 #include "hash_sequence.h"
-#include "build_dictionary.h"
+#include "build_basic_dictionary.h"
+#include "build_combined_dictionary.h"
 #include <limits>
 
 /* Test code to check that the hashing works correctly. */
@@ -44,70 +45,49 @@ SEXP shift_hash(Rcpp::StringVector input, Rcpp::StringVector coming) {
 }
 
 // [[Rcpp::export(rng=false)]]
-SEXP substitute_hash(Rcpp::StringVector input) {
-    std::string s=Rcpp::as<std::string>(input[0]);
-    auto as_hash=hash_sequence(s.c_str(), s.size());
-    rolling_substitution Subber(as_hash, s.size());
-
-    Rcpp::List output(s.size()*3);
-    size_t i=0;
-    do {
-        if (i==output.size()) {
-            throw std::runtime_error("more substituted strings than expected");
-        }
-        output[i]=hash2double(Subber.get());
-        ++i;
-    } while (Subber.advance());
-
-    return output;
-}
-
-// [[Rcpp::export(rng=false)]]
-SEXP delete_hash(Rcpp::StringVector input) {
-    std::string s=Rcpp::as<std::string>(input[0]);
-    auto as_hash=hash_sequence(s.c_str(), s.size());
-    rolling_deletion Delly(as_hash, s.size());
-
-    Rcpp::List output(s.size());
-    size_t i=0;
-    do {
-        if (i==output.size()) {
-            throw std::runtime_error("more deleted strings than expected");
-        }
-        output[i]=hash2double(Delly.get());
-        ++i;
-    } while (Delly.advance());
-
-    return output;
-}
-
-// [[Rcpp::export(rng=false)]]
-SEXP build_dict(Rcpp::StringVector guides, bool allowS, bool allowD) {
-    sequence_dictionary dict;
-    if (allowD) {
-        dict=build_deleted_dictionary(guides);
-    } else {
-        dict=build_dictionary(guides, allowS);
-    }
-
-    const auto& mapping=dict.mapping;
+SEXP export_basic_dictionary(Rcpp::StringVector guides) {
+    auto mapping = build_basic_dictionary(guides);
     Rcpp::List keys(mapping.size());
-    Rcpp::IntegerVector idx(mapping.size()), priority(mapping.size());
+    Rcpp::IntegerVector idx(mapping.size());
 
     size_t i=0;
     for (const auto& KV : mapping) {
-        keys[i]=hash2double(KV.first);
-        idx[i]=KV.second.first+1; // get back to 1-based indices.
-        priority[i]=KV.second.second;
+        keys[i] = hash2double(KV.first);
+        idx[i] = KV.second + 1; // get back to 1-based indices.
         ++i;
     }
 
-    return Rcpp::List::create(
-        Rcpp::List::create(
-            keys,
-            Rcpp::List::create(idx, priority)
-        ),
-        Rcpp::IntegerVector::create(dict.len)
-    );
+    return Rcpp::List::create(keys, idx);
+}
+
+// [[Rcpp::export(rng=false)]]
+SEXP export_combined_dictionary(Rcpp::StringVector constant, Rcpp::List variable, int n_sub, int n_insert, int n_del, int n_total) { 
+    combined_dictionary cdict = build_combined_dictionary(constant, variable, n_sub, n_insert, n_del, n_total);
+
+    Rcpp::List output(cdict.size());
+    size_t c = 0;
+    for (const auto& CV : cdict) {
+        const auto& mapping = CV.second;
+        Rcpp::List keys(mapping.size()), indices(mapping.size());
+        Rcpp::IntegerVector priority(mapping.size());
+
+        size_t i = 0;
+        for (const auto& KV : mapping) {
+            keys[i] = hash2double(KV.first);
+            priority[i] = KV.second.first;
+
+            const auto& v = KV.second.second;
+            Rcpp::IntegerVector tmp (v.begin(), v.end());
+            for (auto& j : tmp) { ++j; } // get back to 1-based indices.
+            indices[i] = tmp;
+
+            ++i;
+        }
+
+        output[c] = Rcpp::List::create(Rcpp::IntegerVector::create(CV.first), keys, priority, indices);
+        ++c;
+    }
+
+    return output;
 }
 

@@ -1,130 +1,213 @@
 # Tests the dictionary building capabilities for barcode searching.
 # library(screenCounter); library(testthat); source("setup.R"); source("test-build.R")
 
-MANUAL_DICT <- function(barcodes, sub=FALSE, del=FALSE) {
-    # Doesn't do anything special about clashes,
-    # so make sure 'barcodes' doesn't have any clashes!
-    if (!del) {
-        idx <- seq_along(barcodes)
-        priority <- integer(length(barcodes))
-        keys <- lapply(barcodes, MANUAL_HASH)
+test_that("basic dictionary construction works as expected", {
+    for (n1 in 5*1:15) {
+        barcode <- vapply(1:20, function(i) GENERATE_RANDOM_SEQ(n1), "")
+        barcode <- unique(barcode)
+        dict <- screenCounter:::export_basic_dictionary(barcode)
 
-        if (sub) {
-            skeys <- lapply(barcodes, screenCounter:::substitute_hash)
-            sidx <- rep(seq_along(skeys), lengths(skeys))
+        hashes <- dict[[1]]
+        indices <- dict[[2]]
+        expect_identical(sort(indices), seq_along(indices))
 
-            keys <- c(keys, unlist(skeys, recursive=FALSE))
-            idx <- c(idx, sidx)
-            priority <- c(priority, rep(1L, length(sidx)))
+        for (x in seq_along(hashes)) {
+            idx <- indices[[x]]
+            expect_identical(hashes[[x]], MANUAL_HASH(barcode[idx]))
         }
-    } else {
-        keys <- lapply(barcodes, screenCounter:::delete_hash)
-        idx <- rep(seq_along(keys), lengths(keys))
-        keys <- unlist(keys, recursive=FALSE)
-        priority <- rep(1L, length(idx))
     }
 
-    list(keys, list(idx, priority))
-}
-
-COMPARE_DICT <- function(left, right) {
-    lvect <- do.call(mapply, c(left[[1]], list(FUN=c, SIMPLIFY=FALSE)))
-    ol <- do.call(order, lvect)
-
-    rvect <- do.call(mapply, c(right[[1]], list(FUN=c, SIMPLIFY=FALSE)))
-    or <- do.call(order, rvect)
-    
-    # Comparing keys.
-    expect_identical(
-        lapply(lvect, "[", ol),
-        lapply(rvect, "[", or)
-    )
-
-    expect_identical(left[[2]][[1]][ol], right[[2]][[1]][or]) # index
-    expect_identical(left[[2]][[2]][ol], right[[2]][[2]][or]) # priority
-}
-
-test_that("dictionary building works correctly in the basic case", {
-    for (n in c(10, 20, 40)) { 
-        barcodes <- strrep(BASES, n) # avoid error from overlap.
-        ref <- MANUAL_DICT(barcodes)
-        out <- screenCounter:::build_dict(barcodes, FALSE, FALSE)
-        expect_identical(as.integer(n), out[[2]])
-        COMPARE_DICT(ref, out[[1]])
-    }
-
-    # Clashes cause errors.
-    expect_error(screenCounter:::build_dict(c("AAAA", "AAAA"), FALSE, FALSE), "duplicated")
-
-    # Variable length causes errors.
-    expect_error(screenCounter:::build_dict(c("AAA", "AAAA"), FALSE, FALSE), "variable length")
+    expect_error(screenCounter:::export_basic_dictionary(rep("ACAT", 2)), "duplicated")
 })
 
-test_that("dictionary building works correctly with substitutions", {
-    for (n in c(10, 20, 40)) { 
-        barcodes <- strrep(BASES, n)
-        ref <- MANUAL_DICT(barcodes, sub=TRUE)
-        out <- screenCounter:::build_dict(barcodes, TRUE, FALSE)
-        expect_identical(as.integer(n), out[[2]])
-        COMPARE_DICT(ref, out[[1]])
-    }
+test_that("combined dictionary construction works as expected (basic)", {
+    constant <- c("ACGT", "TCGA")
+    barcode <- c("ACACA", "GTGTG", "CTCTC")
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 0, 0, 0, 0)
 
-    # Clashes between mismatch and perfect sequences from different barcodes are handled properly.
-    truseq <- c("ACGTA", "ACGTG")
-    out <- screenCounter:::build_dict(truseq, TRUE, FALSE)
-    expect_identical(length(out[[1]][[1]]), sum(1L + 3L * nchar(truseq)) - 4L)
+    expect_identical(length(dict), 1L)
+    expect_identical(dict[[1]][[1]], 13L) # single length
+    expect_identical(dict[[1]][[3]], integer(3)) # no mismatches
 
-    for (i in seq_along(truseq)) {
-        current <- MANUAL_HASH(truseq[i])
-        idx <- which(vapply(out[[1]][[1]], FUN=function(x) identical(x, current), FUN.VALUE=TRUE))
+    idx <- dict[[1]][[4]]
+    expect_identical(lengths(idx), rep(1L, 3))
+    expect_identical(sort(unlist(idx)), 1:3)
 
-        expect_identical(out[[1]][[2]][[1]][idx], i)
-        expect_identical(out[[1]][[2]][[2]][idx], 0L)
-    }
+    full.seq <- paste0(constant[1], barcode, constant[2])
+    expect_identical(dict[[1]][[2]], lapply(full.seq[unlist(idx)], MANUAL_HASH))
 
-    # Clashes between two mismatch sequences are handled properly.
-    truseq <- c("AAAAAACA", "AAAAAAAC")
-    out <- screenCounter:::build_dict(truseq, TRUE, FALSE)
-
-    for (conflict in c("AAAAAAAA", "AAAAAACC")) {
-        conflictor <- MANUAL_HASH(conflict)
-        chosen <- which(vapply(out[[1]][[1]], FUN=function(x) identical(x, conflictor), FUN.VALUE=TRUE))
-
-        expect_identical(out[[1]][[2]][[1]][chosen], 0L) # Stored as -1 in C++, then +1 when moving back into R.
-        expect_identical(out[[1]][[2]][[2]][chosen], 1L)
-    }
+    expect_error(screenCounter:::export_combined_dictionary(constant, list(c(barcode, barcode)), 0, 0, 0, 0), "duplicated")
+    expect_error(screenCounter:::export_combined_dictionary(constant, list(c("A", barcode)), 0, 0, 0, 0), "variable length")
 })
 
-test_that("dictionary building works correctly with deletions", {
-    for (n in c(2, 5, 10)) { 
-        # Carefully chosen to avoid consecutive runs that 
-        # would result in two deletions clashing with each other.
-        barcodes <- strrep(c("ACGT", "GCAT", "TACA", "GCTC"), n)
-        ref <- MANUAL_DICT(barcodes, del=TRUE)
-        out <- screenCounter:::build_dict(barcodes, FALSE, TRUE)
-        expect_identical(unique(nchar(barcodes))-1L, out[[2]])
-        COMPARE_DICT(ref, out[[1]])
+test_that("combined dictionary construction works as expected (multiple)", {
+    constant <- c("ACGT", "ATTA", "TCGA")
+    barcode1 <- c("ACACA", "GTGTG", "CTCTC")
+    barcode2 <- c("TCTC", "TGTG")
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode1, barcode2), 0, 0, 0, 0)
+
+    expect_identical(length(dict), 1L)
+    dict <- dict[[1]]
+    expect_identical(dict[[1]], 21L)
+
+    n1 <- length(barcode1)
+    n2 <- length(barcode2)
+    expect_identical(length(dict[[3]]), n1*n2)
+    expect_identical(dict[[3]], integer(n1*n2)) # no mismatches
+
+    idx <- do.call(rbind, dict[[4]])
+    expect_identical(nrow(idx), n1*n2)
+    o <- order(idx[,2], idx[,1])
+    expect_identical(idx[o,], unname(as.matrix(expand.grid(seq_len(n1), seq_len(n2)))))
+
+    full.seq <- paste0(constant[1], barcode1[idx[,1]], constant[2], barcode2[idx[,2]], constant[3])
+    expect_identical(dict[[2]], lapply(full.seq, MANUAL_HASH))
+
+    expect_error(screenCounter:::export_combined_dictionary(constant, list(barcode1, c(barcode2, barcode2)), 0, 0, 0, 0), "duplicated")
+    expect_error(screenCounter:::export_combined_dictionary(constant, list(barcode1), 0, 0, 0, 0), "number of constant regions")
+})
+
+library(S4Vectors)
+COMPARE_HASHES <- function(x, y) {
+    x1 <- DataFrame(do.call(rbind, x))
+    y1 <- DataFrame(do.call(rbind, y))
+    expect_identical(sort(x1), sort(y1))
+}
+
+COMPUTE_NSUBS <- function(full, N) {
+    length(full) * vapply(seq_len(N), function(n) choose(nchar(full)[1], n) * 3L^n, 0)
+}
+
+test_that("combined dictionary construction works as expected (single substitution)", {
+    # NOTE: avoid choosing barcodes that causes an overlap on substitution.
+    constant <- c("ACGT", "TCGA")
+    barcode <- c("ACACA", "GTGTG", "CACAC")
+
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 1, 0, 0, 1)
+    expect_identical(length(dict), 1L)
+
+    # Mutate the sequence and check.
+    all.full <- paste0(constant[1], barcode, constant[2])
+    for (i in seq_along(barcode)) {
+        full <- all.full[i]
+        len <- nchar(full)
+
+        current <- character()
+        for (j in seq_len(len)) {
+            base <- substr(full, j, j)
+            current <- c(current, paste0(substr(full, 1, j-1), setdiff(c("A", "C", "G", "T"), base), substr(full, j+1, len)))
+        }
+
+        keep <- unlist(dict[[1]][[4]])==i 
+        expect_identical(MANUAL_HASH(full), dict[[1]][[2]][keep & dict[[1]][[3]]==0][[1]]) 
+
+        observed <- dict[[1]][[2]][keep & dict[[1]][[3]]==1]
+        ref <- lapply(current, MANUAL_HASH)
+        COMPARE_HASHES(observed, ref)
     }
 
-    # Clashes between two mismatch sequences are handled properly.
-    truseq <- c("AAAAAACA", "AAAAAAAC")
-    out <- screenCounter:::build_dict(truseq, FALSE, TRUE)
+    expect_equal(length(dict[[1]][[2]]), sum(COMPUTE_NSUBS(all.full, 1L)) + length(all.full))
+})
 
-    for (conflict in c("AAAAAAA", "AAAAAAC")) {
-        conflictor <- MANUAL_HASH(conflict)
-        chosen <- which(vapply(out[[1]][[1]], FUN=function(x) identical(x, conflictor), FUN.VALUE=TRUE))
-        expect_identical(out[[1]][[2]][[1]][chosen], 0L) # Stored as -1 in C++, then +1 when moving back into R.
-        expect_identical(out[[1]][[2]][[2]][chosen], 1L)
+test_that("combined dictionary construction works as expected (single deletions)", {
+    # NOTE: avoid choosing barcodes that causes an overlap on deletion.
+    constant <- c("ACGT", "TCGA")
+    barcode <- c("ACACA", "GTGTG", "CGCGC")
+
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 0, 0, 1, 1)
+    expect_identical(length(dict), 2L)
+
+    # Mutate the sequence and check.
+    all.full <- paste0(constant[1], barcode, constant[2])
+    for (i in seq_along(barcode)) {
+        full <- all.full[i]
+        len <- nchar(full)
+
+        current <- character()
+        for (j in seq_len(len)) {
+            current <- c(current, paste0(substr(full, 1, j-1), substr(full, j+1, len)))
+        }
+
+        keep <- unlist(dict[[1]][[4]]) == i 
+        expect_true(all(dict[[1]][[3]][keep] == 1))
+        observed <- dict[[1]][[2]][keep]
+        ref <- lapply(current, MANUAL_HASH)
+        COMPARE_HASHES(observed, ref)
     }
 
-    # Clashes between two mismatch sequences of the same barcode do not create '-1's.
-    truseq <- c("AAAAAAAA", "TTTTTTTT")
-    out <- screenCounter:::build_dict(truseq, FALSE, TRUE)
+    # The original sequences work correctly.
+    expect_identical(lapply(all.full[unlist(dict[[2]][[4]])], MANUAL_HASH), dict[[2]][[2]])
+})
 
-    expect_identical(out[[1]][[2]][[2]], rep(1L, length(truseq)))
-    out[[1]][[2]][[2]][] <- 0L
-    COMPARE_DICT(out[[1]], MANUAL_DICT(c("AAAAAAA", "TTTTTTT")))
+test_that("combined dictionary construction works as expected (single insertion)", {
+    # NOTE: avoid choosing barcodes that causes an overlap on insertion.
+    constant <- c("ACGT", "TCGA")
+    barcode <- c("ACACA", "GTGTG", "CGCGC")
 
-    # Variable length causes errors.
-    expect_error(screenCounter:::build_dict(c("AAA", "AAAA"), FALSE, TRUE), "variable length")
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 0, 1, 0, 1)
+    expect_identical(length(dict), 2L)
+
+    # Mutate the sequence and check.
+    all.full <- paste0(constant[1], barcode, constant[2])
+    for (i in seq_along(barcode)) {
+        full <- all.full[i]
+        len <- nchar(full)
+
+        current <- character()
+        for (j in seq_len(len)[-1]) { # exclude the position at the start.
+            current <- c(current, paste0(substr(full, 1, j-1), c("A", "C", "G", "T"), substr(full, j, len)))
+        }
+
+        keep <- unlist(dict[[1]][[4]]) == i 
+        expect_true(all(dict[[1]][[3]][keep] == 1))
+        observed <- dict[[1]][[2]][keep]
+        ref <- lapply(unique(current), MANUAL_HASH)
+        COMPARE_HASHES(observed, ref)
+    }
+
+    # The original sequences work correctly.
+    expect_identical(lapply(all.full[unlist(dict[[2]][[4]])], MANUAL_HASH), dict[[2]][[2]])
+})
+
+test_that("combined dictionary construction works as expected (multiple edits)", {
+    # NOTE: 'barcode' must be carefully chosen as two substitutions can cause an overlap.
+    constant <- c("ACGT", "TCGA")
+    barcode <- c("ACACA", "GTGTG", "CACAC")
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 2, 0, 0, 2)
+    dict <- dict[[1]]
+
+    full <- paste0(constant[1], barcode, constant[2])
+    n <- COMPUTE_NSUBS(full, 2L)
+    expect_equal(sum(dict[[3]] == 0L), length(barcode))
+    expect_equal(sum(dict[[3]] == 1L), n[1])
+    expect_equal(sum(dict[[3]] == 2L), n[2])
+
+    # Total edits has some effect.
+    ref <- screenCounter:::export_combined_dictionary(constant, list(barcode), 1, 0, 0, 1)
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 2, 0, 0, 1)
+    COMPARE_HASHES(ref[[1]][[2]], dict[[1]][[2]])
+
+    # Throwing them all together seems to do something. 
+    dict <- screenCounter:::export_combined_dictionary(constant, list(barcode), 2, 1, 1, 2)
+    expect_true(length(dict) > length(ref))
+    offender <- which(vapply(dict, function(x) x[[1]], 0L)==ref[[1]][[1]])
+    expect_true(length(dict[[offender]][[2]]) > length(ref[[1]][[2]]))
+})
+
+test_that("combined dictionary construction works as expected (overlaps)", {
+    dict <- screenCounter:::export_combined_dictionary(c("A", "A"), list("A"), 0, 1, 1, 2)
+
+    # Range of elements available.
+    spread <- vapply(dict, function(x) x[[1]], 0L)
+    expect_identical(sort(spread), 2:4)
+
+    # Exact match is present.
+    offender <- which(spread==3L)
+    exactor <- dict[[offender]]
+    expect_true(any(exactor[[3]]==0))
+
+    # Mimic substitutions at every base except the first (which insertions can't touch).
+    other.bases <- c("C", "T", "G")
+    others <- c(paste0("A", other.bases, "A"), paste0("AA", other.bases))
+    COMPARE_HASHES(exactor[[2]][exactor[[3]]!=0], lapply(others, MANUAL_HASH))
 })

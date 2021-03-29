@@ -7,19 +7,27 @@ extern "C" {
 }
 
 #include "hash_sequence.h"
-#include "build_dictionary.h"
-#include "search_sequence.h"
+#include "build_combined_dictionary.h"
+#include "simple_search.h"
 #include "utils.h"
 
 #include <vector>
-#include <deque>
 
-typedef search_info<1> se_single_info;
+struct se_single_info {
+    se_single_info(const Rcpp::StringVector& constants, const Rcpp::StringVector& variables, int n_sub, int n_insert, int n_del, int n_total) : nchoices(variables.size()) {
+        std::vector<Rcpp::StringVector> varlist(1);
+        varlist[0] = variables;
+        mapping = build_combined_dictionary(constants, varlist, n_sub, n_insert, n_del, n_total);
+        return;
+    }
+
+    int nchoices;
+    combined_dictionary mapping;
+};
 
 // [[Rcpp::export(rng=false)]]
-SEXP setup_barcodes_single(SEXP constants, SEXP guide_list, Rcpp::LogicalVector allowS, Rcpp::LogicalVector allowD) 
-{
-    se_single_info * ptr = new se_single_info(guide_list, constants, allowS, allowD);
+SEXP setup_barcodes_single(Rcpp::StringVector constants, Rcpp::StringVector variables, int n_sub, int n_insert, int n_del, int n_total) {
+    se_single_info * ptr = new se_single_info(constants, variables, n_sub, n_insert, n_del, n_total);
     return Rcpp::XPtr<se_single_info>(ptr, true);
 }
 
@@ -34,13 +42,13 @@ SEXP setup_barcodes_single(SEXP constants, SEXP guide_list, Rcpp::LogicalVector 
 template<class STORE>
 Rcpp::IntegerVector search_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward, bool use_reverse) {
     Rcpp::XPtr<se_single_info> ptr(xptr);
-    const auto& search_info=*ptr;
+    const auto& edict = ptr->mapping;
 
     auto Seqs=hold_XStringSet(seqs);
     size_t nseqs=get_length_from_XStringSet_holder(&Seqs);
     std::vector<char> curseq;
 
-    STORE output(search_info.nbarcodes.front(), nseqs);
+    STORE output(ptr->nchoices, nseqs);
 
     for (size_t i=0; i<nseqs; ++i) {
         auto current=get_elt_from_XStringSet_holder(&Seqs, i);
@@ -54,19 +62,22 @@ Rcpp::IntegerVector search_barcodes_single(SEXP seqs, SEXP xptr, bool use_forwar
             curseq[i]=DNAdecode(ptr[i]);
         }
 
+        int best_nedits = len; // any large value will do here.
+        int chosen = -1;
+
         // Searching one or both strands.
         if (use_forward) {
-            if (search_sequence<1>(curseq.data(), len, search_info, output)) {
-                output.advance();
-                continue;
-            }
+            simple_search(edict, curseq.data(), len, best_nedits, chosen);
         }
 
-        if (use_reverse) {
+        if (best_nedits > 0 && use_reverse) {
             reverse_complement(curseq.data(), len);
-            search_sequence<1>(curseq.data(), len, search_info, output);
+            simple_search(edict, curseq.data(), len, best_nedits, chosen);
         }
 
+        if (chosen >= 0) {
+            output(chosen);
+        }
         output.advance();
     }
 
@@ -77,8 +88,8 @@ Rcpp::IntegerVector search_barcodes_single(SEXP seqs, SEXP xptr, bool use_forwar
 
 struct result_count_store {
     result_count_store(int nbarcodes, int nsequences) : counts(nbarcodes) {}
-    void operator()(const combination<1>& input) {
-        ++(counts[input.indices[0]]);
+    void operator()(int input) {
+        ++(counts[input]);
         return;
     }
     void advance() {}
@@ -97,8 +108,8 @@ Rcpp::IntegerVector count_barcodes_single(SEXP seqs, SEXP xptr, bool use_forward
 
 struct result_identity_store {
     result_identity_store(int nbarcodes, int nsequences) : ids(nsequences) {}
-    void operator()(const combination<1>& input) {
-        ids[counter]=input.indices[0]+1;
+    void operator()(int input) {
+        ids[counter]=input+1;
         return;
     }
     void advance() { 

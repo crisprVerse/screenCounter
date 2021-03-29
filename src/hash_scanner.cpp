@@ -1,24 +1,5 @@
-#include "search_sequence.h"
-
-/* Utility functions to check that a string or character is valid,
- * i.e., contains only ACTG (or lower case) bases.
- */
-
-bool is_valid(char base) {
-    switch (base) {
-        case 'A': case 'a': case 'C': case 'c': case 'G': case 'g': case 'T': case 't':
-            return true;
-    };
-    return false;
-}
-
-int is_valid(const char* ptr, size_t n) {
-    int valid=0;
-    for (size_t i=0; i<n; ++i) {
-        valid+=is_valid(ptr[i]);
-    }
-    return valid;
-}
+#include "hash_scanner.h"
+#include "utils.h"
 
 /* Class that combines shift_sequence and is_valid to iterate across a
  * string and produce the hash at each position (or die trying).

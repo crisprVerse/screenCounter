@@ -42,6 +42,68 @@ test_that("dual counting gives the same results as the single counter", {
     expect_false(identical(output.x$counts, ref$counts))
 })
 
+test_that("dual counting works as expected for edits", {
+    barcodes <- c(
+        "ACGTGGGGGGGGGGACGT",
+        "ACGTGGGGCGGGGGACGT",
+        "ACGTGGGGGGGGGACGT",
+        "ACGTGGGGGGGGGGGACGT"  
+    )
+    names(barcodes) <- seq_along(barcodes)
+
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+
+    choices <- strrep(BASES, 10)
+    output <- countDualBarcodes(c(tmp, tmp), choices=DataFrame(choices, choices), template=template1)
+    expect_identical(sum(output$counts), 1L)
+    ref <- countSingleBarcodes(tmp, choices=choices, template=template1, strand="original")
+    expect_identical(ref$counts, output$counts)
+
+    # Throwing in scalar specifications.
+    output <- countDualBarcodes(c(tmp, tmp), choices=DataFrame(choices, choices), template=template1, insertion=1)
+    expect_identical(sum(output$counts), 2L)
+    ref <- countSingleBarcodes(tmp, choices=choices, template=template1, strand="original", insertion=1)
+    expect_identical(ref$counts, output$counts)
+    
+    output <- countDualBarcodes(c(tmp, tmp), choices=DataFrame(choices, choices), template=template1, substitution=1)
+    expect_identical(sum(output$counts), 2L)
+    ref <- countSingleBarcodes(tmp, choices=choices, template=template1, strand="original", substitution=1)
+    expect_identical(ref$counts, output$counts)
+
+    output <- countDualBarcodes(c(tmp, tmp), choices=DataFrame(choices, choices), template=template1, deletion=1)
+    expect_identical(sum(output$counts), 2L)
+    ref <- countSingleBarcodes(tmp, choices=choices, template=template1, strand="original", deletion=1)
+    expect_identical(ref$counts, output$counts)
+
+    # Works with vectors.
+    barcodes <- c(
+        "ACGTGGGGCGGGGGACGT",
+        "ACGTGGGGGGGGGGACGT",
+        "ACGTGGGGGGGGGGGACGT",
+        "ACGTGGGGGGGGGACGT"
+    )
+    names(barcodes) <- seq_along(barcodes)
+
+    tmp2 <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp2, format="fastq")
+
+    output <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(choices, choices), template=template1)
+    expect_identical(sum(output$counts), 0L)
+
+    output <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(choices, choices), template=template1, 
+        substitution=c(0, 1), insertion=c(0, 1), deletion=c(0, 1))
+    expect_identical(sum(output$counts), 1L)
+
+    output <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(choices, choices), template=template1, 
+        substitution=c(1, 0), insertion=c(1, 0), deletion=c(1, 0))
+    expect_identical(sum(output$counts), 1L)
+
+    output <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(choices, choices), template=template1, 
+        substitution=c(1, 1), insertion=c(1, 1), deletion=c(1, 1))
+    expect_identical(sum(output$counts), 4L)
+})
+
 combos <- expand.grid(POOL1, POOL2)
 choices <- DataFrame(X=combos[,1], Y=combos[,2])
 

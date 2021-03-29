@@ -8,8 +8,10 @@
 #' @param flank5 String containing the constant sequence on the 5' flank of the variable region.
 #' @param flank3 String containing the constant sequence on the 3' flank of the variable region.
 #' @param template String containing the template for the barcode structure.
-#' @param substitutions Logical scalar specifying whether substitutions should be allowed when matching to variable regions.
-#' @param deletions Logical scalar specifying whether deletions should be allowed when matching to variable regions.
+#' @param substitutions Integer scalar specifying the maximum number of substitutions when considering a match. 
+#' @param insertions Integer scalar specifying the maximum number of insertions when considering a match. 
+#' @param deletions Integer scalar specifying the maximum number of deletions when considering a match. 
+#' @param total.edits Integer scalar specifying the maximum number of edits when considering a match.
 #' @param strand String specifying which strand of the read to search.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countSingleBarcodes}.
@@ -22,11 +24,10 @@
 #' Note that, for this function, the template should only contain a single variable region.
 #' See \code{\link{parseBarcodeTemplate}} for more details.
 #'
-#' If \code{substitutions=TRUE}, only one mismatch is allowed across all variable regions,
-#' \emph{not} per variable region.
-#' Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
-#' If both are set, only one deletion or mismatch is allowed across all variable regions,
-#' i.e., there is a maximum edit distance of 1 from any possible reference combination.
+#' We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
+#' by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
+#' If \code{total.edits} is specified, the total number of edits is capped regardless of the individual values for each edit type.
+#' The default of \code{total.edits=2} means that only 2 edits are allowed for a match, even if \code{substitutions + insertions + deletions} is greater than 2.
 #'
 #' If \code{strand="both"}, the original read sequence will be searched first.
 #' If no match is found, the sequence is reverse-complemented and searched again.
@@ -78,8 +79,8 @@
 #' @export
 #' @importFrom ShortRead FastqStreamer yield sread
 #' @importFrom S4Vectors DataFrame metadata<-
-countSingleBarcodes <- function(fastq, choices, flank5, flank3, 
-    template=NULL, substitutions=FALSE, deletions=FALSE, 
+countSingleBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
+    substitutions=0, insertions=0, deletions=0, total.edits=2,
     strand=c("both", "original", "reverse")) 
 {
     if (!is.null(template)) {
@@ -96,7 +97,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3,
     use.forward <- strand %in% c("original", "both")
     use.reverse <- strand %in% c("reverse", "both")
 
-    ptr <- setup_barcodes_single(constants, list(choices), substitutions, deletions)
+    ptr <- setup_barcodes_single(constants, choices, substitutions, insertions, deletions, total.edits)
     incoming <- FastqStreamer(fastq) 
     on.exit(close(incoming))
 

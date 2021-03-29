@@ -11,8 +11,10 @@ countSingleBarcodes(
   flank5,
   flank3,
   template = NULL,
-  substitutions = FALSE,
-  deletions = FALSE,
+  substitutions = 0,
+  insertions = 0,
+  deletions = 0,
+  total.edits = 2,
   strand = c("both", "original", "reverse")
 )
 
@@ -36,9 +38,13 @@ or a connection object to such a file.}
 
 \item{template}{String containing the template for the barcode structure.}
 
-\item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
+\item{substitutions}{Integer scalar specifying the maximum number of substitutions when considering a match.}
 
-\item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
+\item{insertions}{Integer scalar specifying the maximum number of insertions when considering a match.}
+
+\item{deletions}{Integer scalar specifying the maximum number of deletions when considering a match.}
+
+\item{total.edits}{Integer scalar specifying the maximum number of edits when considering a match.}
 
 \item{strand}{String specifying which strand of the read to search.}
 
@@ -77,11 +83,10 @@ Any user-supplied values of \code{flank5} and \code{flank3} will be ignored.
 Note that, for this function, the template should only contain a single variable region.
 See \code{\link{parseBarcodeTemplate}} for more details.
 
-If \code{substitutions=TRUE}, only one mismatch is allowed across all variable regions,
-\emph{not} per variable region.
-Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
-If both are set, only one deletion or mismatch is allowed across all variable regions,
-i.e., there is a maximum edit distance of 1 from any possible reference combination.
+We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
+by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
+If \code{total.edits} is specified, the total number of edits is capped regardless of the individual values for each edit type.
+The default of \code{total.edits=2} means that only 2 edits are allowed for a match, even if \code{substitutions + insertions + deletions} is greater than 2.
 
 If \code{strand="both"}, the original read sequence will be searched first.
 If no match is found, the sequence is reverse-complemented and searched again.

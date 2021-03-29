@@ -27,9 +27,7 @@ or a connection object to such a file.}
 The first vector should contain the potential sequences for the first variable region, 
 the second vector for the second variable region and so on.}
 
-\item{substitutions}{Logical scalar specifying whether substitutions should be allowed when matching to variable regions.}
-
-\item{deletions}{Logical scalar specifying whether deletions should be allowed when matching to variable regions.}
+\item{substitutions, deletions}{Deprecated options, ignored.}
 
 \item{strand}{String specifying which strand of the read to search.}
 
@@ -71,16 +69,12 @@ Certain screen sequencing experiments take advantage of combinatorial complexity
 Only a subset of all possible combinatorial barcodes will be used in any given experiment.
 This function only counts the combinations that are actually observed, improving efficiency over a more conventional approach (i.e., to generate all possible combinations and use \code{\link{countSingleBarcodes}} to count their frequency).
 
-If \code{substitutions=TRUE}, only one mismatch is allowed across all variable regions,
-\emph{not} per variable region.
-Similarly, if \code{deletions=TRUE}, only one deletion is allowed across all variable regions.
-If both are set, only one deletion or mismatch is allowed across all variable regions,
-i.e., there is a maximum edit distance of 1 from any possible reference combination.
-
 If \code{strand="both"}, the original read sequence will be searched first.
 If no match is found, the sequence is reverse-complemented and searched again.
 Other settings of \code{strand} will only search one or the other sequence.
 The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
+
+Currently, there is no support for searching with mismatches.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.

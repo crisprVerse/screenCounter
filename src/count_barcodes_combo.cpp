@@ -7,8 +7,7 @@ extern "C" {
 }
 
 #include "hash_sequence.h"
-#include "build_dictionary.h"
-#include "search_sequence.h"
+#include "component_search.h"
 #include "utils.h"
 
 #include <stdexcept>
@@ -43,18 +42,14 @@ struct combo_store {
 
 template<size_t nvariable> 
 struct se_combo_info {
-    se_combo_info(Rcpp::List g, Rcpp::StringVector c, Rcpp::LogicalVector s, Rcpp::LogicalVector d) :
-        info(g, c, s, d) {}
+    se_combo_info(Rcpp::List g, Rcpp::StringVector c)  : info(g, c) {}
     search_info<nvariable> info;
     combo_store<nvariable> output;
 };
 
 template<size_t nvariable>
-SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list, Rcpp::LogicalVector allowS, Rcpp::LogicalVector allowD) 
-{
-    se_combo_info<nvariable> * ptr = new se_combo_info<nvariable>(
-        guide_list, constants, allowS, allowD
-    );
+SEXP setup_barcodes_combo(SEXP constants, SEXP guide_list) {
+    se_combo_info<nvariable> * ptr = new se_combo_info<nvariable>(guide_list, constants);
     return Rcpp::XPtr<se_combo_info<nvariable> >(ptr, true);
 }
 
@@ -82,14 +77,14 @@ SEXP count_barcodes_combo(SEXP seqs, SEXP xptr, bool use_forward, bool use_rever
 
         // Searching one or both strands.
         if (use_forward) {
-            if (search_sequence(curseq.data(), len, search_info, output)) {
+            if (component_search(curseq.data(), len, search_info, output)) {
                 continue;
             }
         }
 
         if (use_reverse) {
             reverse_complement(curseq.data(), len);
-            search_sequence(curseq.data(), len, search_info, output);
+            component_search(curseq.data(), len, search_info, output);
         }
     }
 
@@ -127,8 +122,8 @@ SEXP report_barcodes_combo(SEXP xptr) {
  ****************************************************/
 
 // [[Rcpp::export(rng=false)]]
-SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list, Rcpp::LogicalVector allowSub, Rcpp::LogicalVector allowDel) {
-    return setup_barcodes_combo<2>(constants, guide_list, allowSub, allowDel);
+SEXP setup_barcodes_combo_dual(SEXP constants, SEXP guide_list) {
+    return setup_barcodes_combo<2>(constants, guide_list);
 }
 
 // [[Rcpp::export(rng=false)]]

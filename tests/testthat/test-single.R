@@ -12,6 +12,16 @@ STICKER <- function(barcodes, fname, out, ..., strandFUN=identity) {
     ADD_FLANKS(barcodes, fname, strandFUN=strandFUN)
     out2 <- countSingleBarcodes(fname, template=template, ...)
     expect_identical(out, out2)
+
+    # Nothing at the start, flanking on the right.
+    ADD_FLANKS(barcodes, fname, nleft=0, strandFUN=strandFUN)
+    out2 <- countSingleBarcodes(fname, template=template, ...)
+    expect_identical(out, out2)
+
+    # Nothing at the end, flanking on the left.
+    ADD_FLANKS(barcodes, fname, nright=0, strandFUN=strandFUN)
+    out2 <- countSingleBarcodes(fname, template=template, ...)
+    expect_identical(out, out2)
 }
 
 CHECK_OUTPUT <- function(out, tab, choices, N) {
@@ -43,8 +53,8 @@ test_that("countSingleBarcodes works as expected with substitutions", {
         "ACGTGGGGGGGGGGACGT",
         "ACGTGGGGCGGGGGACGT",
         "ACGTGGGGCCGGGGACGT", # not matched, two substitutions.
-        "ACGTGGGGGGGGGGATGT", # not matched, error in a constant region.
-        "CCGTGGGGGGGGGGACGT"  # not matched, error in a constant region.
+        "ACGTGGGGGGGGGGATGT", 
+        "CCGTGGGGGGGGGGACGT"  
     )
     names(barcodes) <- seq_along(barcodes)
 
@@ -53,7 +63,7 @@ test_that("countSingleBarcodes works as expected with substitutions", {
 
     choices <- strrep(BASES, 10)
     out <- countSingleBarcodes(tmp, choices, template=template, sub=TRUE)
-    CHECK_OUTPUT(out, c(0L, 0L, 2L, 0L), choices, length(barcodes))
+    CHECK_OUTPUT(out, c(0L, 0L, 4L, 0L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, sub=TRUE)
 
@@ -81,8 +91,8 @@ test_that("countSingleBarcodes works as expected with deletions", {
         "ACGTCCCCCCCCCCACGT",
         "ACGTCCCCCCCCCACGT",
         "ACGTCCCCCCCCACGT",  # not matched, two deletions.
-        "ACGTCCCCCCCCCCAGT", # not matched, error in a constant region.
-        "ACTCCCCCCCCCCACGT"  # not matched, error in a constant region.
+        "ACGTCCCCCCCCCCAGT", 
+        "ACTCCCCCCCCCCACGT" 
     )
     names(barcodes) <- seq_along(barcodes)
 
@@ -91,7 +101,7 @@ test_that("countSingleBarcodes works as expected with deletions", {
 
     choices <- strrep(BASES, 10)
     out <- countSingleBarcodes(tmp, choices, template=template, del=TRUE)
-    CHECK_OUTPUT(out, c(0L, 2L, 0L, 0L), choices, length(barcodes))
+    CHECK_OUTPUT(out, c(0L, 4L, 0L, 0L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
 
@@ -112,6 +122,44 @@ test_that("countSingleBarcodes works as expected with deletions", {
     CHECK_OUTPUT(out, c(1L, 2L), choices, length(barcodes))
 
     STICKER(barcodes, tmp, out, choices=choices, del=TRUE)
+})
+
+test_that("countSingleBarcodes works as expected with insertions", {
+    barcodes <- c(
+        "ACGTCCCCCCCCCCACGT",
+        "ACGTCCCCCCACCCCACGT",
+        "ACGTCCCCCCAACCCCACGT", # not matched, two insertions.
+        "ACGTCCCCCCCCCCAACGT", 
+        "AACGTCCCCCCCCCCACGT"  
+    )
+    names(barcodes) <- seq_along(barcodes)
+
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+
+    choices <- strrep(BASES, 10)
+    out <- countSingleBarcodes(tmp, choices, template=template, ins=TRUE)
+    CHECK_OUTPUT(out, c(0L, 4L, 0L, 0L), choices, length(barcodes))
+
+    STICKER(barcodes, tmp, out, choices=choices, ins=TRUE)
+
+    # Handles conflicts correctly.
+    barcodes <- c(
+        "ACGTCCCCCCCCCCACGT",
+        "ACGTCCCCCCCCCAACGT", 
+        "ACGTCCCCCCCCCTAACGT", 
+        "ACGTCCCCCCCCCCAACGT"  # ambiguous and removed.
+    )
+    names(barcodes) <- seq_along(barcodes)
+
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+
+    choices <- c("CCCCCCCCCC", "CCCCCCCCCA")
+    out <- countSingleBarcodes(tmp, choices, template=template, ins=TRUE)
+    CHECK_OUTPUT(out, c(1L, 2L), choices, length(barcodes))
+
+    STICKER(barcodes, tmp, out, choices=choices, ins=TRUE)
 })
 
 test_that("countSingleBarcodes works as expected with strands", {
