@@ -104,8 +104,11 @@ test_that("dual counting works as expected for edits", {
     expect_identical(sum(output$counts), 4L)
 })
 
+##############################################
+##############################################
+
 combos <- expand.grid(POOL1, POOL2)
-choices <- DataFrame(X=combos[,1], Y=combos[,2])
+choices <- DataFrame(X=as.character(combos[,1]), Y=as.character(combos[,2]))
 
 test_that("dual counting works as expected for combinations", {
     N <- 5000
@@ -260,9 +263,11 @@ test_that("dual counting reports invalid pairs correctly", {
     expect_identical(sub$valid, output2$valid)
 })
 
-test_that("matrix summarization works as expected", {
+##############################################
+##############################################
+
+SPAWN_MULTI_FILES <- function(Nchoices) {
     collected <- list()
-    Nchoices <- c(5000, 2000, 1000)
 
     for (x in seq_along(Nchoices)) {
         N <- Nchoices[x]
@@ -283,6 +288,13 @@ test_that("matrix summarization works as expected", {
         collected[[x]] <- c(tmp, tmp2)
     }
 
+    collected
+}
+
+test_that("matrix summarization works as expected", {
+    Nchoices <- c(5000, 2000, 1000)
+    collected <- SPAWN_MULTI_FILES(Nchoices)
+
     se <- matrixOfDualBarcodes(collected, choices=choices, template=c(template1, template2))
     expect_true(all(c("none", "barcode1.only", "barcode2.only", "invalid.pair") %in% colnames(colData(se))))
     expect_equivalent(colSums(assay(se)), Nchoices)
@@ -295,4 +307,52 @@ test_that("matrix summarization works as expected", {
     o1 <- order(rowData(se))
     o2 <- order(rowData(se2))
     expect_identical(se[o1,], se2[o2,])
+
+    # Respects row names.
+    rownames(choices) <- paste0("PAIR_", seq_len(nrow(choices)))
+    full <- matrixOfDualBarcodes(collected, choices=choices, template=c(template1, template2))
+    expect_identical(rownames(full), rownames(choices))
+})
+
+test_that("matrix summarization works as expected with invalid pairs", {
+    Nchoices <- c(5000, 2000, 1000)
+    collected <- SPAWN_MULTI_FILES(Nchoices)
+
+    rownames(choices) <- paste0("PAIR_", seq_len(nrow(choices)))
+    full <- matrixOfDualBarcodes(collected, choices=choices, template=c(template1, template2))
+    expect_identical(rownames(full), rownames(choices))
+
+    # Correctly respects the subset.
+    max.len <- max(length(POOL1), length(POOL2))
+    subchoices <- DataFrame(X=rep(POOL1, length.out=max.len), Y=rep(POOL2, length.out=max.len))
+    keep <- match(subchoices, choices)
+    rownames(subchoices) <- rownames(choices)[keep]
+
+    ref <- matrixOfDualBarcodes(collected, choices=subchoices, template=c(template1, template2))
+    expect_identical(rowData(full)[keep,], rowData(ref))
+    expect_identical(assay(full)[keep,], assay(ref))
+    expect_identical(rownames(ref), rownames(subchoices))
+
+    # Correctly reports valid pairs when we include invalids.
+    se <- matrixOfDualBarcodes(collected, choices=subchoices, template=c(template1, template2), include.invalid=TRUE)
+    expect_true(nrow(se) > nrow(ref))
+    sub <- se[rowData(se)$valid,]
+    rowData(sub)$valid <- NULL
+
+    m <- match(rowData(sub), rowData(ref))
+    expect_identical(ref[m,], sub)
+
+    # Same results if we apply an ordered input. This checks that the conversion
+    # of indices to sequences is done correctly for the invalid pairs.
+    o <- do.call(order, c(as.list(subchoices), list(decreasing=TRUE)))
+    subchoices2 <- subchoices[o,]
+    keep <- match(subchoices, choices)
+
+    ref <- matrixOfDualBarcodes(collected, choices=subchoices, template=c(template1, template2), include.invalid=TRUE)
+    se2 <- matrixOfDualBarcodes(collected, choices=subchoices2, template=c(template1, template2), include.invalid=TRUE)
+    expect_identical(nrow(ref), nrow(se2))
+
+    m <- match(rowData(se2)[,1:2], rowData(ref)[,1:2])
+    expect_false(any(is.na(m)))
+    expect_identical(ref[m,], se2)
 })

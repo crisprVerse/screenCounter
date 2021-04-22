@@ -224,6 +224,7 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="", template=NUL
 
     output <- original
     output$counts <- tabulate(assignments, nbins=nrow(original))
+    nmapped <- sum(output$counts)
 
     invalid.pair <- is.na(assignments) & status==3L
     if (include.invalid) {
@@ -232,10 +233,12 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="", template=NUL
         m <- selfmatch(invalids)
         keep <- !duplicated(m)
         invalids <- invalids[keep,,drop=FALSE]
-        invalids[,1] <- original[invalids[,1],1]
-        invalids[,2] <- original[invalids[,2],2]
+        invalids[,1] <- condensed[[1]][invalids[,1]]
+        invalids[,2] <- condensed[[2]][invalids[,2]]
         invalids$counts <- countMatches(m[keep], m)
         invalids$valid <- rep(FALSE, nrow(invalids))
+        rownames(invalids) <- rep("invalid", nrow(invalids)) # need something, otherwise row names get lost.
+
         output$valid <- rep(TRUE, nrow(output))
         output <- rbind(output, invalids)
     }
@@ -245,7 +248,8 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="", template=NUL
             none=sum(status==0L), 
             barcode1.only=sum(status==1L),
             barcode2.only=sum(status==2L), 
-            invalid.pair=sum(invalid.pair)
+            invalid.pair=sum(invalid.pair),
+            nmapped=nmapped
         ),
         extra.qc
     )
@@ -309,8 +313,7 @@ matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, include
 
     se <- SummarizedExperiment(list(counts=mat), rowData=choices,
         colData=DataFrame(paths1=vapply(files, "[", i=1, ""), 
-            paths2=vapply(files, "[", i=2, ""), 
-            output, nmapped=colSums(mat)))
+            paths2=vapply(files, "[", i=2, ""), output))
 
     if (withDimnames) {
         colnames(se) <- basename(se$paths1)
