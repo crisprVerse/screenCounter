@@ -70,10 +70,15 @@ test_that("combineComboCounts works as expected with strings", {
     }
 })
 
-
 test_that("combineComboCounts respects file names", {
     N <- 500
     output <- GENERATOR(3, 10, N)
     out <- combineComboCounts(A=output[[1]], B=output[[2]], C=output[[3]])
     expect_identical(colnames(out$counts), c("A", "B", "C"))
+})
+
+test_that("combineComboCounts fails for non-unique entries", {
+    N <- 500
+    output <- GENERATOR(3, 10, N)
+    expect_error(combineComboCounts(A=output[[1]][c(1,1:nrow(output[[1]])),], B=output[[2]], C=output[[3]]), "unique")
 })

@@ -43,7 +43,14 @@ combineComboCounts <- function(...) {
 
     out.counts <- matrix(0L, sum(is.unique), length(everything))
     colnames(out.counts) <- names(everything)
+
     id <- cumsum(is.unique)
+    df <- DataFrame(X=id, Y=combined$origin)
+    if (anyDuplicated(df)) {
+        stop("barcode combinations should be unique within each DataFrame in '...'")
+    }
+
     out.counts[cbind(id, combined$origin)] <- combined$counts
+
     DataFrame(combinations=I(combined$combinations[is.unique,]), counts=I(out.counts))
 }
