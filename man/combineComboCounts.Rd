@@ -23,14 +23,14 @@ Column names are set to the names of \code{...}, if supplied.
 Combine counts for combinatorial barcodes from multiple files into a single count matrix.
 }
 \examples{
-df1 <- DataFrame(combination=I(DataFrame(X=1:4, Y=1:4)),
-   count=sample(10, 4))
+df1 <- DataFrame(combinations=I(DataFrame(X=1:4, Y=1:4)),
+   counts=sample(10, 4))
 
-df2 <- DataFrame(combination=I(DataFrame(X=1:4, Y=4:1)),
-   count=sample(10, 4))
+df2 <- DataFrame(combinations=I(DataFrame(X=1:4, Y=4:1)),
+   counts=sample(10, 4))
 
-df3 <- DataFrame(combination=I(DataFrame(X=1, Y=1)),
-   count=sample(10, 1))
+df3 <- DataFrame(combinations=I(DataFrame(X=1, Y=1)),
+   counts=sample(10, 1))
 
 combineComboCounts(df1, df2, df3)
 
