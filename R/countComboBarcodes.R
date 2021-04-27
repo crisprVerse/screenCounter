@@ -75,7 +75,7 @@
 #'     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
-#' @importFrom S4Vectors DataFrame metadata<-
+#' @importFrom S4Vectors DataFrame metadata<- I
 #' @importFrom ShortRead FastqStreamer sread yield
 countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE,
     strand=c("both", "original", "reverse"), indices=FALSE)

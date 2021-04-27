@@ -48,7 +48,6 @@
 #' However, if \code{randomized=TRUE}, the orientation is assumed to be random such that
 #' the first FASTQ file may contain the second barcode and so on.
 #' In such cases, both orientations will be searched to identify a valid combination.
-#' (If both orientations yield a different valid combination, no count will be assigned.)
 #'
 #' We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
 #' by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
@@ -65,11 +64,11 @@
 #' \item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
 #' \item \code{invalid.pair}, the number of read pairs with matches for each barcode 
 #' but do not form a valid combination in \code{choices}.
-#' \item \code{original.orientation}, the number of read pairs that match a barcode combination in the original strand orientation.
+#' \item \code{provided.orientation}, the number of read pairs that match a barcode combination in the provided orientation,
+#' i.e., the first and second FASTQ files contain the first and second barcodes, respectively.
 #' Only reported when \code{randomized=TRUE}.
-#' \item \code{reverse.orientation}, the number of read pairs that match a barcode combination in the reverse strand orientation.
-#' Only reported when \code{randomized=TRUE}.
-#' \item \code{ambiguous.orientation}, the number of read pairs that match a different barcode combination in each strand orientation.
+#' \item \code{other.orientation}, the number of read pairs that match a barcode combination in the other orientation,
+#' i.e., the first and second FASTQ files contain the second and first barcodes, respectively.
 #' Only reported when \code{randomized=TRUE}.
 #' }
 #' 
@@ -133,7 +132,6 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="", template=NUL
     strand="original", randomized=FALSE, include.invalid=FALSE)
 {
     # Checking the choices.
-    original <- choices
     condensed <- as.list(choices)
     condensed <- lapply(choices, unique)
     for (i in seq_along(choices)) {
@@ -168,113 +166,100 @@ countDualBarcodes <- function(fastq, choices, flank5="", flank3="", template=NUL
     total.edits <- rep(total.edits, length.out=2)
     strand <- rep(strand, length.out=2)
 
-    # Searching two sequences for the matches.
-    r1 <- .solo_identifier(fastq[[1]], choices=condensed[[1]], flank5=flank5[1], flank3=flank3[1],
-        substitutions=substitutions[1], insertions=insertions[1], deletions=deletions[1], total.edits=total.edits[1],
-        strand=strand[1])
-    r2 <- .solo_identifier(fastq[[2]], choices=condensed[[2]], flank5=flank5[2], flank3=flank3[2],
-        substitutions=substitutions[2], insertions=insertions[2], deletions=deletions[2], total.edits=total.edits[2],
-        strand=strand[2])
+    # Performing the search.
+    collected <- .dual_identifier(fastq, condensed, flank5=flank5, flank3=flank3, 
+         substitutions=substitutions, insertions=insertions, deletions=deletions, total.edits=total.edits, 
+         strand=strand, randomized=randomized)
 
-    observed <- DataFrame(r1, r2)
+    observed <- DataFrame(collected[[1]], collected[[2]])
     colnames(observed) <- colnames(choices)
-    assignments <- match(observed, choices)
+    status <- (observed[,1] != 0L) + (observed[,2] != 0L) * 2L
+    observed <- observed[status==3L,,drop=FALSE]
 
-    STATUS <- function(R1, R2) (R1!=0L) + 2*(R2!=0L)
-    status <- STATUS(r1, r2)
+    # Generating counts.
+    assignments <- selfmatch(observed)
+    keep <- !duplicated(assignments)
+    uniq.out <- observed[keep,,drop=FALSE]
+    uniq.counts <- countMatches(assignments[keep], assignments)
 
-    # Handling the inverted case.
-    extra.qc <- list()
-    if (randomized) {
-        r1.alt <- .solo_identifier(fastq[[2]], choices=condensed[[1]], flank5=flank5[1], flank3=flank3[1],
-            substitutions=substitutions[1], insertions=insertions[1], deletions=deletions[1], total.edits=total.edits[1],
-            strand=strand[1])
-        r2.alt <- .solo_identifier(fastq[[1]], choices=condensed[[2]], flank5=flank5[2], flank3=flank3[2],
-            substitutions=substitutions[2], insertions=insertions[2], deletions=deletions[2], total.edits=total.edits[2],
-            strand=strand[2])
+    m <- match(choices, uniq.out)
+    valid.counts <- uniq.counts[m]
+    valid.counts[is.na(m)] <- 0L
+    output <- choices
+    output$counts <- valid.counts
 
-        observed.alt <- DataFrame(r1.alt, r2.alt)
-        colnames(observed.alt) <- colnames(choices)
-        assignments.alt <- match(observed.alt, choices)
+    is.invalid <- setdiff(seq_len(nrow(uniq.out)), m)
+    invalid.counts <- uniq.counts[is.invalid]
 
-        old.status <- status
-        new.status <- STATUS(r1.alt, r2.alt)
-        status <- pmax(old.status, new.status)
-
-        # Ignoring ambiguous orientations where both orientations yield a valid match 
-        # (that is not the same match, e.g., in the case of symmetric constructs!)
-        has.both <- !is.na(assignments) & !is.na(assignments.alt) & assignments!=assignments.alt
-        replace <- is.na(assignments) & !is.na(assignments.alt)
-        assignments[replace] <- assignments.alt[replace]
-        assignments[has.both] <- NA
-
-        extra.qc <- list(
-             original.orientation=sum(!is.na(assignments) & is.na(assignments.alt)),
-             reverse.orientation=sum(replace),
-             ambiguous.orientation=sum(has.both)
-        )
-
-        if (include.invalid) {
-            # More generous replacement than just 'replace', as we ensure 
-            # that invalid pairs are swapped in.
-            replace2 <- replace | old.status!=3L & new.status==3L
-            observed[replace2,] <- observed.alt[replace2,]
-        }
-    }
-
-    output <- original
-    output$counts <- tabulate(assignments, nbins=nrow(original))
-    nmapped <- sum(output$counts)
-
-    invalid.pair <- is.na(assignments) & status==3L
+    # Appending on invalid pairs.
     if (include.invalid) {
-        # Adding all our invalid observed friends.
-        invalids <- observed[invalid.pair,]
-        m <- selfmatch(invalids)
-        keep <- !duplicated(m)
-        invalids <- invalids[keep,,drop=FALSE]
-        invalids[,1] <- condensed[[1]][invalids[,1]]
-        invalids[,2] <- condensed[[2]][invalids[,2]]
-        invalids$counts <- countMatches(m[keep], m)
-        invalids$valid <- rep(FALSE, nrow(invalids))
-        rownames(invalids) <- rep("invalid", nrow(invalids)) # need something, otherwise row names get lost.
+        invalids <- uniq.out[is.invalid,,drop=FALSE]
+        invalids$counts <- invalid.counts
+        invalids$valid <- logical(nrow(invalids)) 
+        if (!is.null(rownames(output))) {
+            # Preserve the row names by giving something to combine with.
+            rownames(invalids) <- rep("invalid", nrow(invalids))
+        }
 
-        output$valid <- rep(TRUE, nrow(output))
+        output$valid <- !logical(nrow(output))
         output <- rbind(output, invalids)
     }
+
+    # Restoring sequence identities.
+    output[,1] <- condensed[[1]][output[,1]]
+    output[,2] <- condensed[[2]][output[,2]]
 
     metadata(output) <- c(
         list(
             none=sum(status==0L), 
             barcode1.only=sum(status==1L),
             barcode2.only=sum(status==2L), 
-            invalid.pair=sum(invalid.pair),
-            nmapped=nmapped
+            invalid.pair=sum(invalid.counts),
+            nmapped=sum(valid.counts)
         ),
-        extra.qc
+        collected$diagnostics
     )
 
     output
 }
 
 #' @importFrom ShortRead FastqStreamer yield sread
-.solo_identifier <- function(fastq, choices, flank5, flank3, substitutions, insertions, deletions, total.edits, strand) {
-    strand <- match.arg(strand, c("original", "both", "reverse"))
-    use.forward <- strand %in% c("original", "both")
-    use.reverse <- strand %in% c("reverse", "both")
+.dual_identifier <- function(fastq, condensed, flank5, flank3, substitutions, insertions, deletions, total.edits, strand, randomized) {
+    ptr1 <- setup_barcodes_dual(c(flank5[1], flank3[1]), condensed[[1]], substitutions[1], insertions[1], deletions[1], total.edits[1])
+    ptr2 <- setup_barcodes_dual(c(flank5[2], flank3[2]), condensed[[2]], substitutions[2], insertions[2], deletions[2], total.edits[2])
 
-    ptr <- setup_barcodes_single(c(flank5, flank3), choices, substitutions, insertions, deletions, total.edits)
-    incoming <- FastqStreamer(fastq) 
-    on.exit(close(incoming))
+    incoming1 <- FastqStreamer(fastq[[1]]) 
+    on.exit(close(incoming1))
+    incoming2 <- FastqStreamer(fastq[[2]]) 
+    on.exit(close(incoming2), add=TRUE)
 
-    collected <- list()
+    for (i in seq_along(strand)) {
+        strand[i] <- match.arg(strand[i], c("original", "reverse"))
+    }
+
+    collected1 <- collected2 <- list()
+    diagnostics <- c(0L, 0L)
     counter <- 1L
-    while (length(fq <- yield(incoming))) {
-        collected[[counter]] <- identify_barcodes_single(sread(fq), ptr, use.forward, use.reverse)
+
+    repeat {
+        fq1 <- yield(incoming1)
+        fq2 <- yield(incoming2)
+        if (length(fq1)==0 && length(fq2)==0) {
+            break
+        }
+
+        output <- count_barcodes_dual(sread(fq1), sread(fq2), ptr1, ptr2, forward1=(strand[1]=="original"), forward2=(strand[2]=="original"), randomized=randomized)
+        collected1[[counter]] <- output[[1]]
+        collected2[[counter]] <- output[[2]]
+        diagnostics <- diagnostics + output[[3]]
         counter <- counter + 1L
     }
 
-    unlist(collected)
+    output <- list(first=unlist(collected1), second=unlist(collected2))
+    if (randomized) {
+        output$diagnostics <- list(provided.orientation=diagnostics[1], other.orientation=diagnostics[2])
+    }
+    output
 }
 
 #' @rdname countDualBarcodes

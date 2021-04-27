@@ -39,6 +39,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// setup_barcodes_dual
+SEXP setup_barcodes_dual(Rcpp::StringVector constants, Rcpp::StringVector variables, int n_sub, int n_insert, int n_del, int n_total);
+RcppExport SEXP _screenCounter_setup_barcodes_dual(SEXP constantsSEXP, SEXP variablesSEXP, SEXP n_subSEXP, SEXP n_insertSEXP, SEXP n_delSEXP, SEXP n_totalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type constants(constantsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type variables(variablesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_sub(n_subSEXP);
+    Rcpp::traits::input_parameter< int >::type n_insert(n_insertSEXP);
+    Rcpp::traits::input_parameter< int >::type n_del(n_delSEXP);
+    Rcpp::traits::input_parameter< int >::type n_total(n_totalSEXP);
+    rcpp_result_gen = Rcpp::wrap(setup_barcodes_dual(constants, variables, n_sub, n_insert, n_del, n_total));
+    return rcpp_result_gen;
+END_RCPP
+}
+// count_barcodes_dual
+Rcpp::List count_barcodes_dual(SEXP seqs1, SEXP seqs2, SEXP xptr1, SEXP xptr2, bool forward1, bool forward2, bool randomized);
+RcppExport SEXP _screenCounter_count_barcodes_dual(SEXP seqs1SEXP, SEXP seqs2SEXP, SEXP xptr1SEXP, SEXP xptr2SEXP, SEXP forward1SEXP, SEXP forward2SEXP, SEXP randomizedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type seqs1(seqs1SEXP);
+    Rcpp::traits::input_parameter< SEXP >::type seqs2(seqs2SEXP);
+    Rcpp::traits::input_parameter< SEXP >::type xptr1(xptr1SEXP);
+    Rcpp::traits::input_parameter< SEXP >::type xptr2(xptr2SEXP);
+    Rcpp::traits::input_parameter< bool >::type forward1(forward1SEXP);
+    Rcpp::traits::input_parameter< bool >::type forward2(forward2SEXP);
+    Rcpp::traits::input_parameter< bool >::type randomized(randomizedSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_barcodes_dual(seqs1, seqs2, xptr1, xptr2, forward1, forward2, randomized));
+    return rcpp_result_gen;
+END_RCPP
+}
 // setup_barcodes_single
 SEXP setup_barcodes_single(Rcpp::StringVector constants, Rcpp::StringVector variables, int n_sub, int n_insert, int n_del, int n_total);
 RcppExport SEXP _screenCounter_setup_barcodes_single(SEXP constantsSEXP, SEXP variablesSEXP, SEXP n_subSEXP, SEXP n_insertSEXP, SEXP n_delSEXP, SEXP n_totalSEXP) {
@@ -131,6 +162,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_screenCounter_setup_barcodes_combo_dual", (DL_FUNC) &_screenCounter_setup_barcodes_combo_dual, 2},
     {"_screenCounter_count_barcodes_combo_dual", (DL_FUNC) &_screenCounter_count_barcodes_combo_dual, 4},
     {"_screenCounter_report_barcodes_combo_dual", (DL_FUNC) &_screenCounter_report_barcodes_combo_dual, 1},
+    {"_screenCounter_setup_barcodes_dual", (DL_FUNC) &_screenCounter_setup_barcodes_dual, 6},
+    {"_screenCounter_count_barcodes_dual", (DL_FUNC) &_screenCounter_count_barcodes_dual, 7},
     {"_screenCounter_setup_barcodes_single", (DL_FUNC) &_screenCounter_setup_barcodes_single, 6},
     {"_screenCounter_count_barcodes_single", (DL_FUNC) &_screenCounter_count_barcodes_single, 4},
     {"_screenCounter_identify_barcodes_single", (DL_FUNC) &_screenCounter_identify_barcodes_single, 4},

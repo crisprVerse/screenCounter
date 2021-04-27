@@ -171,6 +171,9 @@ test_that("dual counting reports diagnostic values correctly", {
     expect_identical(collated$barcode2.only, sum(i > nbarcodes1 & j <= nbarcodes2))
     expect_identical(collated$invalid.pair, 0L)
     expect_equal(collated$none + collated$barcode1.only + collated$barcode2.only + sum(output$counts), N)
+
+    expect_null(collated$provided.orientation)
+    expect_null(collated$other.orientation)
 })
 
 test_that("dual counting handles randomization correctly", {
@@ -200,8 +203,8 @@ test_that("dual counting handles randomization correctly", {
     expect_identical(collated$none, N)
     collated <- metadata(output2)
     expect_identical(collated$none, 0L)
-    expect_identical(collated$original.orientation, N)
-    expect_identical(collated$reverse.orientation, N)
+    expect_identical(collated$provided.orientation, N)
+    expect_identical(collated$other.orientation, N)
 
     # Trying with a symmetric construct.
     i <- sample(nbarcodes1, N, replace=TRUE)

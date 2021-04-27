@@ -13,6 +13,14 @@ report_barcodes_combo_dual <- function(xptr) {
     .Call('_screenCounter_report_barcodes_combo_dual', PACKAGE = 'screenCounter', xptr)
 }
 
+setup_barcodes_dual <- function(constants, variables, n_sub, n_insert, n_del, n_total) {
+    .Call('_screenCounter_setup_barcodes_dual', PACKAGE = 'screenCounter', constants, variables, n_sub, n_insert, n_del, n_total)
+}
+
+count_barcodes_dual <- function(seqs1, seqs2, xptr1, xptr2, forward1, forward2, randomized) {
+    .Call('_screenCounter_count_barcodes_dual', PACKAGE = 'screenCounter', seqs1, seqs2, xptr1, xptr2, forward1, forward2, randomized)
+}
+
 setup_barcodes_single <- function(constants, variables, n_sub, n_insert, n_del, n_total) {
     .Call('_screenCounter_setup_barcodes_single', PACKAGE = 'screenCounter', constants, variables, n_sub, n_insert, n_del, n_total)
 }
