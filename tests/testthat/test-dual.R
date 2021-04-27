@@ -222,6 +222,63 @@ test_that("dual counting handles randomization correctly", {
     expect_identical(output$counts, tabulate(i, nbins=length(POOL1)))
 })
 
+test_that("dual counting handles randomization edge cases", {
+    barcodes <- c(
+        "AAAAAAAAA",
+        "AAAAAAAAA",
+        "AAAAAACAA",
+        "AAAAAACAA"
+    )
+    names(barcodes) <- seq_along(barcodes)
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+
+    barcodes2 <- c(
+        "AAAAAAAAA",
+        "AAAAAACAA",
+        "AAAAAAAAA",
+        "AAAAAACAA"
+    )
+    names(barcodes2) <- seq_along(barcodes2)
+    tmp2 <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes2), filepath=tmp2, format="fastq")
+
+    output <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"))
+    expect_identical(output$counts, 1L)
+    expect_identical(metadata(output)$none, 1L)
+    expect_identical(metadata(output)$barcode1.only, 1L)
+    expect_identical(metadata(output)$barcode2.only, 1L)
+    expect_identical(metadata(output)$nmapped, 1L)
+
+    output2 <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), randomized=TRUE)
+    expect_identical(as.data.frame(output), as.data.frame(output2))
+    expect_identical(metadata(output2)$provided.orientation, 1L)
+
+    output3 <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), substitutions=c(1, 0))
+    expect_identical(output3$counts, 2L)
+    expect_identical(metadata(output3)$barcode1.only, 2L)
+    expect_identical(metadata(output3)$barcode2.only, 0L)
+
+    output4 <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), substitutions=c(0, 1))
+    expect_identical(output4$counts, 2L)
+    expect_identical(metadata(output4)$barcode1.only, 0L)
+    expect_identical(metadata(output4)$barcode2.only, 2L)
+
+    output5 <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), substitutions=c(0, 1), randomized=TRUE)
+    expect_identical(output4$counts, 3L) # doesn't match the case with two subs 
+    expect_identical(metadata(output5)$barcode1.only, 0L)
+    expect_identical(metadata(output5)$barcode2.only, 1L)
+
+    output6a <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), substitutions=1)
+    output6b <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), substitutions=1, randomized=TRUE)
+    expect_identical(as.data.frame(output6a), as.data.frame(output6b))
+
+    # Competition between matches in both orientations is resolved correctly.
+    output7 <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first=c("AAAAAAAAA", "AAAAAACAA"), second="AAAAAAAAA"), substitutions=1, randomized=TRUE)
+    expect_identical(output7$counts[1], 1L)
+    expect_identical(output7$counts[2], 3L) # fewer edits in all 3 substituted cases.
+})
+
 test_that("dual counting reports invalid pairs correctly", {
     N <- 5000
 
