@@ -47,9 +47,10 @@ Rcpp::List count_barcodes_dual(SEXP seqs1, SEXP seqs2, SEXP xptr1, SEXP xptr2, b
     Rcpp::IntegerVector out1(nseqs), out2(nseqs), diagnostics(2);
     int& nprovided = diagnostics[0];
     int& nother = diagnostics[1];
+    constexpr int UNMAPPED = -1;
 
     for (size_t i=0; i<nseqs; ++i) {
-        int id1_provided=-1, id2_provided=-1, id1_other=-1, id2_other=-1;
+        int id1_provided=UNMAPPED, id2_provided=UNMAPPED, id1_other=UNMAPPED, id2_other=UNMAPPED;
         int provided_nedits=0, other_nedits=0;
 
         for (int j=0; j<2; ++j) {
@@ -113,8 +114,8 @@ Rcpp::List count_barcodes_dual(SEXP seqs1, SEXP seqs2, SEXP xptr1, SEXP xptr2, b
             out1[i] = id1_provided;
             out2[i] = id2_provided;
         } else {
-            const bool provided_ok = id1_provided != -1 && id2_provided != -1;
-            const bool other_ok = id1_other != -1 && id2_other != -1;
+            const bool provided_ok = id1_provided != UNMAPPED && id2_provided != UNMAPPED;
+            const bool other_ok = id1_other != UNMAPPED && id2_other != UNMAPPED;
 
             if (!other_ok) {
                 out1[i] = id1_provided;
@@ -125,14 +126,22 @@ Rcpp::List count_barcodes_dual(SEXP seqs1, SEXP seqs2, SEXP xptr1, SEXP xptr2, b
                 out2[i] = id2_other;
                 nother += other_ok;
             } else {
-                if (provided_nedits <= other_nedits) {
+                if (provided_nedits < other_nedits) {
+                    out1[i] = id1_provided;
+                    out2[i] = id2_provided;
+                    ++nprovided;
+                } else if (provided_nedits > other_nedits) {
+                    out1[i] = id1_other;
+                    out2[i] = id2_other;
+                    ++nother;
+                } else if (provided_nedits == other_nedits && id1_provided == id1_other && id2_provided == id2_other) {
                     out1[i] = id1_provided;
                     out2[i] = id2_provided;
                     ++nprovided;
                 } else {
-                    out1[i] = id1_other;
-                    out2[i] = id2_other;
-                    ++nother;
+                    // Ties are considered unmapped.
+                    out1[i] = -1;
+                    out2[i] = -1;
                 }
             }
         }

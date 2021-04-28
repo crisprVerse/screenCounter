@@ -265,7 +265,7 @@ test_that("dual counting handles randomization edge cases", {
     expect_identical(metadata(output4)$barcode2.only, 2L)
 
     output5 <- countDualBarcodes(c(tmp, tmp2), choices=DataFrame(first="AAAAAAAAA", second="AAAAAAAAA"), substitutions=c(0, 1), randomized=TRUE)
-    expect_identical(output4$counts, 3L) # doesn't match the case with two subs 
+    expect_identical(output5$counts, 3L) # doesn't match the case with two subs 
     expect_identical(metadata(output5)$barcode1.only, 0L)
     expect_identical(metadata(output5)$barcode2.only, 1L)
 
