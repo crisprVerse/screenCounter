@@ -27,6 +27,7 @@
 #' combineComboCounts(df1, df2, df3)
 #' 
 #' @export
+#' @importFrom S4Vectors I
 combineComboCounts <- function(...) {
     everything <- list(...)
     combined <- do.call(rbind, everything)
