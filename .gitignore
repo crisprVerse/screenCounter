@@ -2,3 +2,4 @@ INTERNAL_*
 *.o
 *.so
 *.html
+inst/include/source-*
