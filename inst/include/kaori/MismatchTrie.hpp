@@ -72,7 +72,7 @@ public:
                     }
 
                     int candidate = pointers[node + s];
-                    if (candidate > 0) {
+                    if (candidate >= 0) {
                         if (found) { // ambiguous, so we quit early.
                             alt = -1;
                             break;
