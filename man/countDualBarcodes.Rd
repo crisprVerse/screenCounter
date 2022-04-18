@@ -84,11 +84,11 @@ The metadata contains:
 \item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
 \item \code{invalid.pair}, the number of read pairs with matches for each barcode 
 but do not form a valid combination in \code{choices}.
-\item \code{original.orientation}, the number of read pairs that match a barcode combination in the original strand orientation.
+\item \code{provided.orientation}, the number of read pairs that match a barcode combination in the provided orientation,
+i.e., the first and second FASTQ files contain the first and second barcodes, respectively.
 Only reported when \code{randomized=TRUE}.
-\item \code{reverse.orientation}, the number of read pairs that match a barcode combination in the reverse strand orientation.
-Only reported when \code{randomized=TRUE}.
-\item \code{ambiguous.orientation}, the number of read pairs that match a different barcode combination in each strand orientation.
+\item \code{other.orientation}, the number of read pairs that match a barcode combination in the other orientation,
+i.e., the first and second FASTQ files contain the second and first barcodes, respectively.
 Only reported when \code{randomized=TRUE}.
 }
 
@@ -125,7 +125,6 @@ while the second file is assumed to contain the second barcode (\code{choices[,2
 However, if \code{randomized=TRUE}, the orientation is assumed to be random such that
 the first FASTQ file may contain the second barcode and so on.
 In such cases, both orientations will be searched to identify a valid combination.
-(If both orientations yield a different valid combination, no count will be assigned.)
 
 We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
 by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
