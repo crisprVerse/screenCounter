@@ -12,7 +12,7 @@ else
 fi
 rm -rf kaori
 mkdir -p kaori
-cp source-kaori/include/kaori/* kaori
+cp -r source-kaori/include/kaori/* kaori
 
 # Transplant the byteme code.
 if [ -e source-byteme ]
