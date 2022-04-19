@@ -3,4 +3,5 @@ INTERNAL_*
 *.so
 *.html
 *.swp
+*.rds
 inst/include/source-*
