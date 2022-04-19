@@ -186,8 +186,13 @@ private:
 public:
     std::vector<std::pair<int, int> > forward_variables, reverse_variables;
 
-    const std::vector<std::pair<int, int> >& variable_regions(bool reverse = false) const {
-        return (reverse ? reverse_variables : forward_variables);
+    template<bool reverse = false>
+    const std::vector<std::pair<int, int> >& variable_regions() const {
+        if constexpr(reverse) { 
+            return reverse_variables;
+        } else {
+            return forward_variables;
+        }
     } 
 
 private:

@@ -21,6 +21,7 @@ public:
         max_mismatches(mm),
         constant(s, n, f, r)
     {
+        // Exact strandedness doesn't matter here, just need the number and length.
         const auto& regions = constant.variable_regions();
         if (regions.size() != 1) {
             throw std::runtime_error("expected a single variable region only");
@@ -79,7 +80,7 @@ private:
 
     void reverse_match(const char* seq, const typename ConstantTemplate<N>::MatchDetails& details, SearchState& state) const {
         auto start = seq + details.position;
-        const auto& range = constant.variable_regions(true)[0];
+        const auto& range = constant.template variable_regions<true>()[0];
         std::string curseq(start + range.first, start + range.second);
         reverse_lib.match(curseq, state.reverse_details);
     }

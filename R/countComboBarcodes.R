@@ -8,9 +8,11 @@
 #' @param choices A \linkS4class{List} of character vectors, one per variable region in \code{template}.
 #' The first vector should contain the potential sequences for the first variable region, 
 #' the second vector for the second variable region and so on.
-#' @param substitutions,deletions Deprecated options, ignored.
+#' @param substitutions Integer scalar specifying the maximum number of substitutions when considering a match. 
+#' @param deletions Deprecated.
 #' @param strand String specifying which strand of the read to search.
 #' @param indices Logical scalar indicating whether integer indices should be used to define each combinational barcode.
+#' @param num.threads Integer scalar specifying the number of threads to use to process a single file.
 #' @param files A character vector of paths to FASTQ files.
 #' @param ... Further arguments to pass to \code{countComboBarcodes}.
 #' @param withDimnames A logical scalar indicating whether the rows and columns should be named.
@@ -26,7 +28,9 @@
 #' Other settings of \code{strand} will only search one or the other sequence.
 #' The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
 #'
-#' Currently, there is no support for searching with mismatches.
+#' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
+#' This will consider substitutions in both the variable region as well as the constant flanking regions.
+#' Previous versions of the function also handled indels but this has been removed for better performance.
 #'
 #' @return 
 #' \code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
@@ -68,8 +72,8 @@
 #' output <- countComboBarcodes(tmp,
 #'     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
 #'     choices=list(first=known.pool, second=known.pool))
-#' output$combination
-#' head(output$count)
+#' output$combinations
+#' head(output$counts)
 #'
 #' matrixOfComboBarcodes(c(tmp, tmp),
 #'     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
@@ -77,16 +81,18 @@
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<- I
 #' @importFrom ShortRead FastqStreamer sread yield
-countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, deletions=FALSE,
-    strand=c("both", "original", "reverse"), indices=FALSE)
-{
+countComboBarcodes <- function(fastq, template, choices, substitutions=0, deletions=FALSE, strand=c("both", "original", "reverse"), num.threads=1, indices=FALSE) {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
     n.len <- parsed$variable$len
     constants <- parsed$constant
+    template <- gsub("N", "-", template)
 
     # Validating 'choices'.
     nvariables <- length(n.pos)
+    if (nvariables!=2L) {
+        stop(sprintf("'ncol(choices)=%i' is not currently supported", nvariables))
+    }
     if (nvariables!=length(choices)) {
         stop("'length(choices)' is not equal to the number of stretches of N's")
     }
@@ -99,36 +105,14 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
         names(choices) <- sprintf("X%i", seq_along(choices))
     }
 
-    # Choosing the C++ functions to use.
-    if (nvariables==2L) {
-        setupfun <- setup_barcodes_combo_dual
-        countfun <- count_barcodes_combo_dual
-        reportfun <- report_barcodes_combo_dual
-    } else {
-        stop(sprintf("'ncol(choices)=%i' is not currently supported", nvariables))
+    strand <- c(original=0L, reverse=1L, both=2L)[match.arg(strand)]
+    if (deletions) {
+        .Deprecated("'deletions=TRUE' is deprecated and will be ignored")
     }
 
-    strand <- match.arg(strand)
-    use.forward <- strand %in% c("original", "both")
-    use.reverse <- strand %in% c("reverse", "both")
+    output <- count_combo_barcodes(fastq, template, strand, choices, substitutions, TRUE, num.threads)
 
-    if (substitutions || deletions) {
-        .Deprecated("'substitutions=TRUE' and 'deletions=TRUE' are deprecated and will be ignored")
-    }
-
-    # Counting all pairs of barcodes. 
-    ptr <- setupfun(constants, as.list(choices)) 
-    incoming <- FastqStreamer(fastq) 
-    on.exit(close(incoming))
-
-    N <- 0L
-    while (length(fq <- yield(incoming))) {
-        countfun(sread(fq), ptr, use.forward, use.reverse)
-        N <- N + length(fq)
-    }
-
-    output <- reportfun(ptr)
-    keys <- do.call(DataFrame, output[[2]])
+    keys <- DataFrame(t(output[[1]] + 1L))
     colnames(keys) <- names(choices)
     if (!indices) {
         for (i in seq_len(ncol(keys))) {
@@ -136,8 +120,8 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=FALSE, de
         }
     }
 
-    out <- DataFrame(combinations=I(keys), counts=output[[1]])
-    metadata(out)$nreads <- N
+    out <- DataFrame(combinations=I(keys), counts=output[[2]])
+    metadata(out)$nreads <- output[[3]]
     out
 }
 
