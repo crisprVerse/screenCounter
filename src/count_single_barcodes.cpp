@@ -13,7 +13,7 @@ template<size_t N, class Reader>
 void count_single_barcodes_(Reader& reader, Rcpp::IntegerVector& output, int& total_nreads, std::string constant, int strand, const std::vector<const char*>& options, int mismatches, bool use_first, int nthreads) {
     kaori::SingleBarcodeSingleEnd<N> handler(constant.c_str(), constant.size(), strand, options, mismatches);
     handler.set_first(use_first);
-    process_single_end_data(&reader, handler, nthreads);
+    kaori::process_single_end_data(&reader, handler, nthreads);
 
     const auto& counts = handler.get_counts();
     std::copy(counts.begin(), counts.end(), output.begin());
@@ -39,6 +39,8 @@ Rcpp::List count_single_barcodes(std::string path, std::string constant, int str
         count_single_barcodes_<512>(reader, output_counts, output_totals, constant, strand, ptrs, mismatches, use_first, nthreads);
     } else if (constant.size() <= 256) {
         count_single_barcodes_<1024>(reader, output_counts, output_totals, constant, strand, ptrs, mismatches, use_first, nthreads);
+    } else {
+        throw std::runtime_error("lacking compile-time support for constant regions longer than 256 bp");
     }
 
     return Rcpp::List::create(output_counts, output_totals);
