@@ -9,9 +9,10 @@ countComboBarcodes(
   fastq,
   template,
   choices,
-  substitutions = FALSE,
+  substitutions = 0,
   deletions = FALSE,
   strand = c("both", "original", "reverse"),
+  num.threads = 1,
   indices = FALSE
 )
 
@@ -27,9 +28,13 @@ or a connection object to such a file.}
 The first vector should contain the potential sequences for the first variable region, 
 the second vector for the second variable region and so on.}
 
-\item{substitutions, deletions}{Deprecated options, ignored.}
+\item{substitutions}{Integer scalar specifying the maximum number of substitutions when considering a match.}
+
+\item{deletions}{Deprecated.}
 
 \item{strand}{String specifying which strand of the read to search.}
+
+\item{num.threads}{Integer scalar specifying the number of threads to use to process a single file.}
 
 \item{indices}{Logical scalar indicating whether integer indices should be used to define each combinational barcode.}
 
@@ -74,7 +79,9 @@ If no match is found, the sequence is reverse-complemented and searched again.
 Other settings of \code{strand} will only search one or the other sequence.
 The most appropriate choice depends on both the sequencing protocol and the design (i.e., position and length) of the barcode.
 
-Currently, there is no support for searching with mismatches.
+We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
+This will consider substitutions in both the variable region as well as the constant flanking regions.
+Previous versions of the function also handled indels but this has been removed for better performance.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.
@@ -95,8 +102,8 @@ writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 output <- countComboBarcodes(tmp,
     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
     choices=list(first=known.pool, second=known.pool))
-output$combination
-head(output$count)
+output$combinations
+head(output$counts)
 
 matrixOfComboBarcodes(c(tmp, tmp),
     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",

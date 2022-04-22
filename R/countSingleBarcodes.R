@@ -74,7 +74,6 @@
 #' matrixOfSingleBarcodes(c(tmp, tmp), choices=known.pool,
 #'     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 #' @export
-#' @importFrom ShortRead FastqStreamer yield sread
 #' @importFrom S4Vectors DataFrame metadata<-
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
     substitutions=0, insertions=0, deletions=0, total.edits=2,
@@ -88,7 +87,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3, template=NULL,
     if (!is.null(template)) {
         template <- gsub("N", "-", template)
     } else {
-        template <- paste0(flank5, rep("-", nchar(choices)[1]), flank3)
+        template <- paste0(flank5, strrep("-", nchar(choices)[1]), flank3)
     }
 
     strand <- c(original = 0L, reverse = 1L, both = 2L)[match.arg(strand)]

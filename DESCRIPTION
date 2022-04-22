@@ -1,6 +1,6 @@
 Package: screenCounter
-Version: 1.7.0
-Date: 2021-12-03
+Version: 1.7.1
+Date: 2022-04-22
 Title: Counting Reads in High-Throughput Sequencing Screens
 Description: Provides functions for counting reads from high-throughput
     sequencing screen data (e.g., CRISPR, shRNA) to quantify barcode 
@@ -12,25 +12,16 @@ Depends:
     SummarizedExperiment
 Imports: 
     Rcpp,
-    IRanges,
-    XVector,
-    BiocGenerics,
-    Biostrings,
-    ShortRead,
     BiocParallel
 Suggests: 
+    Biostrings,
     BiocStyle,
     knitr,
     rmarkdown,
     testthat
 LinkingTo: 
-    Rcpp,
-    IRanges,
-    XVector,
-    Biostrings,
-    S4Vectors,
-    BH
+    Rcpp
 License: Genentech, Inc.
 VignetteBuilder: knitr
 SystemRequirements: C++17
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

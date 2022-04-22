@@ -115,7 +115,6 @@
 #'     flank3=c("CCAGCTCGATCG", "ACACGAGGGTAT"))
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<- countMatches selfmatch
-#' @importFrom BiocGenerics anyDuplicated match %in%
 countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
     substitutions=0, insertions=0, deletions=0, total.edits=2,
     strand="original", randomized=FALSE, include.invalid=FALSE, num.threads=1)
@@ -180,7 +179,7 @@ countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL,
 #' @export
 #' @importFrom BiocParallel bplapply SerialParam
 #' @importFrom SummarizedExperiment SummarizedExperiment
-#' @importFrom S4Vectors DataFrame metadata
+#' @importFrom S4Vectors DataFrame metadata %in%
 matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, include.invalid=FALSE, BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countDualBarcodes, choices=choices, ..., include.invalid=include.invalid, BPPARAM=BPPARAM)
 

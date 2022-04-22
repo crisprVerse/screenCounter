@@ -35,7 +35,7 @@ MANUAL <- function(...) {
     all.keys <- unique(unlist(has.keys))
     mat <- matrix(0L, length(all.keys), length(everything))
     for (i in seq_along(has.keys)) {
-        m <- match(has.keys[[i]], all.keys)
+        m <- S4Vectors::match(has.keys[[i]], all.keys)
         counts <- everything[[i]]$counts
         mat[m,i] <- counts
     }

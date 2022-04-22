@@ -80,7 +80,6 @@
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<- I
-#' @importFrom ShortRead FastqStreamer sread yield
 countComboBarcodes <- function(fastq, template, choices, substitutions=0, deletions=FALSE, strand=c("both", "original", "reverse"), num.threads=1, indices=FALSE) {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos

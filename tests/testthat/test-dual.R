@@ -116,7 +116,7 @@ test_that("dual counting works as expected for combinations", {
 
     output <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2))
     expect_identical(as.data.frame(output[,1:2]), as.data.frame(choices))
-    m <- match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices)
+    m <- S4Vectors::match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices)
     expect_identical(output$counts, tabulate(m, nbins=nrow(choices))) # NA's are dismissed.
 
     # Works when only a subset of the combinations are valid.
@@ -243,7 +243,7 @@ test_that("dual counting reports invalid pairs correctly", {
 
     expect_true(all(sub$valid[1:nrow(subchoices)]))
     expect_false(any(sub$valid[(nrow(subchoices)+1):nrow(sub)]))
-    m <- match(ref[,1:2], sub[,1:2])
+    m <- S4Vectors::match(ref[,1:2], sub[,1:2])
     nzero <- ref$counts!=0
     expect_identical(ref$counts[nzero], sub$counts[m[nzero]])
     expect_identical(sum(nzero), nrow(sub))
@@ -321,7 +321,7 @@ test_that("matrix summarization works as expected with invalid pairs", {
     # Correctly respects the subset.
     max.len <- max(length(POOL1), length(POOL2))
     subchoices <- DataFrame(X=rep(POOL1, length.out=max.len), Y=rep(POOL2, length.out=max.len))
-    keep <- match(subchoices, choices)
+    keep <- S4Vectors::match(subchoices, choices)
     rownames(subchoices) <- rownames(choices)[keep]
 
     ref <- matrixOfDualBarcodes(collected, choices=subchoices, template=c(template1, template2))
@@ -335,7 +335,7 @@ test_that("matrix summarization works as expected with invalid pairs", {
     sub <- se[rowData(se)$valid,]
     rowData(sub)$valid <- NULL
 
-    m <- match(rowData(sub), rowData(ref))
+    m <- S4Vectors::match(rowData(sub), rowData(ref))
     colData(sub) <- colData(sub)[,c("paths1", "paths2", "npairs")]
     expect_identical(ref[m,], sub)
 
@@ -343,13 +343,13 @@ test_that("matrix summarization works as expected with invalid pairs", {
     # of indices to sequences is done correctly for the invalid pairs.
     o <- do.call(order, c(as.list(subchoices), list(decreasing=TRUE)))
     subchoices2 <- subchoices[o,]
-    keep <- match(subchoices, choices)
+    keep <- S4Vectors::match(subchoices, choices)
 
     ref <- matrixOfDualBarcodes(collected, choices=subchoices, template=c(template1, template2), include.invalid=TRUE)
     se2 <- matrixOfDualBarcodes(collected, choices=subchoices2, template=c(template1, template2), include.invalid=TRUE)
     expect_identical(nrow(ref), nrow(se2))
 
-    m <- match(rowData(se2)[,1:2], rowData(ref)[,1:2])
+    m <- S4Vectors::match(rowData(se2)[,1:2], rowData(ref)[,1:2])
     expect_false(any(is.na(m)))
     expect_identical(ref[m,], se2)
 })
