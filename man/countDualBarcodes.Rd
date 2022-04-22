@@ -8,8 +8,8 @@
 countDualBarcodes(
   fastq,
   choices,
-  flank5 = "",
-  flank3 = "",
+  flank5,
+  flank3,
   template = NULL,
   substitutions = 0,
   insertions = 0,
@@ -17,7 +17,8 @@ countDualBarcodes(
   total.edits = 2,
   strand = "original",
   randomized = FALSE,
-  include.invalid = FALSE
+  include.invalid = FALSE,
+  num.threads = 1
 )
 
 matrixOfDualBarcodes(
@@ -30,8 +31,7 @@ matrixOfDualBarcodes(
 )
 }
 \arguments{
-\item{fastq}{Character vector of length two containing the path to two FASTQ files containing paired-end data.
-Alternatively, a list of length two containing connection objects to such files.}
+\item{fastq}{Character vector of length 2, containin paths to two FASTQ files with paired-end data.}
 
 \item{choices}{A \linkS4class{DataFrame} with two character columns specifying valid combinations of variable regions.
 The first column contains sequences for barcode 1 while the second column contains sequences for barcode 2.}
@@ -48,23 +48,17 @@ Alternatively, a string can be supplied if the template is the same for each bar
 \item{substitutions}{Integer vector of length 2 specifying how many substitutions should be allowed for barcodes 1 and 2, respectively.
 Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
 
-\item{insertions}{Integer vector of length 2 specifying how many insertions should be allowed for barcodes 1 and 2, respectively.
-Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
+\item{insertions, deletions, total.edits}{Deprecated and ignored.}
 
-\item{deletions}{Integer vector of length 2 specifying how many deletions should be allowed for barcodes 1 and 2, respectively.
-Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
-
-\item{total.edits}{Integer vector of length 2 specifying how many total edits should be allowed for barcodes 1 and 2, respectively.
-Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
-
-\item{strand}{Character vector of length 2 specifying which strand of the read to search 
-(\code{"both"}, \code{"original"}, \code{"reverse"}) for each barcode.
+\item{strand}{Character vector of length 2 specifying which strand of the read to search (\code{"original"}, \code{"reverse"}) for each barcode.
 Alternatively, a string can be supplied if this is the same for each barcode.}
 
 \item{randomized}{Logical scalar indicating whether the first FASTQ file always contains the first barcode in \code{choices}.
 If not, the opposite orientation is also searched.}
 
 \item{include.invalid}{Logical scalar indicating whether counts for invalid barcode combinations should also be returned.}
+
+\item{num.threads}{Integer scalar specifying the number of threads to use to process a single file.}
 
 \item{files}{A list of character vectors of length 2 containing paths to paired FASTQ files.}
 
@@ -79,17 +73,14 @@ By default, \code{countDualBarcodes} will return \code{choices} with an addition
 containing an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode combination.
 The metadata contains:
 \itemize{
-\item \code{none}, the number of read pairs with no matches to either barcode.
+\item \code{npairs}, the total number of read pairs processed by the function.
 \item \code{barcode1.only}, the number of read pairs that only match to barcode 1.
+Only provided when \code{invalid.pair=TRUE}.
 \item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
+Only provided when \code{invalid.pair=TRUE}.
 \item \code{invalid.pair}, the number of read pairs with matches for each barcode 
 but do not form a valid combination in \code{choices}.
-\item \code{provided.orientation}, the number of read pairs that match a barcode combination in the provided orientation,
-i.e., the first and second FASTQ files contain the first and second barcodes, respectively.
-Only reported when \code{randomized=TRUE}.
-\item \code{other.orientation}, the number of read pairs that match a barcode combination in the other orientation,
-i.e., the first and second FASTQ files contain the second and first barcodes, respectively.
-Only reported when \code{randomized=TRUE}.
+Only provided when \code{invalid.pair=TRUE}.
 }
 
 \code{matrixOfDualBarcodes} will return a \linkS4class{SummarizedExperiment} object containing:
@@ -103,7 +94,7 @@ and \code{nmapped}, containing the number of read pairs assigned to a barcode co
 If \code{withDimnames=TRUE}, row names are set to \code{choices} while column names are \code{basename(files)}.
 
 If \code{include.invalid=TRUE}, each row contains all observed combinations in addition to those in \code{choices}.
-The \code{\link{rowData}} contains an additional \code{valid} field specifying if a combination is valid, i.e., present in \code{choices}.
+The DataFrame (or \code{\link{rowData}} of the SummarizedExperiment) contains an additional \code{valid} field specifying if a combination is valid, i.e., present in \code{choices}.
 }
 \description{
 Count the frequency of dual barcodes in a dataset for a paired-end sequencing screen.
@@ -114,8 +105,7 @@ The goal is to count the frequency of each combination of barcodes across the re
 This differs from \code{\link{countComboBarcodes}} in that (i) only a subset of combinations are valid
 and (ii) the two barcodes occur on different reads.
 
-The behavior of this function with respect to the actual matching of read sequences to each individual barcode 
-is the same as that of \code{\link{countSingleBarcodes}}.
+The interpretation of the arguments for matching each barcode to reads is similar to that of \code{\link{countSingleBarcodes}}.
 Each barcode in the combination can be associated with different search parameters;
 for example, the search for the \dQuote{first} barcode in \code{choices[,1]}
 will be performed with \code{flank5[1]}, \code{flank3[1]}, \code{substitutions[1]}, \code{strand[1]}, etc.
@@ -126,10 +116,9 @@ However, if \code{randomized=TRUE}, the orientation is assumed to be random such
 the first FASTQ file may contain the second barcode and so on.
 In such cases, both orientations will be searched to identify a valid combination.
 
-We can handle sequencing errors across the entire barcode sequence (including variable and flanking regions) 
-by setting \code{substitutions}, \code{deletions} and \code{insertions} to accept imperfect matches. 
-If \code{total.edits} is specified, the total number of edits is capped regardless of the individual values for each edit type.
-The default of \code{total.edits=2} means that only 2 edits are allowed for a match, even if \code{substitutions + insertions + deletions} is greater than 2.
+We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
+This will consider substitutions in both the variable region as well as the constant flanking regions.
+Previous versions of the function also handled indels but this has been removed for better performance.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.

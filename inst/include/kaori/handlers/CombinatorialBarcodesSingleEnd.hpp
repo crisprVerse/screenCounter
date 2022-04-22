@@ -1,5 +1,5 @@
-#ifndef KAORI_COMBINATORIAL_BARCODES_HPP
-#define KAORI_COMBINATORIAL_BARCODES_HPP
+#ifndef KAORI_COMBINATORIAL_BARCODES_SINGLE_END_HPP
+#define KAORI_COMBINATORIAL_BARCODES_SINGLE_END_HPP
 
 #include "../ConstantTemplate.hpp"
 #include "../VariableLibrary.hpp"
@@ -11,9 +11,9 @@
 namespace kaori {
 
 template<size_t N, size_t V>
-class CombinatorialBarcodes {
+class CombinatorialBarcodesSingleEnd {
 public:
-    CombinatorialBarcodes(const char* constant, size_t size, int strand, const std::vector<std::vector<const char*> >& variable, int mismatches = 0) : 
+    CombinatorialBarcodesSingleEnd(const char* constant, size_t size, int strand, const std::vector<std::vector<const char*> >& variable, int mismatches = 0) : 
         forward(strand != 1),
         reverse(strand != 0),
         max_mismatches(mismatches),
@@ -36,7 +36,7 @@ public:
             for (size_t i = 0; i < V; ++i) {
                 const auto& current = regions[i];
                 size_t len = current.second - current.first;
-                forward_lib[i] = VariableLibrary(variable[i], len, mismatches);
+                forward_lib[i] = SimpleVariableLibrary(variable[i], len, mismatches);
             }
         }
 
@@ -45,12 +45,12 @@ public:
             for (size_t i = 0; i < V; ++i) {
                 const auto& current = rev_regions[i];
                 size_t len = current.second - current.first;
-                reverse_lib[i] = VariableLibrary(variable[V - i - 1], len, mismatches, true);
+                reverse_lib[i] = SimpleVariableLibrary(variable[V - i - 1], len, mismatches, true);
             }
         }
     }
         
-    CombinatorialBarcodes& set_first(bool t = true) {
+    CombinatorialBarcodesSingleEnd& set_first(bool t = true) {
         use_first = t;
         return *this;
     }
@@ -66,7 +66,7 @@ public:
         std::array<int, V> temp;
 
         // Default constructors should be called in this case, so it should be fine.
-        std::array<typename VariableLibrary::SearchState, V> forward_details, reverse_details;
+        std::array<typename SimpleVariableLibrary::SearchState, V> forward_details, reverse_details;
         /**
          * @endcond
          */
@@ -78,8 +78,8 @@ private:
         const char* seq, 
         size_t position, 
         int obs_mismatches, 
-        const std::array<VariableLibrary, V>& libs, 
-        std::array<typename VariableLibrary::SearchState, V>& states, 
+        const std::array<SimpleVariableLibrary, V>& libs, 
+        std::array<typename SimpleVariableLibrary::SearchState, V>& states, 
         std::array<int, V>& temp) 
     const {
         const auto& regions = constant_matcher.template variable_regions<reverse>();
@@ -90,7 +90,7 @@ private:
             std::string current(start + range.first, start + range.second);
 
             auto& curstate = states[r];
-            libs[r].match(current, curstate);
+            libs[r].match(current, curstate, max_mismatches - obs_mismatches);
             if (curstate.index < 0) {
                 return std::make_pair(false, 0);
             }
@@ -150,8 +150,14 @@ private:
         auto update = [&](std::pair<int, int> match) -> void {
             if (match.first && match.second <= best_mismatches) {
                 if (match.second == best_mismatches) {
-                    found = false;
+                    if (best_id != state.temp) { // ambiguous.
+                        found = false;
+                    }
                 } else { 
+                    // A further optimization at this point would be to narrow
+                    // max_mismatches to the current 'best_mismatches'. But
+                    // this probably isn't worth it.
+
                     found = true;
                     best_mismatches = match.second;
                     best_id = state.temp;
@@ -211,29 +217,7 @@ public:
 
 public:
     void sort() {
-        // Going back to front as the last iteration gives the slowest changing index.
-        // This ensures that we get the same results as std::sort() on the arrays.
-        for (size_t i_ = 0; i_ < V; ++i_) {
-            auto i = V - i_ - 1;
-
-            std::vector<size_t> counts(num_options[i] + 1);
-            for (const auto& x : combinations) {
-                ++(counts[x[i] + 1]);
-            }
-
-            for (size_t j = 1; j < counts.size(); ++j) {
-                counts[j] += counts[j-1];
-            }
-
-            std::vector<std::array<int, V> > copy(combinations.size());
-            for (const auto& x : combinations) {
-                auto& pos = counts[x[i]];
-                copy[pos] = x;
-                ++pos;
-            }
-
-            combinations.swap(copy);
-        }
+        sort_combinations(combinations, num_options);
     }
 
     const std::vector<std::array<int, V> >& get_combinations() const {
@@ -251,7 +235,7 @@ private:
     size_t nregions;
 
     ConstantTemplate<N> constant_matcher;
-    std::array<VariableLibrary, V> forward_lib, reverse_lib;
+    std::array<SimpleVariableLibrary, V> forward_lib, reverse_lib;
     std::array<size_t, V> num_options;
 
     std::vector<std::array<int, V> > combinations;

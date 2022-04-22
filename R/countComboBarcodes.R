@@ -110,7 +110,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=0, deleti
         .Deprecated("'deletions=TRUE' is deprecated and will be ignored")
     }
 
-    output <- count_combo_barcodes(fastq, template, strand, choices, substitutions, TRUE, num.threads)
+    output <- count_combo_barcodes_single(fastq, template, strand, choices, substitutions, TRUE, num.threads)
 
     keys <- DataFrame(t(output[[1]] + 1L))
     colnames(keys) <- names(choices)

@@ -10,9 +10,31 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// count_combo_barcodes
-Rcpp::List count_combo_barcodes(std::string path, std::string constant, int strand, Rcpp::List options, int mismatches, bool use_first, int nthreads);
-RcppExport SEXP _screenCounter_count_combo_barcodes(SEXP pathSEXP, SEXP constantSEXP, SEXP strandSEXP, SEXP optionsSEXP, SEXP mismatchesSEXP, SEXP use_firstSEXP, SEXP nthreadsSEXP) {
+// count_combo_barcodes_paired
+Rcpp::List count_combo_barcodes_paired(std::string path1, std::string constant1, bool reverse1, int mismatches1, Rcpp::CharacterVector options1, std::string path2, std::string constant2, bool reverse2, int mismatches2, Rcpp::CharacterVector options2, bool randomized, bool use_first, int nthreads);
+RcppExport SEXP _screenCounter_count_combo_barcodes_paired(SEXP path1SEXP, SEXP constant1SEXP, SEXP reverse1SEXP, SEXP mismatches1SEXP, SEXP options1SEXP, SEXP path2SEXP, SEXP constant2SEXP, SEXP reverse2SEXP, SEXP mismatches2SEXP, SEXP options2SEXP, SEXP randomizedSEXP, SEXP use_firstSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< std::string >::type path1(path1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type constant1(constant1SEXP);
+    Rcpp::traits::input_parameter< bool >::type reverse1(reverse1SEXP);
+    Rcpp::traits::input_parameter< int >::type mismatches1(mismatches1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options1(options1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type path2(path2SEXP);
+    Rcpp::traits::input_parameter< std::string >::type constant2(constant2SEXP);
+    Rcpp::traits::input_parameter< bool >::type reverse2(reverse2SEXP);
+    Rcpp::traits::input_parameter< int >::type mismatches2(mismatches2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options2(options2SEXP);
+    Rcpp::traits::input_parameter< bool >::type randomized(randomizedSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_first(use_firstSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_combo_barcodes_paired(path1, constant1, reverse1, mismatches1, options1, path2, constant2, reverse2, mismatches2, options2, randomized, use_first, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// count_combo_barcodes_single
+Rcpp::List count_combo_barcodes_single(std::string path, std::string constant, int strand, Rcpp::List options, int mismatches, bool use_first, int nthreads);
+RcppExport SEXP _screenCounter_count_combo_barcodes_single(SEXP pathSEXP, SEXP constantSEXP, SEXP strandSEXP, SEXP optionsSEXP, SEXP mismatchesSEXP, SEXP use_firstSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
@@ -22,7 +44,30 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type mismatches(mismatchesSEXP);
     Rcpp::traits::input_parameter< bool >::type use_first(use_firstSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(count_combo_barcodes(path, constant, strand, options, mismatches, use_first, nthreads));
+    rcpp_result_gen = Rcpp::wrap(count_combo_barcodes_single(path, constant, strand, options, mismatches, use_first, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// count_dual_barcodes
+Rcpp::List count_dual_barcodes(std::string path1, std::string constant1, bool reverse1, int mismatches1, Rcpp::CharacterVector options1, std::string path2, std::string constant2, bool reverse2, int mismatches2, Rcpp::CharacterVector options2, bool randomized, bool use_first, bool diagnostics, int nthreads);
+RcppExport SEXP _screenCounter_count_dual_barcodes(SEXP path1SEXP, SEXP constant1SEXP, SEXP reverse1SEXP, SEXP mismatches1SEXP, SEXP options1SEXP, SEXP path2SEXP, SEXP constant2SEXP, SEXP reverse2SEXP, SEXP mismatches2SEXP, SEXP options2SEXP, SEXP randomizedSEXP, SEXP use_firstSEXP, SEXP diagnosticsSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< std::string >::type path1(path1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type constant1(constant1SEXP);
+    Rcpp::traits::input_parameter< bool >::type reverse1(reverse1SEXP);
+    Rcpp::traits::input_parameter< int >::type mismatches1(mismatches1SEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options1(options1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type path2(path2SEXP);
+    Rcpp::traits::input_parameter< std::string >::type constant2(constant2SEXP);
+    Rcpp::traits::input_parameter< bool >::type reverse2(reverse2SEXP);
+    Rcpp::traits::input_parameter< int >::type mismatches2(mismatches2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type options2(options2SEXP);
+    Rcpp::traits::input_parameter< bool >::type randomized(randomizedSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_first(use_firstSEXP);
+    Rcpp::traits::input_parameter< bool >::type diagnostics(diagnosticsSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_dual_barcodes(path1, constant1, reverse1, mismatches1, options1, path2, constant2, reverse2, mismatches2, options2, randomized, use_first, diagnostics, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -44,7 +89,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_screenCounter_count_combo_barcodes", (DL_FUNC) &_screenCounter_count_combo_barcodes, 7},
+    {"_screenCounter_count_combo_barcodes_paired", (DL_FUNC) &_screenCounter_count_combo_barcodes_paired, 13},
+    {"_screenCounter_count_combo_barcodes_single", (DL_FUNC) &_screenCounter_count_combo_barcodes_single, 7},
+    {"_screenCounter_count_dual_barcodes", (DL_FUNC) &_screenCounter_count_dual_barcodes, 14},
     {"_screenCounter_count_single_barcodes", (DL_FUNC) &_screenCounter_count_single_barcodes, 7},
     {NULL, NULL, 0}
 };

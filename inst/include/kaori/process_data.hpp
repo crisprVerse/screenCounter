@@ -205,7 +205,7 @@ void process_paired_end_data(byteme::Reader* input1, byteme::Reader* input2, Tas
                     }
                 }
 
-                if (finished1 != finished2) {
+                if (finished1 != finished2 || reads1[t].size() != reads2[t].size()) {
                     throw std::runtime_error("different number of reads in paired FASTQ files");
                 } else if (finished1) {
                     finished = true;

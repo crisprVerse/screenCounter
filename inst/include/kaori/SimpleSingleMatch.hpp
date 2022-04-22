@@ -14,7 +14,7 @@ namespace kaori {
 template<size_t N>
 class SimpleSingleMatch {
 public:
-    SimpleSingleMatch(const char* s, size_t n, bool f, bool r, const std::vector<const char*>& options, int mm = 0) : 
+    SimpleSingleMatch(const char* s, size_t n, bool f, bool r, const std::vector<const char*>& options, int mm = 0, bool duplicates = false) : 
         num_options(options.size()),
         forward(f), 
         reverse(r),
@@ -29,10 +29,10 @@ public:
         size_t var_length = regions[0].second - regions[0].first;
 
         if (forward) {
-            forward_lib = VariableLibrary(options, var_length, max_mismatches);
+            forward_lib = SimpleVariableLibrary(options, var_length, max_mismatches, false, duplicates);
         }
         if (reverse) {
-            reverse_lib = VariableLibrary(options, var_length, max_mismatches, true);
+            reverse_lib = SimpleVariableLibrary(options, var_length, max_mismatches, true, duplicates);
         }
     }
 
@@ -47,7 +47,7 @@ public:
         /**
          * @cond
          */
-        typename VariableLibrary::SearchState forward_details, reverse_details;
+        typename SimpleVariableLibrary::SearchState forward_details, reverse_details;
         /**
          * @endcond
          */
@@ -75,14 +75,14 @@ private:
         auto start = seq + details.position;
         const auto& range = constant.variable_regions()[0];
         std::string curseq(start + range.first, start + range.second);
-        forward_lib.match(curseq, state.forward_details);
+        forward_lib.match(curseq, state.forward_details, max_mismatches - details.forward_mismatches);
     }
 
     void reverse_match(const char* seq, const typename ConstantTemplate<N>::MatchDetails& details, SearchState& state) const {
         auto start = seq + details.position;
         const auto& range = constant.template variable_regions<true>()[0];
         std::string curseq(start + range.first, start + range.second);
-        reverse_lib.match(curseq, state.reverse_details);
+        reverse_lib.match(curseq, state.reverse_details, max_mismatches - details.reverse_mismatches);
     }
 
 public:
@@ -93,7 +93,7 @@ public:
         state.mismatches = 0;
         state.variable_mismatches = 0;
 
-        auto update = [&](bool rev, int const_mismatches, const typename VariableLibrary::SearchState& x) -> bool {
+        auto update = [&](bool rev, int const_mismatches, const typename SimpleVariableLibrary::SearchState& x) -> bool {
             if (x.index < 0) {
                 return false;
             }
@@ -139,22 +139,23 @@ public:
         bool found = false;
         int best = max_mismatches + 1;
 
-        auto update = [&](bool rev,  int const_mismatches, const typename VariableLibrary::SearchState& x) -> void {
+        auto update = [&](bool rev,  int const_mismatches, const typename SimpleVariableLibrary::SearchState& x) -> void {
             if (x.index < 0) {
                 return;
             }
 
             auto total = x.mismatches + const_mismatches;
-            if (total == best) { // ambiguous, setting back to a mismatch.
-                found = false;
-                state.index = -1;
-
+            if (total == best) { 
+                if (state.index != x.index) { // ambiguous, setting back to a mismatch.
+                    found = false;
+                    state.index = -1;
+                }
             } else if (total < best) {
                 found = true;
-                best = total;
-                // As tempting as it might be, don't adjust max_mismatches to
-                // the current 'best'. This would tighten the search for the
-                // current sequence but could invalidate the matcher cache.
+                best = total; 
+                // A further optimization at this point would be to narrow
+                // max_mismatches to the current 'best'. But this probably
+                // isn't worth it.
 
                 state.index = x.index;
                 state.mismatches = total;
@@ -187,7 +188,7 @@ private:
     int max_mismatches;
 
     ConstantTemplate<N> constant;
-    VariableLibrary forward_lib, reverse_lib;
+    SimpleVariableLibrary forward_lib, reverse_lib;
 };
 
 }
