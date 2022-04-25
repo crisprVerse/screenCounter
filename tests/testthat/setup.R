@@ -55,4 +55,11 @@ CHOOSE_STRAND_FUN <- function(strand) {
     }
 }
 
-
+REF_COMBINE <- function(i1, i2, POOL1, POOL2) {
+    tab <- table(factor(i1, seq_along(POOL1)), factor(i2, seq_along(POOL2)))
+    ref <- list(as.vector(row(tab)), as.vector(col(tab)), as.vector(tab)) 
+    keep <- ref[[3]] != 0L
+    ref <- lapply(ref, "[", keep)
+    o <- do.call(order, ref)
+    lapply(ref, "[", o)
+}

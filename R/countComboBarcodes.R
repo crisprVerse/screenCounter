@@ -1,6 +1,6 @@
 #' Count combinatorial barcodes
 #'
-#' Count combinatorial barcodes for screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences. 
+#' Count combinatorial barcodes for single-end screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences within a single template.
 #' 
 #' @param fastq String containing the path to a FASTQ file containing single-end data,
 #' or a connection object to such a file.
@@ -79,7 +79,7 @@
 #'     template="ACGTNNNNNNNNNACGTNNNNNNNNNACGT",
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
-#' @importFrom S4Vectors DataFrame metadata<- I
+#' @importFrom S4Vectors metadata metadata<-
 countComboBarcodes <- function(fastq, template, choices, substitutions=0, deletions=FALSE, strand=c("both", "original", "reverse"), num.threads=1, indices=FALSE) {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
@@ -93,15 +93,12 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=0, deleti
         stop(sprintf("'length(choices)=%i' is not currently supported", nvariables))
     }
     if (nvariables!=length(choices)) {
-        stop("'length(choices)' is not equal to the number of stretches of N's")
+        stop("'length(choices)' is not equal to the number of variable regions in 'template'")
     }
     for (i in seq_len(nvariables)) {
         if (!all(nchar(choices[[i]])==n.len[i])) {
             stop("each column of 'choices' must have same width as variable region in 'template'")
         }
-    }
-    if (is.null(names(choices))) {
-        names(choices) <- sprintf("X%i", seq_along(choices))
     }
 
     strand <- c(original=0L, reverse=1L, both=2L)[match.arg(strand)]
@@ -111,17 +108,27 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=0, deleti
 
     output <- count_combo_barcodes_single(fastq, template, strand, choices, substitutions, TRUE, num.threads)
 
+    formatted <- .harvest_combinations(output, indices, choices)
+    metadata(formatted)$nreads <- output[[3]]
+    formatted
+}
+
+#' @importFrom S4Vectors DataFrame I
+.harvest_combinations <- function(output, indices, choices) {
     keys <- DataFrame(t(output[[1]] + 1L))
-    colnames(keys) <- names(choices)
+
+    .names <- names(choices)
+    if (is.null(.names)) {
+        .names <- c("first", "second")
+    }
+    colnames(keys) <- .names
+
     if (!indices) {
         for (i in seq_len(ncol(keys))) {
             keys[,i] <- choices[[i]][keys[,i]]
         }
     }
-
-    out <- DataFrame(combinations=I(keys), counts=output[[2]])
-    metadata(out)$nreads <- output[[3]]
-    out
+    DataFrame(combinations=I(keys), counts=output[[2]])
 }
 
 #' @rdname countComboBarcodes

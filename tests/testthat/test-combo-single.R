@@ -1,5 +1,5 @@
 # This tests countComboBarcodes().
-# library(testthat); library(screenCounter); source("setup.R"); source("test-combo-count.R")
+# library(testthat); library(screenCounter); source("setup.R"); source("test-combo-single.R")
 
 library(Biostrings)
 POOL1 <- vapply(rep(10, 20), GENERATE_RANDOM_SEQ, FUN.VALUE="")
@@ -32,14 +32,7 @@ test_that("countComboBarcodes works as expected in basic mode", {
         writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
 
         out <- countComboBarcodes(tmp, template, list(POOL1, POOL2), indices=TRUE)
-
-        tab <- table(factor(i1, seq_along(POOL1)), factor(i2, seq_along(POOL2)))
-        ref <- list(as.vector(row(tab)), as.vector(col(tab)), as.vector(tab)) 
-        keep <- ref[[3]]!=0L
-        ref <- lapply(ref, "[", keep)
-        o <- do.call(order, ref)
-        ref <- lapply(ref, "[", o)
-
+        ref <- REF_COMBINE(i1, i2, POOL1, POOL2)
         CHECK_OUTPUT(out, ref[[1]], ref[[2]], ref[[3]], N)
 
         # Same results when you stick a bunch of random crap to the start and end.
@@ -61,14 +54,7 @@ test_that("countComboBarcodes works as expected with strands", {
         writeXStringSet(strandFUN(B), filepath=tmp, format="fastq")
 
         out <- countComboBarcodes(tmp, template, list(POOL1, POOL2), strand=strand, indices=TRUE)
-
-        tab <- table(factor(i1, seq_along(POOL1)), factor(i2, seq_along(POOL2)))
-        ref <- list(as.vector(row(tab)), as.vector(col(tab)), as.vector(tab)) 
-        keep <- ref[[3]]!=0L
-        ref <- lapply(ref, "[", keep)
-        o <- do.call(order, ref)
-        ref <- lapply(ref, "[", o)
-
+        ref <- REF_COMBINE(i1, i2, POOL1, POOL2)
         CHECK_OUTPUT(out, ref[[1]], ref[[2]], ref[[3]], N)
 
         # Same results when you stick a bunch of random crap to the start and end.
@@ -121,5 +107,5 @@ test_that("matrixOfComboBarcodes handles names correctly", {
 
     # Works when pool names are not specified.
     se <- matrixOfComboBarcodes(tmp, template, list(POOL1, POOL2))
-    expect_identical(colnames(rowData(se)), c("X1", "X2"))
+    expect_identical(colnames(rowData(se)), c("first", "second"))
 }) 

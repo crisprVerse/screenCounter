@@ -67,7 +67,7 @@ and \code{nmapped}, containing the number of reads assigned to a barcode in the 
 If \code{withDimnames=TRUE}, row names are set to \code{"BARCODE_[ROW]"} and column names are set to \code{basename(files)}.
 }
 \description{
-Count combinatorial barcodes for screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences.
+Count combinatorial barcodes for single-end screen sequencing experiments where entities are distinguished based on random combinations of a small pool of known sequences within a single template.
 }
 \details{
 Certain screen sequencing experiments take advantage of combinatorial complexity to generate a very large pool of unique barcode sequences.

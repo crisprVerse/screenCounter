@@ -119,34 +119,22 @@ countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL,
     substitutions=0, insertions=0, deletions=0, total.edits=2,
     strand="original", randomized=FALSE, include.invalid=FALSE, num.threads=1)
 {
-    for (i in seq_len(ncol(choices))) {
-        choices[[i]] <- as.character(choices[[i]])
-    }
-
-    # Checking the search parameters.
-    if (!is.null(template)) {
-        template <- rep(template, length.out=2)
-        template1 <- gsub("N", "-", template[1])
-        template2 <- gsub("N", "-", template[2])
-    } else {
-        flank5 <- rep(flank5, length.out=2)
-        flank3 <- rep(flank3, length.out=2)
-        template1 <- paste0(flank5[1], strrep("-", nchar(choices[1,1])), flank3[1])
-        template2 <- paste0(flank5[2], strrep("-", nchar(choices[1,2])), flank3[2])
-    }
+    temp.out <- .create_paired_templates(template, flank5, flank3, choices)
+    template1 <- temp.out[[1]]
+    template2 <- temp.out[[2]]
 
     substitutions <- rep(substitutions, length.out=2)
     if (!missing(insertions) || !missing(deletions)) {
         .Deprecated("indels are no longer supported")
     }
 
-    strand <- rep(strand, length.out=2)
+    strand <- .verify_strand(strand)
     strand1 <- strand[1] == "reverse"
     strand2 <- strand[2] == "reverse"
 
     output <- count_dual_barcodes(
-        fastq[1], template1, strand1, substitutions[1], choices[,1], 
-        fastq[2], template2, strand2, substitutions[2], choices[,2], 
+        fastq[1], template1, strand1, substitutions[1], as.character(choices[,1]),
+        fastq[2], template2, strand2, substitutions[2], as.character(choices[,2]),
         randomized, TRUE, include.invalid, num.threads
     )
 
@@ -173,6 +161,28 @@ countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL,
         metadata(combined) <- list(npairs = output[[3]], barcode1.only = output[[4]], barcode2.only = output[[5]], invalid.pair = sum(others$counts))
         return(combined)
     }
+}
+
+.create_paired_templates <- function(template, flank5, flank3, choices) {
+    if (!is.null(template)) {
+        template <- rep(template, length.out=2)
+        template1 <- gsub("[nN]", "-", template[1])
+        template2 <- gsub("[nN]", "-", template[2])
+    } else {
+        flank5 <- rep(flank5, length.out=2)
+        flank3 <- rep(flank3, length.out=2)
+        template1 <- paste0(flank5[1], strrep("-", nchar(as.character(choices[1,1]))), flank3[1])
+        template2 <- paste0(flank5[2], strrep("-", nchar(as.character(choices[1,2]))), flank3[2])
+    }
+    c(template1, template2)
+}
+
+.verify_strand <- function(strand) {
+    strand <- rep(strand, length.out=2)
+    for (s in seq_along(strand)) {
+        strand[s] <- match.arg(strand[s], c("original", "reverse"))
+    }
+    strand
 }
 
 #' @rdname countDualBarcodes
