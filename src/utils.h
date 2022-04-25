@@ -2,9 +2,10 @@
 #define UTILS_H
 
 #include "Rcpp.h"
+#include "kaori/BarcodePool.hpp"
 #include <vector>
 
-std::vector<const char*> format_pointers(const Rcpp::CharacterVector&);
+kaori::BarcodePool format_pointers(const Rcpp::CharacterVector&);
 
 template<size_t V>
 Rcpp::List count_combinations(const std::vector<std::array<int, V> >& available, int extras) {

@@ -2,8 +2,8 @@
 #include "utils.h"
 #include <stdexcept>
 
-std::vector<const char*> format_pointers(const Rcpp::CharacterVector& options) {
-    size_t size;
+kaori::BarcodePool format_pointers(const Rcpp::CharacterVector& options) {
+    size_t size = 0;
 
     std::vector<const char*> ptrs(options.size());
     for (size_t o = 0; o < options.size(); ++o) {
@@ -20,5 +20,5 @@ std::vector<const char*> format_pointers(const Rcpp::CharacterVector& options) {
         ptrs[o] = current.get_cstring();
     }
 
-    return ptrs;
+    return kaori::BarcodePool(std::move(ptrs), size);
 }

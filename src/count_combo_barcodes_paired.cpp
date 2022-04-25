@@ -14,13 +14,13 @@ Rcpp::List count_combo_barcodes_paired_(
     Reader& reader1, 
     std::string constant1, 
     bool reverse1,
-    const std::vector<const char*>& options1, 
+    const kaori::BarcodePool& options1, 
     int mismatches1,
 
     Reader& reader2, 
     std::string constant2, 
     bool reverse2,
-    const std::vector<const char*>& options2, 
+    const kaori::BarcodePool& options2, 
     int mismatches2,
 
     bool randomized,
@@ -38,8 +38,8 @@ Rcpp::List count_combo_barcodes_paired_(
 
     auto output = count_combinations(handler.get_combinations(), 3);
     output[2] = Rcpp::IntegerVector::create(handler.get_total());
-    output[3] = Rcpp::IntegerVector::create(handler.get_read1_only());
-    output[4] = Rcpp::IntegerVector::create(handler.get_read2_only());
+    output[3] = Rcpp::IntegerVector::create(handler.get_barcode1_only());
+    output[4] = Rcpp::IntegerVector::create(handler.get_barcode2_only());
     return output;
 }
 
@@ -71,13 +71,13 @@ Rcpp::List count_combo_barcodes_paired(
     size_t len = std::min(constant1.size(), constant2.size());
     Rcpp::List output;
     if (len <= 32) {
-        output = count_combo_barcodes_paired_<128>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
+        output = count_combo_barcodes_paired_<32>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
     } else if (len <= 64) {
-        output = count_combo_barcodes_paired_<256>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
+        output = count_combo_barcodes_paired_<64>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
     } else if (len <= 128) {
-        output = count_combo_barcodes_paired_<512>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
+        output = count_combo_barcodes_paired_<128>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
     } else if (len <= 256) {
-        output = count_combo_barcodes_paired_<1024>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
+        output = count_combo_barcodes_paired_<256>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);
     } else {
         throw std::runtime_error("lacking compile-time support for constant regions longer than 256 bp");
     }

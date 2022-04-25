@@ -6,10 +6,26 @@
 #include <vector>
 #include <stdexcept>
 
+/**
+ * @file FastqReader.hpp
+ *
+ * @brief Defines the `FastqReader` class.
+ */
+
 namespace kaori {
 
+/**
+ * @brief Stream reads from a FASTQ file.
+ *
+ * Pretty much what it says on the tin.
+ * Multi-line sequence and quality strings are supported.
+ * The name of each read is only considered up to the first whitespace.
+ */
 class FastqReader {
 public:
+    /**
+     * @param p Any `byteme::Reader` instance that defines a text stream.
+     */
     FastqReader(byteme::Reader* p) : ptr(p) {
         sequence.reserve(200);
         name.reserve(200);
@@ -23,7 +39,13 @@ public:
         }
     }
 
-
+    /**
+     * Extract details for the next read in the file.
+     *
+     * @return Whether or not a record was successfully extracted.
+     * If `true`, `get_sequence()` and `get_name()` may be used.
+     * If `false`, this indicates that we reached the end of the file.
+     */
     bool operator()() {
         // Quitting early if the buffer is already empty. 
         if (available == 0) {
@@ -173,10 +195,17 @@ private:
     int line_count = 0;
 
 public:
+    /**
+     * @return Vector containing the sequence for the current read.
+     */
     const std::vector<char>& get_sequence() const {
         return sequence;
     }
 
+    /**
+     * @return Vector containing the name for the current read.
+     * Note that the name is considered to end at the first whitespace on the line.
+     */
     const std::vector<char>& get_name() const {
         return name;
     }

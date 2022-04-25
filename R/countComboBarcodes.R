@@ -90,7 +90,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=0, deleti
     # Validating 'choices'.
     nvariables <- length(n.pos)
     if (nvariables!=2L) {
-        stop(sprintf("'ncol(choices)=%i' is not currently supported", nvariables))
+        stop(sprintf("'length(choices)=%i' is not currently supported", nvariables))
     }
     if (nvariables!=length(choices)) {
         stop("'length(choices)' is not equal to the number of stretches of N's")
