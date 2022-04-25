@@ -242,21 +242,18 @@ Note that this will filter out read pairs that match different valid combination
 
 # Further options
 
-## Supporting mismatches and deletions
+## Supporting mismatches 
 
-Mismatch tolerance can be enabled by setting `substitutions=TRUE` and/or `deletions=TRUE`.
-Allowing for mismatches or deletions improves barcode recovery in the presence of sequencing errors.
+Mismatch tolerance can be enabled by setting `substitutions` to the desired number of mismatches.
+This may improve barcode recovery in the presence of sequencing errors.
 While such errors are rare per base^[At least on Illumina machines.], they will be more likely to occur when considering the entire length of the barcode.
-Substitutions are most common, followed by deletions; insertions are extremely rare and are not supported.
-
-With mismatch tolerance, we allow _no more than_ one substitution or deletion within any variable region.
-If multiple variable regions are present in a combinatorial barcode, only one substitution or deletion can be present across all variable regions.
-This is equivalent to an edit distance threshold of one (across the variable regions).
 
 In practice, mismatch tolerance is turned off by default in all counting functions.
 This is because many errors are introduced during barcode synthesis, more than those due to library preparation or sequencing.
 Synthesis errors result in genuinely different barcodes (e.g., guides targeting different regions, or different molecular tags) that should not be counted together.
 Nonetheless, this setting may be useful for debugging experiments with low mapping rates.
+
+Indels are not tolerated in any matches.
 
 ## Searching the other strand
 
@@ -308,7 +305,7 @@ out <- matrixOfSingleBarcodes(all.files,
 out
 ```
 
-Users are advised to read the `r Biocpkg("BiocParallel", "Introduction_To_BiocParallel.pdf", "relevant documentation")` to determine the most effective parallelization approach for their system.
+Users should read the `r Biocpkg("BiocParallel", "Introduction_To_BiocParallel.pdf", "relevant documentation")` to determine the most effective parallelization approach for their system.
 For example, users working on a cluster should use `BatchToolsParam()`, while users on a local non-Windows machines may prefer to use `MulticoreParam()`.
 
 # Session information
