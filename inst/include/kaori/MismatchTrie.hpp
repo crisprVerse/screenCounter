@@ -101,6 +101,7 @@ protected:
     size_t length;
     std::vector<int> pointers;
 
+    template<bool allow_unknown = false>
     static int base_shift(char base) {
         int shift = 0;
         switch (base) {
@@ -116,7 +117,11 @@ protected:
                 shift = 3;
                 break;
             default:
-                throw std::runtime_error("unknown base '" + std::string(1, base) + "' detected when constructing the trie");
+                if constexpr(allow_unknown) {
+                    shift = -1; 
+                } else {
+                    throw std::runtime_error("unknown base '" + std::string(1, base) + "' detected when constructing the trie");
+                }
         }
         return shift;
     }
@@ -165,8 +170,8 @@ public:
 
 private:
     std::pair<int, int> search(const char* seq, size_t pos, int node, int mismatches, int& max_mismatches) const {
-        int shift = base_shift(seq[pos]);
-        int current = pointers[node + shift];
+        int shift = base_shift<true>(seq[pos]);
+        int current = (shift >= 0 ? pointers[node + shift] : -1);
 
         // At the end: we prepare to return the actual values. We also refine
         // the max number of mismatches so that we don't search for things with
@@ -336,8 +341,8 @@ private:
         // as the index of the node on the trie.
         int node = state.index;
 
-        int shift = base_shift(seq[pos]);
-        int current = pointers[node + shift];
+        int shift = base_shift<true>(seq[pos]);
+        int current = (shift >= 0 ? pointers[node + shift] : -1);
 
         // At the end: we prepare to return the actual values. We also refine
         // the max number of mismatches so that we don't search for things with
