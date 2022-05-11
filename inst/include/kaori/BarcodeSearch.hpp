@@ -58,14 +58,15 @@ void fill_library(
     return;
 }
 
-template<class Indexer, class Updater, class Cache, class Trie, class Result, class Mismatch>
+template<class Methods, class Cache, class Trie, class Result, class Mismatch>
 void matcher_in_the_rye(const std::string& x, const Cache& cache, const Trie& trie, Result& res, const Mismatch& mismatches, const Mismatch& max_mismatches) {
     // Seeing if it's any of the caches; otherwise searching the trie.
     auto cit = cache.find(x);
     if (cit == cache.end()) {
         auto lit = res.cache.find(x);
         if (lit != res.cache.end()) {
-            Updater::update(res, lit->second);
+            Methods::update(res, lit->second, mismatches);
+
         } else {
             auto missed = trie.search(x.c_str(), mismatches);
 
@@ -76,14 +77,16 @@ void matcher_in_the_rye(const std::string& x, const Cache& cache, const Trie& tr
             // might actually be a hit). As such, we should only store a
             // miss in the cache when the requested number of mismatches is
             // equal to the maximum value specified in the constructor.
-            if (Indexer::index(missed) >= 0 || mismatches == max_mismatches) {
+            if (Methods::index(missed) >= 0 || mismatches == max_mismatches) {
                 res.cache[x] = missed;
             }
 
-            Updater::update(res, missed);
+            // No need to pass the requested number of mismatches,
+            // as we explicitly searched for that in the trie.
+            Methods::update(res, missed);
         }
     } else {
-        Updater::update(res, cit->second);
+        Methods::update(res, cit->second, mismatches);
     }
     return;
 }
@@ -172,15 +175,19 @@ public:
     }
 
 private:
-    struct Index {
+    struct Methods {
         static int index(const std::pair<int, int>& val) {
             return val.first;
         }
-    };
 
-    struct Updator {
         static void update(State& state, const std::pair<int, int>& val) {
             state.index = val.first;
+            state.mismatches = val.second;
+            return;
+        }
+
+        static void update(State& state, const std::pair<int, int>& val, int mismatches) {
+            state.index = (val.second > mismatches ? -1 : val.first);
             state.mismatches = val.second;
             return;
         }
@@ -221,7 +228,7 @@ public:
             state.index = it->second;
             state.mismatches = 0;
         } else {
-            matcher_in_the_rye<Index, Updator>(search_seq, cache, trie, state, allowed_mismatches, max_mm);
+            matcher_in_the_rye<Methods>(search_seq, cache, trie, state, allowed_mismatches, max_mm);
         }
     }
 
@@ -231,6 +238,27 @@ private:
     std::unordered_map<std::string, std::pair<int, int> > cache;
     int max_mm;
 };
+
+/**
+ * @cond
+ */
+// Using some template recursion instead of a fixed-length loop.
+// Maybe it compiles down to the same thing. We use a bitwise `|`
+// to avoid any branch prediction for some speed.
+template<size_t total, size_t position>
+struct HasMore {
+    static bool check(const std::array<int, total>& left, const std::array<int, total>& right) {
+        return (HasMore<total, position + 1>::check(left, right) | left[position] > right[position]);
+    }
+};
+
+template<size_t total>
+struct HasMore<total, total> {
+    static bool check(const std::array<int, total>& left, const std::array<int, total>& right) { return false; }
+};
+/**
+ * @endcond
+ */
 
 /**
  * @brief Search for known barcode sequences with segmented mismatches.
@@ -332,15 +360,20 @@ public:
 private:
     typedef typename SegmentedMismatches<num_segments>::Result SegmentedResult;
 
-    struct Index {
+    struct Methods {
         static int index(const SegmentedResult& val) {
             return val.index;
         }
-    };
 
-    struct Updator {
         static void update(State& state, const SegmentedResult& val) {
             state.index = val.index;
+            state.mismatches = val.total;
+            state.per_segment = val.per_segment;
+            return;
+        }
+
+        static void update(State& state, const SegmentedResult& val, const std::array<int, num_segments>& mismatches) {
+            state.index = (HasMore<num_segments, 0>::check(val.per_segment, mismatches) ? -1 : val.index);
             state.mismatches = val.total;
             state.per_segment = val.per_segment;
             return;
@@ -383,7 +416,7 @@ public:
             state.mismatches = 0;
             std::fill_n(state.per_segment.begin(), num_segments, 0);
         } else {
-            matcher_in_the_rye<Index, Updator>(search_seq, cache, trie, state, allowed_mismatches, max_mm);
+            matcher_in_the_rye<Methods>(search_seq, cache, trie, state, allowed_mismatches, max_mm);
         }
     }
 
