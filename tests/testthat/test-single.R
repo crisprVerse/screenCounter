@@ -45,6 +45,10 @@ test_that("countSingleBarcodes works as expected in basic mode", {
 
         # Same results when you stick a bunch of random crap to the start and end.
         STICKER(barcodes, tmp, out, choices=POOL)
+
+        # Same results with find.best=TRUE.
+        best <- countSingleBarcodes(tmp, POOL, template=template, find.best=TRUE)
+        expect_identical(out, best)
     }
 })
 

@@ -9,6 +9,8 @@
 #' @param template String containing the template for the barcode structure.
 #' @param substitutions Integer scalar specifying the maximum number of substitutions when considering a match. 
 #' @param insertions,deletions,total.edits Deprecated.
+#' @param find.best Logical scalar indicating whether to search each read for the best match.
+#' Defaults to stopping at the first match.
 #' @param strand String specifying which strand of the read to search.
 #' @param num.threads Integer scalar specifying the number of threads to use to process a single file.
 #' @param files A character vector of paths to FASTQ files.
@@ -30,6 +32,10 @@
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions.
 #' Previous versions of the function also handled indels but this has been removed for better performance.
+#'
+#' By default, the function will stop at the first match that satisfies the requirements above.
+#' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
+#' If there are multiple matches with the same number of mismatches, the read is discarded to avoid problems with ambiguity.
 #'
 #' @return 
 #' \code{countSingleBarcodes} will return a \linkS4class{DataFrame} containing:
@@ -76,7 +82,7 @@
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
 countSingleBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
-    substitutions=0, insertions=0, deletions=0, total.edits=2,
+    substitutions=0, insertions=0, deletions=0, total.edits=2, find.best=FALSE,
     strand=c("both", "original", "reverse"),
     num.threads = 1) 
 {
@@ -91,7 +97,7 @@ countSingleBarcodes <- function(fastq, choices, flank5, flank3, template=NULL,
     }
 
     strand <- c(original = 0L, reverse = 1L, both = 2L)[match.arg(strand)]
-    results <- count_single_barcodes(fastq, template, strand, choices, substitutions, TRUE, num.threads)
+    results <- count_single_barcodes(fastq, template, strand, choices, substitutions, !find.best, num.threads)
 
     out <- DataFrame(choices=choices, counts=results[[1]])
     metadata(out)$nreads <- results[[2]]

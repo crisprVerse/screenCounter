@@ -29,6 +29,10 @@
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions for each read.
 #'
+#' By default, the function will stop at the first match that satisfies the requirements above.
+#' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
+#' If there are multiple matches with the same number of mismatches, the read is discarded to avoid problems with ambiguity.
+#'
 #' @return 
 #' \code{countPairedComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
 #' It contains \code{combinations}, a nested \linkS4class{DataFrame} that contains the sequences that define each combinatorial barcode;
@@ -86,7 +90,7 @@
 #'     choices=list(first=known.pool1, second=known.pool2))
 #' 
 #' @importFrom S4Vectors metadata<- metadata
-countPairedComboBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, substitutions=0, strand="original", num.threads=1, randomized=FALSE, indices=FALSE) {
+countPairedComboBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, substitutions=0, find.best=FALSE, strand="original", num.threads=1, randomized=FALSE, indices=FALSE) {
     temp.out <- .create_paired_templates(template, flank5, flank3, choices)
     template1 <- temp.out[[1]]
     template2 <- temp.out[[2]]
@@ -99,7 +103,7 @@ countPairedComboBarcodes <- function(fastq, choices, flank5, flank3, template=NU
     output <- count_combo_barcodes_paired(
         fastq[1], template1, strand1, substitutions[1], as.character(choices[[1]]),
         fastq[2], template2, strand2, substitutions[2], as.character(choices[[2]]),
-        randomized, TRUE, num.threads
+        randomized, !find.best, num.threads
     )
 
     formatted <- .harvest_combinations(output, indices, choices)

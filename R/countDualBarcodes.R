@@ -14,6 +14,8 @@
 #' @param substitutions Integer vector of length 2 specifying how many substitutions should be allowed for barcodes 1 and 2, respectively.
 #' Alternatively, an integer scalar can be supplied if this is the same for each barcode.
 #' @param insertions,deletions,total.edits Deprecated and ignored.
+#' @param find.best Logical scalar indicating whether to search each read for the best match.
+#' Defaults to stopping at the first match.
 #' @param strand Character vector of length 2 specifying which strand of the read to search (\code{"original"}, \code{"reverse"}) for each barcode.
 #' Alternatively, a string can be supplied if this is the same for each barcode.
 #' @param randomized Logical scalar indicating whether the first FASTQ file always contains the first barcode in \code{choices}.
@@ -45,6 +47,10 @@
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions.
 #' Previous versions of the function also handled indels but this has been removed for better performance.
+#'
+#' By default, the function will stop at the first match that satisfies the requirements above.
+#' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
+#' If there are multiple matches with the same number of mismatches, the read is discarded to avoid problems with ambiguity.
 #'
 #' @return 
 #' By default, \code{countDualBarcodes} will return \code{choices} with an additional \code{counts} column
@@ -116,7 +122,7 @@
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<- countMatches selfmatch
 countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
-    substitutions=0, insertions=0, deletions=0, total.edits=2,
+    substitutions=0, insertions=0, deletions=0, total.edits=2, find.best=FALSE,
     strand="original", randomized=FALSE, include.invalid=FALSE, num.threads=1)
 {
     temp.out <- .create_paired_templates(template, flank5, flank3, choices)
@@ -135,7 +141,7 @@ countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL,
     output <- count_dual_barcodes(
         fastq[1], template1, strand1, substitutions[1], as.character(choices[,1]),
         fastq[2], template2, strand2, substitutions[2], as.character(choices[,2]),
-        randomized, TRUE, include.invalid, num.threads
+        randomized, !find.best, include.invalid, num.threads
     )
 
     if (!include.invalid) {

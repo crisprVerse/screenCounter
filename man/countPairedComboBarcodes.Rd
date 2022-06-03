@@ -12,6 +12,7 @@ countPairedComboBarcodes(
   flank3,
   template = NULL,
   substitutions = 0,
+  find.best = FALSE,
   strand = "original",
   num.threads = 1,
   randomized = FALSE,
@@ -43,6 +44,9 @@ Alternatively, a string can be supplied if the template is the same for each bar
 
 \item{substitutions}{Integer vector of length 2 specifying how many substitutions should be allowed for barcodes 1 and 2, respectively.
 Alternatively, an integer scalar can be supplied if this is the same for each barcode.}
+
+\item{find.best}{Logical scalar indicating whether to search each read for the best match.
+Defaults to stopping at the first match.}
 
 \item{strand}{Character vector of length 2 specifying which strand of the read to search (\code{"original"}, \code{"reverse"}) for each barcode.
 Alternatively, a string can be supplied if this is the same for each barcode.}
@@ -107,6 +111,10 @@ This is most relevant when the constant regions are different between the two re
 
 We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 This will consider substitutions in both the variable region as well as the constant flanking regions for each read.
+
+By default, the function will stop at the first match that satisfies the requirements above.
+If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
+If there are multiple matches with the same number of mismatches, the read is discarded to avoid problems with ambiguity.
 }
 \examples{
 # Creating an example dual barcode sequencing experiment.
@@ -140,7 +148,5 @@ matrixOfPairedComboBarcodes(list(c(tmp1, tmp2)),
 
 }
 \author{
-Aaron Lun
-
 Aaron Lun
 }

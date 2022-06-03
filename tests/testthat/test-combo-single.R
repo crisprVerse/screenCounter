@@ -37,6 +37,10 @@ test_that("countComboBarcodes works as expected in basic mode", {
 
         # Same results when you stick a bunch of random crap to the start and end.
         STICKER(barcodes, tmp, out, choices=list(POOL1, POOL2))
+
+        # Should be the same, just checking that it works.
+        best <- countComboBarcodes(tmp, template, list(POOL1, POOL2), find.best=TRUE, indices=TRUE)
+        expect_identical(out, best)
     }
 })
 

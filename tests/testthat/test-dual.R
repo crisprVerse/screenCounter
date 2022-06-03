@@ -119,6 +119,10 @@ test_that("dual counting works as expected for combinations", {
     m <- S4Vectors::match(DataFrame(X=POOL1[i], Y=POOL2[j]), choices)
     expect_identical(output$counts, tabulate(m, nbins=nrow(choices))) # NA's are dismissed.
 
+    # Best situation works as expected.
+    best <- countDualBarcodes(c(tmp, tmp2), choices=choices, template=c(template1, template2), find.best=TRUE)
+    expect_identical(output, best)
+
     # Works when only a subset of the combinations are valid.
     keep <- sample(nrow(choices), nrow(choices)/2)
     choices2 <- choices[keep,]

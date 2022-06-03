@@ -39,6 +39,10 @@ test_that("countPairedComboBarcodes works as expected in basic mode", {
 
         ref <- REF_COMBINE(i1, i2, POOL1, POOL2)
         CHECK_OUTPUT(out, ref[[1]], ref[[2]], ref[[3]], N)
+
+        # Should be the same, but just checking that find.best=TRUE works.
+        best <- countPairedComboBarcodes(c(tmp1, tmp2), template=c(template.fmt1, template.fmt2), choices=list(POOL1, POOL2), find.best=TRUE, indices=TRUE)
+        expect_identical(out, best)
     }
 })
 

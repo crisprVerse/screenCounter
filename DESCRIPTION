@@ -1,6 +1,6 @@
 Package: screenCounter
-Version: 1.9.0
-Date: 2022-06-01
+Version: 1.9.1
+Date: 2022-06-03
 Title: Counting Reads in High-Throughput Sequencing Screens
 Description: Provides functions for counting reads from high-throughput
     sequencing screen data (e.g., CRISPR, shRNA) to quantify barcode 
@@ -24,4 +24,4 @@ LinkingTo:
 License: Genentech, Inc.
 VignetteBuilder: knitr
 SystemRequirements: C++17
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0

@@ -11,6 +11,8 @@
 #' @param substitutions Integer scalar specifying the maximum number of substitutions when considering a match. 
 #' @param deletions Deprecated.
 #' @param strand String specifying which strand of the read to search.
+#' @param find.best Logical scalar indicating whether to search each read for the best match.
+#' Defaults to stopping at the first match.
 #' @param indices Logical scalar indicating whether integer indices should be used to define each combinational barcode.
 #' @param num.threads Integer scalar specifying the number of threads to use to process a single file.
 #' @param files A character vector of paths to FASTQ files.
@@ -31,6 +33,10 @@
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions.
 #' Previous versions of the function also handled indels but this has been removed for better performance.
+#'
+#' By default, the function will stop at the first match that satisfies the requirements above.
+#' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
+#' If there are multiple matches with the same number of mismatches, the read is discarded to avoid problems with ambiguity.
 #'
 #' @return 
 #' \code{countComboBarcodes} returns a \linkS4class{DataFrame} where each row corresponds to a combinatorial barcode.
@@ -80,7 +86,7 @@
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
 #' @importFrom S4Vectors metadata metadata<-
-countComboBarcodes <- function(fastq, template, choices, substitutions=0, deletions=FALSE, strand=c("both", "original", "reverse"), num.threads=1, indices=FALSE) {
+countComboBarcodes <- function(fastq, template, choices, substitutions=0, deletions=FALSE, find.best=FALSE, strand=c("both", "original", "reverse"), num.threads=1, indices=FALSE) {
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
     n.len <- parsed$variable$len
@@ -106,7 +112,7 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=0, deleti
         .Deprecated("'deletions=TRUE' is deprecated and will be ignored")
     }
 
-    output <- count_combo_barcodes_single(fastq, template, strand, choices, substitutions, TRUE, num.threads)
+    output <- count_combo_barcodes_single(fastq, template, strand, choices, substitutions, !find.best, num.threads)
 
     formatted <- .harvest_combinations(output, indices, choices)
     metadata(formatted)$nreads <- output[[3]]
