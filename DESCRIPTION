@@ -1,6 +1,6 @@
 Package: screenCounter
-Version: 1.9.1
-Date: 2022-06-03
+Version: 1.10.0
+Date: 2023-01-17
 Title: Counting Reads in High-Throughput Sequencing Screens
 Description: Provides functions for counting reads from high-throughput
     sequencing screen data (e.g., CRISPR, shRNA) to quantify barcode 
