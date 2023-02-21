@@ -21,7 +21,7 @@ Suggests:
     testthat
 LinkingTo: 
     Rcpp
-License: Genentech, Inc.
+License: MIT + file LICENSE
 VignetteBuilder: knitr
 SystemRequirements: C++17
 RoxygenNote: 7.2.0
