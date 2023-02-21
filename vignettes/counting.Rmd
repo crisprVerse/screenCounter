@@ -2,8 +2,7 @@
 title: Counting barcodes in sequencing screens
 author:
 - name: Aaron Lun
-  affiliation: Genentech gRED B&CB
-  email: luna@gene.com
+  email: infinite.monkeys.with.keyboards@gmail.com
 date: "Revised: February 6, 2020"  
 output:
   BiocStyle::html_document
