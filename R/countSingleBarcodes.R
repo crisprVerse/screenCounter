@@ -8,7 +8,6 @@
 #' @param flank3 String containing the constant sequence on the 3' flank of the variable region.
 #' @param template String containing the template for the barcode structure.
 #' @param substitutions Integer scalar specifying the maximum number of substitutions when considering a match. 
-#' @param insertions,deletions,total.edits Deprecated.
 #' @param find.best Logical scalar indicating whether to search each read for the best match.
 #' Defaults to stopping at the first match.
 #' @param strand String specifying which strand of the read to search.
@@ -31,7 +30,6 @@
 #'
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions.
-#' Previous versions of the function also handled indels but this has been removed for better performance.
 #'
 #' By default, the function will stop at the first match that satisfies the requirements above.
 #' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
@@ -81,15 +79,17 @@
 #'     flank5="CAGCTACGTACG", flank3="CCAGCTCGATCG")
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<-
-countSingleBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
-    substitutions=0, insertions=0, deletions=0, total.edits=2, find.best=FALSE,
+countSingleBarcodes <- function(
+    fastq, 
+    choices, 
+    flank5, 
+    flank3, 
+    template=NULL, 
+    substitutions=0, 
+    find.best=FALSE,
     strand=c("both", "original", "reverse"),
     num.threads = 1) 
 {
-    if (insertions > 0 || deletions > 0) {
-        .Deprecated("indels are no longer supported")
-    }
-
     if (!is.null(template)) {
         template <- gsub("N", "-", template)
     } else {

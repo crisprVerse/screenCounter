@@ -9,7 +9,6 @@
 #' The first vector should contain the potential sequences for the first variable region, 
 #' the second vector for the second variable region and so on.
 #' @param substitutions Integer scalar specifying the maximum number of substitutions when considering a match. 
-#' @param deletions Deprecated.
 #' @param strand String specifying which strand of the read to search.
 #' @param find.best Logical scalar indicating whether to search each read for the best match.
 #' Defaults to stopping at the first match.
@@ -32,7 +31,6 @@
 #'
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions.
-#' Previous versions of the function also handled indels but this has been removed for better performance.
 #'
 #' By default, the function will stop at the first match that satisfies the requirements above.
 #' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
@@ -86,7 +84,16 @@
 #'     choices=list(first=known.pool, second=known.pool))
 #' @export
 #' @importFrom S4Vectors metadata metadata<-
-countComboBarcodes <- function(fastq, template, choices, substitutions=0, deletions=FALSE, find.best=FALSE, strand=c("both", "original", "reverse"), num.threads=1, indices=FALSE) {
+countComboBarcodes <- function(
+    fastq, 
+    template, 
+    choices, 
+    substitutions=0, 
+    find.best=FALSE, 
+    strand=c("both", "original", "reverse"), 
+    num.threads=1, 
+    indices=FALSE) 
+{
     parsed <- parseBarcodeTemplate(template)
     n.pos <- parsed$variable$pos
     n.len <- parsed$variable$len
@@ -108,9 +115,6 @@ countComboBarcodes <- function(fastq, template, choices, substitutions=0, deleti
     }
 
     strand <- c(original=0L, reverse=1L, both=2L)[match.arg(strand)]
-    if (deletions) {
-        .Deprecated("'deletions=TRUE' is deprecated and will be ignored")
-    }
 
     output <- count_combo_barcodes_single(fastq, template, strand, choices, substitutions, !find.best, num.threads)
 

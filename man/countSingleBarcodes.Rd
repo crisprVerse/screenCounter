@@ -12,9 +12,6 @@ countSingleBarcodes(
   flank3,
   template = NULL,
   substitutions = 0,
-  insertions = 0,
-  deletions = 0,
-  total.edits = 2,
   find.best = FALSE,
   strand = c("both", "original", "reverse"),
   num.threads = 1
@@ -40,8 +37,6 @@ matrixOfSingleBarcodes(
 \item{template}{String containing the template for the barcode structure.}
 
 \item{substitutions}{Integer scalar specifying the maximum number of substitutions when considering a match.}
-
-\item{insertions, deletions, total.edits}{Deprecated.}
 
 \item{find.best}{Logical scalar indicating whether to search each read for the best match.
 Defaults to stopping at the first match.}
@@ -92,7 +87,6 @@ The most appropriate choice depends on both the sequencing protocol and the desi
 
 We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 This will consider substitutions in both the variable region as well as the constant flanking regions.
-Previous versions of the function also handled indels but this has been removed for better performance.
 
 By default, the function will stop at the first match that satisfies the requirements above.
 If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.

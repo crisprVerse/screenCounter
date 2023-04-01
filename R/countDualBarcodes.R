@@ -13,7 +13,6 @@
 #' Alternatively, a string can be supplied if the template is the same for each barcode.
 #' @param substitutions Integer vector of length 2 specifying how many substitutions should be allowed for barcodes 1 and 2, respectively.
 #' Alternatively, an integer scalar can be supplied if this is the same for each barcode.
-#' @param insertions,deletions,total.edits Deprecated and ignored.
 #' @param find.best Logical scalar indicating whether to search each read for the best match.
 #' Defaults to stopping at the first match.
 #' @param strand Character vector of length 2 specifying which strand of the read to search (\code{"original"}, \code{"reverse"}) for each barcode.
@@ -46,7 +45,6 @@
 #'
 #' We can handle sequencing errors by setting \code{substitutions} to a value greater than zero.
 #' This will consider substitutions in both the variable region as well as the constant flanking regions.
-#' Previous versions of the function also handled indels but this has been removed for better performance.
 #'
 #' By default, the function will stop at the first match that satisfies the requirements above.
 #' If \code{find.best=TRUE}, we will instead try to find the best match with the fewest mismatches.
@@ -121,18 +119,24 @@
 #'     flank3=c("CCAGCTCGATCG", "ACACGAGGGTAT"))
 #' @export
 #' @importFrom S4Vectors DataFrame metadata<- countMatches selfmatch
-countDualBarcodes <- function(fastq, choices, flank5, flank3, template=NULL, 
-    substitutions=0, insertions=0, deletions=0, total.edits=2, find.best=FALSE,
-    strand="original", randomized=FALSE, include.invalid=FALSE, num.threads=1)
+countDualBarcodes <- function(
+    fastq, 
+    choices, 
+    flank5, 
+    flank3, 
+    template=NULL, 
+    substitutions=0, 
+    find.best=FALSE,
+    strand="original", 
+    randomized=FALSE, 
+    include.invalid=FALSE, 
+    num.threads=1)
 {
     temp.out <- .create_paired_templates(template, flank5, flank3, choices)
     template1 <- temp.out[[1]]
     template2 <- temp.out[[2]]
 
     substitutions <- rep(substitutions, length.out=2)
-    if (!missing(insertions) || !missing(deletions)) {
-        .Deprecated("indels are no longer supported")
-    }
 
     strand <- .verify_strand(strand)
     strand1 <- strand[1] == "reverse"
