@@ -1,12 +1,12 @@
 Package: screenCounter
-Version: 0.99.0
-Date: 2023-02-21
+Version: 0.99.1
+Date: 2023-03-31
 Title: Counting Reads in High-Throughput Sequencing Screens
 Description: Provides functions for counting reads from high-throughput
     sequencing screen data (e.g., CRISPR, shRNA) to quantify barcode 
     abundance. Currently supports single barcodes in single- or paired-end
     data, and combinatorial barcodes in paired-end data.
-Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="infinite.monkeys.with.keyboards@gmail.com")
+Authors@R: person("Aaron", "Lun", role=c("aut", "cre"), email="infinite.monkeys.with.keyboards@gmail.com", comment = c(ORCID = "0000-0002-3564-4813"))
 Depends: 
     S4Vectors, 
     SummarizedExperiment
@@ -24,6 +24,8 @@ LinkingTo:
 License: MIT + file LICENSE
 VignetteBuilder: knitr
 SystemRequirements: C++17
+BugReports: https://github.com/crisprVerse/screenCounter/issues
+URL: https://github.com/crisprVerse/screenCounter
 RoxygenNote: 7.2.0
 biocViews:
     CRISPR,
