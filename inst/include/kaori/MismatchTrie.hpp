@@ -131,6 +131,67 @@ protected:
 
 private:
     int counter;
+
+public:
+    /**
+     * Attempt to optimize the trie for more cache-friendly look-ups.
+     * This is not necessary if sorted sequences are supplied in `add()`.
+     */
+    void optimize() {
+        size_t maxed = 0;
+        if (!is_optimal(0, 0, maxed)) {
+            std::vector<int> replacement;
+            replacement.reserve(pointers.size());
+            optimize(0, 0, replacement);
+            pointers.swap(replacement);
+        }
+    }
+
+private:
+    // Optimization involves reorganizing the nodes so that the pointers are
+    // always increasing. This promotes memory locality of similar sequences
+    // in a depth-first search (which is what search() does anyway).
+    bool is_optimal(int node, size_t pos, size_t& maxed) const {
+        ++pos;
+        if (pos < length) {
+            for (int s = 0; s < 4; ++s) {
+                auto v = pointers[node + s];
+                if (v < 0) {
+                    continue;
+                }
+
+                if (v < maxed) {
+                    return false;
+                }
+
+                maxed = v;
+                if (!is_optimal(v, pos, maxed)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    void optimize(int node, size_t pos, std::vector<int>& trie) const {
+        auto it = pointers.begin() + node;
+        size_t new_node = trie.size();
+        trie.insert(trie.end(), it, it + 4);
+
+        ++pos;
+        if (pos < length) {
+            for (int s = 0; s < 4; ++s) {
+                auto& v = trie[new_node + s];
+                if (v < 0) {
+                    continue;
+                }
+
+                auto original = v;
+                v = trie.size();
+                optimize(original, pos, trie);
+            }
+        }
+    }
 };
 
 /**
@@ -381,9 +442,10 @@ private:
             return state;
 
         } else {
-            ++pos;
-            if (pos == boundaries[segment_id]) {
-                ++segment_id;
+            auto next_pos = pos + 1;
+            auto next_segment_id = segment_id;
+            if (next_pos == boundaries[segment_id]) {
+                ++next_segment_id;
             }
 
             Result best;
@@ -392,7 +454,7 @@ private:
 
             if (current >= 0) {
                 state.index = current;
-                best = search(seq, pos, segment_id, state, segment_mismatches, total_mismatches);
+                best = search(seq, next_pos, next_segment_id, state, segment_mismatches, total_mismatches);
             }
 
             ++state.total;
@@ -412,7 +474,7 @@ private:
                     }
 
                     state.index = alt;
-                    auto chosen = search(seq, pos, segment_id, state, segment_mismatches, total_mismatches);
+                    auto chosen = search(seq, next_pos, next_segment_id, state, segment_mismatches, total_mismatches);
                     if (chosen.total < best.total) {
                         best = chosen;
                     } else if (chosen.total == best.total) { // ambiguous

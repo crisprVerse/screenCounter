@@ -55,6 +55,8 @@ void fill_library(
         // otherwise the trie's internal counter will not be properly incremented.
         trie.add(current.c_str(), duplicates);
     }
+
+    trie.optimize();
     return;
 }
 

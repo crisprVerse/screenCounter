@@ -1,5 +1,5 @@
-#ifndef BUFFIN_RAW_BUFFER_READER_HPP
-#define BUFFIN_RAW_BUFFER_READER_HPP
+#ifndef BYTEME_RAW_BUFFER_READER_HPP
+#define BYTEME_RAW_BUFFER_READER_HPP
 
 #include <algorithm>
 #include "Reader.hpp"

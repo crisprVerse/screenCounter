@@ -63,7 +63,7 @@ public:
                 char b = template_seq[i];
                 if (b != '-') {
                     add_base(forward_ref, b);
-                    add_mask(forward_mask, i);
+                    add_mask(forward_mask);
                 } else {
                     shift(forward_ref);
                     shift(forward_mask);
@@ -85,7 +85,7 @@ public:
                 char b = template_seq[length - i - 1];
                 if (b != '-') {
                     add_base(reverse_ref, reverse_complement(b));
-                    add_mask(reverse_mask, i);
+                    add_mask(reverse_mask);
                 } else {
                     shift(reverse_ref);
                     shift(reverse_mask);
@@ -161,10 +161,8 @@ public:
                         shift(out.ambiguous);
                     }
                 } else {
-                    shift(out.state);
-                    out.state |= other_<N>;
-                    shift(out.ambiguous);
-                    out.ambiguous |= other_<N>;
+                    add_other(out.state);
+                    add_other(out.ambiguous);
                     out.bad.push_back(i);
                 }
             }
@@ -204,10 +202,8 @@ public:
                 shift(state.ambiguous);
             }
         } else {
-            shift(state.state);
-            state.state |= other_<N>;
-            shift(state.ambiguous);
-            state.ambiguous |= other_<N>;
+            add_other(state.state);
+            add_other(state.ambiguous);
             state.bad.push_back(right);
         }
 
@@ -227,12 +223,13 @@ private:
     int mismatches;
     bool forward, reverse;
 
-    static void add_mask(std::bitset<N>& current, size_t pos) {
+    static void add_mask(std::bitset<N>& current) {
         shift(current);
-        current |= other_<N>;
-        for (int i = 0; i < 4; ++i) {
-            current[i] = 1;
-        }
+        current.set(0);
+        current.set(1);
+        current.set(2);
+        current.set(3);
+        return;
     }
 
     static int strand_match(const State& match, const std::bitset<N>& ref, const std::bitset<N>& mask) {

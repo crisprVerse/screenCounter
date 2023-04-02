@@ -1,5 +1,5 @@
-#ifndef BUFFIN_TEMP_FILE_PATH_HPP
-#define BUFFIN_TEMP_FILE_PATH_HPP
+#ifndef BYTEME_TEMP_FILE_PATH_HPP
+#define BYTEME_TEMP_FILE_PATH_HPP
 
 #if __has_include(<filesystem>)
 #include <filesystem>

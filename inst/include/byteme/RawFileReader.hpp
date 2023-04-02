@@ -6,6 +6,7 @@
 #include <string>
 #include <cstdio>
 #include "Reader.hpp"
+#include "SelfClosingFILE.hpp"
 
 /**
  * @file RawFileReader.hpp
@@ -26,28 +27,6 @@ private:
     /**
      * @cond
      */
-    struct SelfClosingFILE {
-        SelfClosingFILE(const char * path) : handle(std::fopen(path, "rb")) {
-            if (!handle) {
-                throw std::runtime_error("failed to open file at '" + std::string(path) + "'");
-            }
-            return;
-        }
-
-        ~SelfClosingFILE() {
-            std::fclose(handle);
-            return;
-        }
-
-        // Delete the remaining constructors.
-        SelfClosingFILE(const SelfClosingFILE&) = delete;
-        SelfClosingFILE(SelfClosingFILE&&) = delete;
-        SelfClosingFILE& operator=(const SelfClosingFILE&) = delete;
-        SelfClosingFILE& operator=(SelfClosingFILE&&) = delete;
-
-        FILE* handle;
-    };
-
     friend class SomeFileReader;
     /**
      * @endcond
@@ -58,7 +37,7 @@ public:
      * @param path Path to the file.
      * @param buffer_size Size of the buffer to use for reading.
      */
-    RawFileReader(const char* path, size_t buffer_size = 65536) : file(path), buffer_(buffer_size) {}
+    RawFileReader(const char* path, size_t buffer_size = 65536) : file(path, "rb"), buffer_(buffer_size) {}
 
     /**
      * @param path Path to the file.

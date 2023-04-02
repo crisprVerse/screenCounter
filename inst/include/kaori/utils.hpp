@@ -7,21 +7,6 @@
 
 namespace {
 
-template<size_t N>
-constexpr std::bitset<N> A_(1);
-
-template<size_t N>
-constexpr std::bitset<N> C_(2);
-
-template<size_t N>
-constexpr std::bitset<N> G_(4);
-
-template<size_t N>
-constexpr std::bitset<N> T_(8);
-
-template<size_t N>
-constexpr std::bitset<N> other_(15);
-
 inline char reverse_complement(char b) {
     char output;
     switch (b) {
@@ -73,21 +58,31 @@ void add_base(std::bitset<N>& x, char b) {
     shift(x);
     switch (b) {
         case 'A': case 'a':
-            x |= A_<N>;
+            x.set(0);
             break;
         case 'C': case 'c':
-            x |= C_<N>;
+            x.set(1);
             break;
         case 'G': case 'g':
-            x |= G_<N>;
+            x.set(2);
             break;
         case 'T': case 't':
-            x |= T_<N>;
+            x.set(3);
             break;
         default:
             throw std::runtime_error("unknown base '" + std::string(1, b) + "'");
             break;
     }
+    return;
+}
+
+template<size_t N>
+void add_other(std::bitset<N>& x) {
+    shift(x);
+    x.set(0);
+    x.set(1);
+    x.set(2);
+    x.set(3);
     return;
 }
 

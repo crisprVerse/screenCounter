@@ -37,7 +37,7 @@ private:
              * https://stackoverflow.com/questions/1838699/how-can-i-decompress-a-gzip-stream-with-zlib
              * https://stackoverflow.com/questions/29003909/why-is-a-different-zlib-window-bits-value-required-for-extraction-compared-with
              */
-            int ret;
+            int ret = 0;
             if (mode == 0) { // DEFLATE
                 ret = inflateInit2(&strm, -MAX_WBITS); 
             } else if (mode == 1) { // Zlib
@@ -46,7 +46,9 @@ private:
                 ret = inflateInit2(&strm, 16+MAX_WBITS); 
             } else if (mode == 3) { // Gzip/Zlib auto-detected
                 ret = inflateInit2(&strm, 32+MAX_WBITS); 
-            } 
+            } else {
+                throw std::runtime_error("mode must be 0 (DEFLATE), 1 (Zlib), 2 (Gzip) or 3 (automatic");
+            }
 
             if (ret != Z_OK) {
                 throw 1;
@@ -73,7 +75,6 @@ private:
 public:
     /**
      * @param buffer Pointer to an array containing the compressed data.
-     * The lack of `const`-ness is only a consequence of the C interface - the contents of the buffer do not seem to be modified.
      * @param len Length of the `buffer` array.
      * @param mode Compression of the stream - DEFLATE (0), Zlib (1) or Gzip (2).
      * Default of 3 will auto-detect between Zlib and Gzip based on the headers.
