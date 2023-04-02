@@ -13,6 +13,10 @@ count_dual_barcodes <- function(path1, constant1, reverse1, mismatches1, options
     .Call('_screenCounter_count_dual_barcodes', PACKAGE = 'screenCounter', path1, constant1, reverse1, mismatches1, options1, path2, constant2, reverse2, mismatches2, options2, randomized, use_first, diagnostics, nthreads)
 }
 
+count_random_barcodes <- function(path, constant, strand, mismatches, use_first, nthreads) {
+    .Call('_screenCounter_count_random_barcodes', PACKAGE = 'screenCounter', path, constant, strand, mismatches, use_first, nthreads)
+}
+
 count_single_barcodes <- function(path, constant, strand, options, mismatches, use_first, nthreads) {
     .Call('_screenCounter_count_single_barcodes', PACKAGE = 'screenCounter', path, constant, strand, options, mismatches, use_first, nthreads)
 }

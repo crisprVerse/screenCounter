@@ -71,6 +71,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// count_random_barcodes
+Rcpp::List count_random_barcodes(std::string path, std::string constant, int strand, int mismatches, bool use_first, int nthreads);
+RcppExport SEXP _screenCounter_count_random_barcodes(SEXP pathSEXP, SEXP constantSEXP, SEXP strandSEXP, SEXP mismatchesSEXP, SEXP use_firstSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type constant(constantSEXP);
+    Rcpp::traits::input_parameter< int >::type strand(strandSEXP);
+    Rcpp::traits::input_parameter< int >::type mismatches(mismatchesSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_first(use_firstSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_random_barcodes(path, constant, strand, mismatches, use_first, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // count_single_barcodes
 Rcpp::List count_single_barcodes(std::string path, std::string constant, int strand, Rcpp::CharacterVector options, int mismatches, bool use_first, int nthreads);
 RcppExport SEXP _screenCounter_count_single_barcodes(SEXP pathSEXP, SEXP constantSEXP, SEXP strandSEXP, SEXP optionsSEXP, SEXP mismatchesSEXP, SEXP use_firstSEXP, SEXP nthreadsSEXP) {
@@ -92,6 +107,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_screenCounter_count_combo_barcodes_paired", (DL_FUNC) &_screenCounter_count_combo_barcodes_paired, 13},
     {"_screenCounter_count_combo_barcodes_single", (DL_FUNC) &_screenCounter_count_combo_barcodes_single, 7},
     {"_screenCounter_count_dual_barcodes", (DL_FUNC) &_screenCounter_count_dual_barcodes, 14},
+    {"_screenCounter_count_random_barcodes", (DL_FUNC) &_screenCounter_count_random_barcodes, 6},
     {"_screenCounter_count_single_barcodes", (DL_FUNC) &_screenCounter_count_single_barcodes, 7},
     {NULL, NULL, 0}
 };

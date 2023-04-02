@@ -239,6 +239,38 @@ and the second FASTQ file contains the second barcode.
 If the arrangement is randomized, we can set `randomized=TRUE` to search the first FASTQ file for the second barcode and vice versa.
 Note that this will filter out read pairs that match different valid combinations in both arrangements.
 
+# Counting random barcodes
+
+In this barcode design, the variable region is not sampled from a pool of known sequences but is instead randomly synthesized from a nucleotide mixture.
+We cannot use any of the previous functions as they need a known pool;
+rather, we need to extract the observed sequences (and their frequencies) from the reads.
+To demonstrate, let's mock up a FASTQ file from a single-end sequencing screen with a single random variable region.
+
+```{r}
+# Mocking up a 8-bp random variable region.
+N <- 1000
+randomized <- lapply(1:N, function(i) {
+    paste(sample(c("A", "C", "G", "T"), 8, replace=TRUE), collapse="")
+})
+barcodes <- sprintf("CCCAGT%sGGGATAC", randomized)
+names(reads) <- sprintf("READ_%i", seq_along(reads))
+
+# Writing to a FASTQ file.
+single.fq <- tempfile(fileext=".fastq")
+writeXStringSet(DNAStringSet(reads), file=single.fq, format="fastq")
+```
+
+For this design, we can count the frequency of each observed barcode using the `matrixOfRandomBarcodes()` function.
+This produces a `SummarizedExperiment` containing a count matrix of frequencies for each barcode.
+
+```{r}
+library(screenCounter)
+out <- matrixOfRandomBarcodes(single.fq,
+    template="CCCAGTNNNNNNNNGGGATAC")
+out
+assay(out)
+```
+
 # Further options
 
 ## Supporting mismatches 
