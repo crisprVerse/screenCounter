@@ -36,9 +36,9 @@ Rcpp::List count_single_barcodes(std::string path, std::string constant, int str
     } else if (constant.size() <= 64) {
         count_single_barcodes_<64>(output_counts, output_totals, reader, constant, strand, ptrs, mismatches, use_first, nthreads);
     } else if (constant.size() <= 128) {
-        count_single_barcodes_<32>(output_counts, output_totals, reader, constant, strand, ptrs, mismatches, use_first, nthreads);
+        count_single_barcodes_<128>(output_counts, output_totals, reader, constant, strand, ptrs, mismatches, use_first, nthreads);
     } else if (constant.size() <= 256) {
-        count_single_barcodes_<64>(output_counts, output_totals, reader, constant, strand, ptrs, mismatches, use_first, nthreads);
+        count_single_barcodes_<256>(output_counts, output_totals, reader, constant, strand, ptrs, mismatches, use_first, nthreads);
     } else {
         throw std::runtime_error("lacking compile-time support for constant regions longer than 256 bp");
     }
