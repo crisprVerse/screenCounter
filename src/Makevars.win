@@ -1,0 +1,5 @@
+ZLIB_CFLAGS=$(shell echo 'zlibbioc::pkgconfig("PKG_CFLAGS")'| "${R_HOME}/bin/R" --vanilla --slave)
+ZLIB_LIBS=$(shell echo 'zlibbioc::pkgconfig("PKG_LIBS_shared")' | "${R_HOME}/bin/R" --vanilla --slave)
+
+PKG_CPPFLAGS=-I../inst/include $(ZLIB_CFLAGS)
+PKG_LIBS=$(ZLIB_LIBS)
