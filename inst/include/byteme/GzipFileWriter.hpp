@@ -43,6 +43,8 @@ public:
     GzipFileWriter(const std::string& path, int compression_level = 6, size_t buffer_size = 65536) : GzipFileWriter(path.c_str(), compression_level, buffer_size) {}
 
 public:
+    using Writer::write;
+
     void write(const unsigned char* buffer, size_t n) {
         if (n) {
             size_t ok = gzwrite(gz.handle, buffer, n);

@@ -1,5 +1,5 @@
-#ifndef BYTEME_RAW_BUFFER_READER_HPP
-#define BYTEME_RAW_BUFFER_READER_HPP
+#ifndef BYTEME_RAW_BUFFER_WRITER_HPP
+#define BYTEME_RAW_BUFFER_WRITER_HPP
 
 #include "Writer.hpp"
 #include <vector>
@@ -21,8 +21,13 @@ namespace byteme {
 class RawBufferWriter : public Writer {
 public:
     /**
+     * @param n Initial size of the output buffer to reserve.
      */
-    RawBufferWriter() {}
+    RawBufferWriter(size_t n = 0) {
+        output.reserve(n);
+    }
+
+    using Writer::write;
 
     void write(const unsigned char* buffer, size_t n) {
         output.insert(output.end(), buffer, buffer + n);

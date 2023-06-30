@@ -27,7 +27,7 @@ public:
      * @param path Path to the file.
      * @param buffer_size Size of the buffer to use for reading.
      */
-    GzipFileReader(const char* path, size_t buffer_size = 65536) : gz(path, "rb"), buffer_(buffer_size), read(0) {}
+    GzipFileReader(const char* path, size_t buffer_size = 65536) : gz(path, "rb"), buffer_(buffer_size) {}
 
     /**
      * @param path Path to the file.
@@ -35,17 +35,19 @@ public:
      */
     GzipFileReader(const std::string& path, size_t buffer_size = 65536) : GzipFileReader(path.c_str(), buffer_size) {}
 
-    bool operator()() {
+public:
+    bool load() {
         read = gzread(gz.handle, buffer_.data(), buffer_.size());
-        if (read == 0) {
-            if (!gzeof(gz.handle)) { 
-                int dummy;
-                throw std::runtime_error(gzerror(gz.handle, &dummy));
-            }
-            return false;
-        } else {
+        if (read) {
             return true;
         }
+
+        if (!gzeof(gz.handle)) { 
+            int dummy;
+            throw std::runtime_error(gzerror(gz.handle, &dummy));
+        }
+
+        return false;
     }
 
     const unsigned char* buffer() const {
@@ -59,7 +61,7 @@ public:
 private:
     SelfClosingGzFile gz;
     std::vector<unsigned char> buffer_;
-    size_t read;
+    size_t read = 0;
 };
 
 }

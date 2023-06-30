@@ -102,7 +102,7 @@ public:
 
             auto ptr1 = barcode_pool1[i];
             if (search_reverse1) {
-                for (int j = 0; j < len1; ++j) {
+                for (size_t j = 0; j < len1; ++j) {
                     current += reverse_complement(ptr1[len1 - j - 1]);
                 }
             } else {
@@ -111,7 +111,7 @@ public:
 
             auto ptr2 = barcode_pool2[i];
             if (search_reverse2) {
-                for (int j = 0; j < len2; ++j) {
+                for (size_t j = 0; j < len2; ++j) {
                     current += reverse_complement(ptr2[len2 - j - 1]);
                 }
             } else {

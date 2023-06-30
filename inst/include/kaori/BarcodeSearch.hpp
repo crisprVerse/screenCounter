@@ -37,12 +37,11 @@ void fill_library(
         if (!reverse) {
             current = std::string(ptr, ptr + len);
         } else {
-            for (int j = 0; j < len; ++j) {
+            for (size_t j = 0; j < len; ++j) {
                 current += reverse_complement(ptr[len - j - 1]);
             }
         }
 
-        auto it = exact.find(current);
         if (exact.find(current) != exact.end()) {
             if (!duplicates) {
                 throw std::runtime_error("duplicate variable sequence '" + current + "'");
@@ -245,18 +244,17 @@ private:
  * @cond
  */
 // Using some template recursion instead of a fixed-length loop.
-// Maybe it compiles down to the same thing. We use a bitwise `|`
-// to avoid any branch prediction for some speed.
+// Maybe it compiles down to the same thing. 
 template<size_t total, size_t position>
 struct HasMore {
     static bool check(const std::array<int, total>& left, const std::array<int, total>& right) {
-        return (HasMore<total, position + 1>::check(left, right) | left[position] > right[position]);
+        return (HasMore<total, position + 1>::check(left, right) || left[position] > right[position]);
     }
 };
 
 template<size_t total>
 struct HasMore<total, total> {
-    static bool check(const std::array<int, total>& left, const std::array<int, total>& right) { return false; }
+    static bool check(const std::array<int, total>&, const std::array<int, total>&) { return false; }
 };
 /**
  * @endcond

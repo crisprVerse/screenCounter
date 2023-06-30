@@ -138,7 +138,7 @@ public:
      * This is not necessary if sorted sequences are supplied in `add()`.
      */
     void optimize() {
-        size_t maxed = 0;
+        int maxed = 0;
         if (!is_optimal(0, 0, maxed)) {
             std::vector<int> replacement;
             replacement.reserve(pointers.size());
@@ -151,7 +151,7 @@ private:
     // Optimization involves reorganizing the nodes so that the pointers are
     // always increasing. This promotes memory locality of similar sequences
     // in a depth-first search (which is what search() does anyway).
-    bool is_optimal(int node, size_t pos, size_t& maxed) const {
+    bool is_optimal(int node, size_t pos, int& maxed) const {
         ++pos;
         if (pos < length) {
             for (int s = 0; s < 4; ++s) {
@@ -276,7 +276,6 @@ private:
 
             ++mismatches;
             if (mismatches <= max_mismatches) {
-                bool found = false;
                 for (int s = 0; s < 4; ++s) {
                     if (shift == s) { 
                         continue;
@@ -444,7 +443,7 @@ private:
         } else {
             auto next_pos = pos + 1;
             auto next_segment_id = segment_id;
-            if (next_pos == boundaries[segment_id]) {
+            if (static_cast<int>(next_pos) == boundaries[segment_id]) { // TODO: boundaries should probably be size_t's, thus avoiding the need for this cast.
                 ++next_segment_id;
             }
 
@@ -462,7 +461,6 @@ private:
             ++current_segment_mm;
 
             if (state.total <= total_mismatches && current_segment_mm <= segment_mismatches[segment_id]) {
-                bool found = false;
                 for (int s = 0; s < 4; ++s) {
                     if (shift == s) { 
                         continue;

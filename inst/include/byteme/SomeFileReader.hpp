@@ -49,8 +49,8 @@ public:
      */
     SomeFileReader(const std::string& path, size_t buffer_size = 65536) : SomeFileReader(path.c_str(), buffer_size) {}
 
-    bool operator()() {
-        return source->operator()();
+    bool load() {
+        return source->load();
     }
 
     const unsigned char* buffer() const {

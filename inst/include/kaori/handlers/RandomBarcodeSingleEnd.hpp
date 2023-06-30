@@ -7,9 +7,9 @@
 #include <unordered_map>
 
 /**
- * @file SingleBarcodeSingleEnd.hpp
+ * @file RandomBarcodeSingleEnd.hpp
  *
- * @brief Process single-end single barcodes.
+ * @brief Process single-end random barcodes.
  */
 
 namespace kaori {
@@ -95,7 +95,7 @@ public:
         const auto& range = constant.variable_regions()[0];
         auto start = seq + position + range.first;
         size_t len = state.buffer.size();
-        for (int j = 0; j < len; ++j) {
+        for (size_t j = 0; j < len; ++j) {
             state.buffer[j] = reverse_complement(start[len - j - 1]);
         }
 
@@ -108,7 +108,6 @@ public:
     }
 
     void process(State& state, const std::pair<const char*, const char*>& x) const {
-        bool found = false;
         auto read_seq = x.first;
         auto deets = constant.initialize(read_seq, x.second - x.first);
 

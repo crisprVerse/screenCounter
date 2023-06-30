@@ -65,17 +65,12 @@ public:
 
         if (forward) {
             for (size_t i = 0; i < num_variable; ++i) {
-                const auto& current = regions[i];
-                size_t len = current.second - current.first;
                 forward_lib[i] = SimpleBarcodeSearch(barcode_pools[i], max_mm);
             }
         }
 
         if (reverse) {
-            const auto& rev_regions = constant_matcher.template variable_regions<true>();
             for (size_t i = 0; i < num_variable; ++i) {
-                const auto& current = rev_regions[i];
-                size_t len = current.second - current.first;
                 reverse_lib[i] = SimpleBarcodeSearch(barcode_pools[num_variable - i - 1], max_mm, true);
             }
         }

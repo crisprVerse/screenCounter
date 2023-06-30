@@ -1,6 +1,9 @@
 #ifndef BYTEME_WRITER_HPP
 #define BYTEME_WRITER_HPP
 
+#include <string>
+#include <cstring>
+
 /**
  * @file Writer.hpp
  *
@@ -30,6 +33,33 @@ public:
      * This should be called exactly once, after which no further calls to `write()` or `finish()` should be performed.
      */
     virtual void finish() = 0;
+
+    /**
+     * Write a string to the output sink.
+     *
+     * @param x String to be written.
+     */
+    void write(const std::string& x) {
+        write(reinterpret_cast<const unsigned char*>(x.c_str()), x.size());
+    }
+
+    /**
+     * Write a null-terminated C-string to the output sink.
+     *
+     * @param[in] Pointer to the string to be written.
+     */
+    void write(const char* x) {
+        write(reinterpret_cast<const unsigned char*>(x), std::strlen(x));
+    }
+
+    /**
+     * Write a single character to the output sink.
+     *
+     * @param x Character to be written.
+     */
+    void write(char x) {
+        write(reinterpret_cast<const unsigned char*>(&x), 1);
+    }
 };
 
 }

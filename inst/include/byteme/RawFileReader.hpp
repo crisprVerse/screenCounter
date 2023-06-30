@@ -45,16 +45,22 @@ public:
      */
     RawFileReader(const std::string& path, size_t buffer_size = 65536) : RawFileReader(path.c_str(), buffer_size) {}
 
-    bool operator()() {
+    bool load() {
+        if (!okay) {
+            return false;
+        }
+
         auto& handle = file.handle;
         read = std::fread(buffer_.data(), sizeof(unsigned char), buffer_.size(), handle);
-        if (read != buffer_.size()) {
+
+        if (read < buffer_.size()) {
             if (std::feof(handle)) {
-                return false;
+                okay = false;
             } else {
                 throw std::runtime_error("failed to read raw binary file (fread error " + std::to_string(std::ferror(handle)) + ")");
             }
         }
+
         return true;
     }
 
@@ -70,6 +76,7 @@ private:
     SelfClosingFILE file;
     std::vector<unsigned char> buffer_;
     size_t read = 0;
+    bool okay = true;
 };
 
 }

@@ -25,8 +25,7 @@ namespace byteme {
 class SomeBufferReader : public Reader {
 public:
     /**
-     * @param buffer Pointer to an array containing the possibly compressed data.
-     * The lack of `const`-ness is only a consequence of the C interface - the contents of the buffer do not seem to be modified.
+     * @param[in] buffer Pointer to an array containing the possibly compressed data.
      * @param len Length of the `buffer` array.
      * @param buffer_size Size of the buffer to use for decompression.
      */
@@ -38,8 +37,17 @@ public:
         }
     }
 
-    bool operator()() {
-        return source->operator()();
+    /**
+     * @param[in] buffer Pointer to an array containing the possibly compressed data.
+     * @param len Length of the `buffer` array.
+     * @param buffer_size Size of the buffer to use for decompression.
+     */
+    SomeBufferReader(const char* buffer, size_t len, size_t buffer_size = 65536) :
+        SomeBufferReader(reinterpret_cast<const unsigned char*>(buffer), len, buffer_size) {}
+
+public:
+    bool load() {
+        return source->load();
     }
 
     const unsigned char* buffer() const {

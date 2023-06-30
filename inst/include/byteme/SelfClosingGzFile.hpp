@@ -22,11 +22,19 @@ struct SelfClosingGzFile {
         return;
     }
 
+    SelfClosingGzFile(SelfClosingGzFile&& x) : handle(std::move(x.handle)) {
+        x.closed = true;
+    }
+
+    SelfClosingGzFile& operator=(SelfClosingGzFile&& x) {
+        handle = std::move(x.handle);
+        x.closed = true;
+        return *this;
+    }
+
     // Delete the remaining constructors.
     SelfClosingGzFile(const SelfClosingGzFile&) = delete;
-    SelfClosingGzFile(SelfClosingGzFile&&) = delete;
     SelfClosingGzFile& operator=(const SelfClosingGzFile&) = delete;
-    SelfClosingGzFile& operator=(SelfClosingGzFile&&) = delete;
 
     bool closed = false;
     gzFile handle;

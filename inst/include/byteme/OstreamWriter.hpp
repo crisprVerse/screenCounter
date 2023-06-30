@@ -16,15 +16,20 @@ namespace byteme {
 /**
  * @brief Read bytes from a `std::ostream`.
  *
+ * @tparam Pointer_ A (possibly smart) pointer to an `std::ostream` object.
+ *
  * This is just a wrapper around `std::ostream::write` for compatibility.
  */
+template<class Pointer_ = std::ostream*>
 class OstreamWriter : public Writer {
 public:
     /**
-     * @param output An output stream.
+     * @param output Pointer to an output stream.
      * This is assumed to live until `finish()` is called.
      */
-    OstreamWriter(std::ostream& output) : ptr(&output) {}
+    OstreamWriter(Pointer_ output) : ptr(std::move(output)) {}
+
+    using Writer::write;
 
     void write(const unsigned char* buffer, size_t n) {
         ptr->write(reinterpret_cast<const char*>(buffer), n);
@@ -41,7 +46,7 @@ public:
     }
 
 private:
-    std::ostream* ptr;
+    Pointer_ ptr;
 };
 
 }
