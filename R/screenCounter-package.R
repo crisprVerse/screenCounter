@@ -10,5 +10,6 @@
 #'
 #' @name screenCounter-package
 #' @importFrom Rcpp sourceCpp
+#' @import zlibbioc
 #' @useDynLib screenCounter
 NULL

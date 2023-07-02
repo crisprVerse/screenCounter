@@ -1,2 +1,2 @@
 PKG_CPPFLAGS=-I../inst/include
-PKG_LDFLAGS=-lz
+PKG_LIBS=-lz
