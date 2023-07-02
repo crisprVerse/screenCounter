@@ -34,13 +34,14 @@ Rcpp::List count_combo_barcodes_single_(
 Rcpp::List count_combo_barcodes_single(std::string path, std::string constant, int strand, Rcpp::List options, int mismatches, bool use_first, int nthreads) {
     byteme::SomeFileReader reader(path.c_str());
 
-    if (options.size() != 2) {
+    size_t num_opts = options.size();
+    if (num_opts != 2) {
         throw std::runtime_error("currently expecting only 2 variable regions for single-end combinatorial barcodes");
     }
 
     std::array<kaori::BarcodePool, 2> opts;
     std::array<Rcpp::CharacterVector, 2> converted;
-    for (size_t o = 0; o < options.size(); ++o) {
+    for (size_t o = 0; o < num_opts; ++o) {
         converted[o] = Rcpp::CharacterVector(options[o]);
         opts[o] = format_pointers(converted[o]);
     }

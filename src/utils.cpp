@@ -3,18 +3,17 @@
 #include <stdexcept>
 
 kaori::BarcodePool format_pointers(const Rcpp::CharacterVector& options) {
-    size_t size = 0;
+    size_t size = 0, num_opts = options.size();
 
-    std::vector<const char*> ptrs(options.size());
-    for (size_t o = 0; o < options.size(); ++o) {
+    std::vector<const char*> ptrs(num_opts);
+    for (size_t o = 0; o < num_opts; ++o) {
         auto current = Rcpp::String(options[o]);
 
-        if (o) {
-            if (size != LENGTH(current.get_sexp())) {
-                throw std::runtime_error("variable regions should all have the same length (" + std::to_string(size) + ")");
-            }
-        } else {
-            size = LENGTH(current.get_sexp());
+        size_t curlen = LENGTH(current.get_sexp());
+        if (!o) {
+            size = curlen;
+        } else if (size != curlen) {
+            throw std::runtime_error("variable regions should all have the same length (" + std::to_string(size) + ")");
         }
 
         ptrs[o] = current.get_cstring();
