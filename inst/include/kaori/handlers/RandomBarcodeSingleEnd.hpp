@@ -20,6 +20,7 @@ namespace kaori {
  * In this design, the target sequence is created from a template with a single variable region containing a random barcode sequence.
  * The construct containing the target sequence is then subjected to single-end sequencing.
  * This handler will search the read for the target sequence and count the frequency of each random barcode.
+ * Random barcodes containing N's are allowed and will be counted separately.
  *
  * @tparam max_size Maximum length of the template sequences on both reads.
  */
@@ -96,7 +97,7 @@ public:
         auto start = seq + position + range.first;
         size_t len = state.buffer.size();
         for (size_t j = 0; j < len; ++j) {
-            state.buffer[j] = reverse_complement(start[len - j - 1]);
+            state.buffer[j] = reverse_complement<true>(start[len - j - 1]);
         }
 
         auto it = state.counts.find(state.buffer);

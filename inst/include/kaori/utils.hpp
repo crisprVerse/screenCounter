@@ -7,7 +7,8 @@
 
 namespace {
 
-inline char reverse_complement(char b) {
+template<bool allow_n_ = false>
+char reverse_complement(char b) {
     char output;
     switch (b) {
         case 'A': case 'a':
@@ -22,6 +23,11 @@ inline char reverse_complement(char b) {
         case 'T': case 't':
             output = 'A';
             break;
+        case 'N': case 'n':
+            if constexpr(allow_n_) {
+                output = 'N';
+                break;
+            }
         default:
             throw std::runtime_error("unknown base '" + std::string(1, b) + "'");
             break;
