@@ -15,9 +15,9 @@ namespace kaori {
 /**
  * @brief Handler for single-end single barcodes.
  *
- * In this design, the target sequence is created from a template with a single variable region drawn from a pool of barcode sequences.
- * The construct containing the target sequence is then subjected to single-end sequencing.
- * This handler will search the read for the target sequence and count the frequency of each barcode.
+ * In this design, the barcoding element is constructed from a template with a single variable region drawn from a pool of barcode sequences.
+ * The construct containing the barcoding element is then subjected to single-end sequencing.
+ * This handler will search the read for the barcoding element and count the frequency of each barcode.
  *
  * @tparam max_size Maximum length of the template sequences on both reads.
  */
@@ -25,27 +25,56 @@ template<size_t max_size>
 class SingleBarcodeSingleEnd {
 public:
     /**
-     * @param[in] template_seq Template sequence for the first barcode.
+     * @brief Optional parameters for `SingleBarcodeSingleEnd`.
+     */
+    struct Options {
+        /** 
+         * Maximum number of mismatches allowed across the barcoding element.
+         */
+        int max_mismatches = 0;
+
+        /** 
+         * Whether to search only for the first match.
+         * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
+         */
+        bool use_first = true;
+
+        /** 
+         * Strand(s) of the read sequence to search.
+         */
+        SearchStrand strand = SearchStrand::FORWARD;
+
+        /** 
+         * How duplicated barcode sequences should be handled.
+         */
+        DuplicateAction duplicates = DuplicateAction::ERROR;
+    };
+
+public:
+    /**
+     * @param[in] template_seq Template sequence of the barcoding element.
      * This should contain exactly one variable region.
      * @param template_length Length of the template.
      * This should be less than or equal to `max_size`.
-     * @param strand Strand to use for searching the read sequence - forward (0), reverse (1) or both (2).
      * @param barcode_pool Known barcode sequences for the variable region.
-     * @param max_mismatches Maximum number of mismatches allowed across the target sequence.
+     * @param options Optional parameters.
      */
-    SingleBarcodeSingleEnd(const char* template_seq, size_t template_length, int strand, const BarcodePool& barcode_pool, int max_mismatches = 0) : 
-        matcher(template_seq, template_length, strand != 1, strand != 0, barcode_pool, max_mismatches), counts(barcode_pool.size()) {}
-
-    /**
-     * @param t Whether to search only for the first match.
-     * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
-     *
-     * @return A reference to this `SingleBarcodeSingleEnd` instance.
-     */
-    SingleBarcodeSingleEnd& set_first(bool t = true) {
-        use_first = t;
-        return *this;
-    }
+    SingleBarcodeSingleEnd(const char* template_seq, size_t template_length, const BarcodePool& barcode_pool, const Options& options) :
+        matcher(
+            template_seq, 
+            template_length,
+            barcode_pool, 
+            [&]{
+                typename SimpleSingleMatch<max_size>::Options ssopt;
+                ssopt.strand = options.strand;
+                ssopt.max_mismatches = options.max_mismatches;
+                ssopt.duplicates = options.duplicates;
+                return ssopt;
+            }()
+        ),
+        counts(barcode_pool.size()),
+        use_first(options.use_first) 
+    {}
 
 public:
     /**
@@ -102,7 +131,7 @@ private:
     SimpleSingleMatch<max_size> matcher;
     std::vector<int> counts;
     int total = 0;
-    bool use_first = true;
+    bool use_first;
 
 public:
     /**

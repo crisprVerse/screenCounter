@@ -30,45 +30,47 @@ public:
      * This should contain exactly one variable region.
      * @param template_length1 Length of the first template.
      * This should be less than or equal to `max_size`.
-     * @param reverse1 Whether to search the reverse strand of the read for the first template.
      * @param barcode_pool1 Pool of known barcode sequences for the variable region in the first template.
-     * @param max_mismatches1 Maximum number of mismatches across the target sequence corresponding to the first template.
      * @param[in] template_seq2 Pointer to a character array containing the second template sequence. 
      * This should contain exactly one variable region.
      * @param template_length2 Length of the second template.
      * This should be less than or equal to `max_size`.
-     * @param reverse2 Whether to search the reverse strand of the read for the second template.
      * @param barcode_pool2 Pool of known barcode sequences for the variable region in the second template.
-     * @param max_mismatches2 Maximum number of mismatches across the target sequence corresponding to the second template.
-     * @param random Whether the reads are randomized with respect to the first/second target sequences.
-     * If `false`, the first read is searched for the first target sequence only, and the second read is searched for the second target sequence only.
-     * If `true`, an additional search will be performed in the opposite orientation.
+     * @param options Optional parameters.
      *
      * `barcode_pool1` and `barcode_pool2` are expected to have the same number of barcodes (possibly duplicated).
      * Corresponding values across the two pools define a particular combination of dual barcodes. 
      */
     DualBarcodesWithDiagnostics(
-        const char* template_seq1, size_t template_length1, bool reverse1, const BarcodePool& barcode_pool1, int max_mismatches1, 
-        const char* template_seq2, size_t template_length2, bool reverse2, const BarcodePool& barcode_pool2, int max_mismatches2,
-        bool random = false
+        const char* template_seq1, size_t template_length1, const BarcodePool& barcode_pool1,
+        const char* template_seq2, size_t template_length2, const BarcodePool& barcode_pool2, 
+        const typename DualBarcodes<max_size>::Options& options
     ) :
-        dual_handler(template_seq1, template_length1, reverse1, barcode_pool1, max_mismatches1, template_seq2, template_length2, reverse2, barcode_pool2, max_mismatches2, random),
+        dual_handler(template_seq1, template_length1, barcode_pool1, template_seq2, template_length2, barcode_pool2, options),
 
-        // we allow duplicates in the trie.
-        combo_handler(template_seq1, template_length1, reverse1, barcode_pool1, max_mismatches1, template_seq2, template_length2, reverse2, barcode_pool2, max_mismatches2, random, true) 
+        combo_handler(
+            template_seq1, 
+            template_length1, 
+            barcode_pool1, 
+            template_seq2, 
+            template_length2, 
+            barcode_pool2, 
+            [&]{
+                typename CombinatorialBarcodesPairedEnd<max_size>::Options combopt;
+                combopt.use_first = options.use_first;
+
+                combopt.max_mismatches1 = options.max_mismatches1;
+                combopt.strand1 = options.strand1;
+                combopt.max_mismatches2 = options.max_mismatches2;
+                combopt.strand2 = options.strand2;
+
+                // we allow duplicates in the trie for each individual barcode, as only the pairs are unique in the dual barcode setup.
+                combopt.duplicates = DuplicateAction::FIRST; 
+                combopt.random = options.random;
+                return combopt;
+            }()
+        )
     {}
-
-    /**
-     * @param t Whether to search only for the first match across reads (for valid combinations) or in each read (for invalid combinations).
-     * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
-     *
-     * @return A reference to this `DualBarcodesWithDiagnostics` instance.
-     */
-    DualBarcodesWithDiagnostics& set_first(bool t = true) {
-        dual_handler.set_first(t);
-        combo_handler.set_first(t);
-        return *this;
-    }
 
 private:
     DualBarcodes<max_size> dual_handler;
@@ -122,7 +124,7 @@ public:
 
 public:
     /**
-     * @return Sort the invalid combinations for easier frequency counting.
+     * Sort the invalid combinations for easier frequency counting.
      * Combinations are sorted by the first index, and then the second index.
      */
     void sort() {

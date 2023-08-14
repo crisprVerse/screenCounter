@@ -21,3 +21,21 @@ kaori::BarcodePool format_pointers(const Rcpp::CharacterVector& options) {
 
     return kaori::BarcodePool(std::move(ptrs), size);
 }
+
+kaori::SearchStrand to_strand(bool reverse) {
+    if (reverse) {
+        return kaori::SearchStrand::REVERSE;
+    } else {
+        return kaori::SearchStrand::FORWARD;
+    }
+}
+
+kaori::SearchStrand to_strand(int strand) {
+    if (strand == 0) {
+        return kaori::SearchStrand::FORWARD;
+    } else if (strand == 1) {
+        return kaori::SearchStrand::REVERSE;
+    } else {
+        return kaori::SearchStrand::BOTH;
+    }
+}

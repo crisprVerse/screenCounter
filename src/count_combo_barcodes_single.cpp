@@ -1,8 +1,7 @@
 #include "Rcpp.h"
 
-#include "kaori/handlers/CombinatorialBarcodesSingleEnd.hpp"
-#include "kaori/process_data.hpp"
-#include "byteme/SomeFileReader.hpp"
+#include "kaori/kaori.hpp"
+#include "byteme/byteme.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -15,13 +14,17 @@ Rcpp::List count_combo_barcodes_single_(
     Reader& reader, 
     std::string constant, 
     int strand, 
-    const std::array<kaori::BarcodePool, V>& options,
+    const std::array<kaori::BarcodePool, V>& pool,
     int mismatches, 
     bool use_first, 
     int nthreads) 
 {
-    kaori::CombinatorialBarcodesSingleEnd<N, V> handler(constant.c_str(), constant.size(), strand, options, mismatches);
-    handler.set_first(use_first);
+    typename kaori::CombinatorialBarcodesSingleEnd<N, V>::Options options;
+    options.max_mismatches = mismatches;
+    options.strand = to_strand(strand);
+    options.use_first = use_first;
+
+    kaori::CombinatorialBarcodesSingleEnd<N, V> handler(constant.c_str(), constant.size(), pool, options);
     kaori::process_single_end_data(&reader, handler, nthreads);
     handler.sort();
 
@@ -31,10 +34,10 @@ Rcpp::List count_combo_barcodes_single_(
 }
 
 //[[Rcpp::export(rng=false)]]
-Rcpp::List count_combo_barcodes_single(std::string path, std::string constant, int strand, Rcpp::List options, int mismatches, bool use_first, int nthreads) {
+Rcpp::List count_combo_barcodes_single(std::string path, std::string constant, int strand, Rcpp::List pool, int mismatches, bool use_first, int nthreads) {
     byteme::SomeFileReader reader(path.c_str());
 
-    size_t num_opts = options.size();
+    size_t num_opts = pool.size();
     if (num_opts != 2) {
         throw std::runtime_error("currently expecting only 2 variable regions for single-end combinatorial barcodes");
     }
@@ -42,7 +45,7 @@ Rcpp::List count_combo_barcodes_single(std::string path, std::string constant, i
     std::array<kaori::BarcodePool, 2> opts;
     std::array<Rcpp::CharacterVector, 2> converted;
     for (size_t o = 0; o < num_opts; ++o) {
-        converted[o] = Rcpp::CharacterVector(options[o]);
+        converted[o] = Rcpp::CharacterVector(pool[o]);
         opts[o] = format_pointers(converted[o]);
     }
 

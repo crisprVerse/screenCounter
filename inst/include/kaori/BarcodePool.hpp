@@ -15,8 +15,7 @@ namespace kaori {
 /**
  * @brief Pool of barcode sequences for a variable region.
  *
- * The template sequence is realized into the target sequence by replacing each variable region with a known sequence from a pool of possible barcodes.
- * The `BarcodePool` class defines this pool for a given variable region.
+ * The `BarcodePool` class defines the pool of possible barcode sequences for a given variable region in the template sequence.
  * All sequences in this set are assumed to have the same length.
  */
 struct BarcodePool {

@@ -17,9 +17,9 @@ namespace kaori {
 /**
  * @brief Handler for single-end random barcodes.
  *
- * In this design, the target sequence is created from a template with a single variable region containing a random barcode sequence.
- * The construct containing the target sequence is then subjected to single-end sequencing.
- * This handler will search the read for the target sequence and count the frequency of each random barcode.
+ * In this design, the barcoding element is created from a template with a single variable region containing a random barcode sequence.
+ * The construct containing the barcoding element is then subjected to single-end sequencing.
+ * This handler will search the read for the barcoding element and count the frequency of each random barcode.
  * Random barcodes containing N's are allowed and will be counted separately.
  *
  * @tparam max_size Maximum length of the template sequences on both reads.
@@ -28,39 +28,50 @@ template<size_t max_size>
 class RandomBarcodeSingleEnd {
 public:
     /**
-     * @param[in] template_seq Template sequence for the first barcode.
+     * @brief Optional parameters for `SingleBarcodeSingleEnd`.
+     */
+    struct Options {
+        /** 
+         * Maximum number of mismatches allowed across the barcoding element.
+         */
+        int max_mismatches = 0;
+
+        /** 
+         * Whether to search only for the first match.
+         * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
+         */
+        bool use_first = true;
+
+        /** 
+         * Strand(s) of the read sequence to search.
+         */
+        SearchStrand strand = SearchStrand::FORWARD;
+    };
+
+public:
+    /**
+     * @param[in] template_seq Template sequence of the barcoding element.
      * This should contain exactly one variable region.
      * @param template_length Length of the template.
      * This should be less than or equal to `max_size`.
-     * @param strand Strand to use for searching the read sequence - forward (0), reverse (1) or both (2).
-     * @param max_mismatches Maximum number of mismatches allowed across the target sequence.
+     * @param options Optional parameters.
      */
-    RandomBarcodeSingleEnd(const char* template_seq, size_t template_length, int strand, int max_mismatches = 0) : 
-        forward(strand != 1), 
-        reverse(strand != 0),
-        constant(template_seq, template_length, forward, reverse),
-        max_mm(max_mismatches) {}
-
-    /**
-     * @param t Whether to search only for the first match.
-     * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
-     *
-     * @return A reference to this `RandomBarcodeSingleEnd` instance.
-     */
-    RandomBarcodeSingleEnd& set_first(bool t = true) {
-        use_first = t;
-        return *this;
-    }
+    RandomBarcodeSingleEnd(const char* template_seq, size_t template_length, const Options& options) :
+        forward(search_forward(options.strand)),
+        reverse(search_reverse(options.strand)),
+        constant(template_seq, template_length, options.strand),
+        max_mm(options.max_mismatches),
+        use_first(options.use_first)
+    {}
 
 private:
-    bool use_first = true;
-
     std::unordered_map<std::string, int> counts;
     int total = 0;
 
     bool forward, reverse;
     ScanTemplate<max_size> constant;
     int max_mm;
+    bool use_first;
 
     bool has_match(int obs_mismatches) const {
         return (obs_mismatches >= 0 && obs_mismatches <= max_mm);
@@ -97,7 +108,7 @@ public:
         auto start = seq + position + range.first;
         size_t len = state.buffer.size();
         for (size_t j = 0; j < len; ++j) {
-            state.buffer[j] = reverse_complement<true>(start[len - j - 1]);
+            state.buffer[j] = complement_base<true>(start[len - j - 1]);
         }
 
         auto it = state.counts.find(state.buffer);

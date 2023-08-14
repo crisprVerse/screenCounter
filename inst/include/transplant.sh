@@ -4,23 +4,27 @@ set -e
 set -u
 
 # Transplant the kaori code.
-if [ -e source-kaori ]
+if [ ! -e source-kaori ]
 then
-    (cd source-kaori && git pull)
+    git clone https://github.com/crisprVerse/kaori source-kaori
 else
-    git clone https://github.com/LTLA/kaori source-kaori
+    (cd source-kaori && git checkout master && git pull)
 fi
+(cd source-kaori && git checkout v1.0.0)
+
 rm -rf kaori
 mkdir -p kaori
 cp -r source-kaori/include/kaori/* kaori
 
 # Transplant the byteme code.
-if [ -e source-byteme ]
+if [ ! -e source-byteme ]
 then
-    (cd source-byteme && git pull)
-else
     git clone https://github.com/LTLA/byteme source-byteme
+else
+    (cd source-byteme && git checkout master && git pull)
 fi
+(cd source-byteme && git checkout v1.0.1)
+
 rm -rf byteme
 mkdir -p byteme
 cp source-byteme/include/byteme/* byteme

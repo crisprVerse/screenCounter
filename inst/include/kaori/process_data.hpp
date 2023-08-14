@@ -71,7 +71,9 @@ private:
  */
 
 /**
- * Perform a handler for each read in single-end data.
+ * Run a handler for each read in single-end data.
+ * This is done by calling `handler.process()` on each read.
+ * It is expected that the results are stored in `handler` for retrieval by the caller.
  *
  * @tparam Handler A class that implements a handler for single-end data.
  *
@@ -79,9 +81,6 @@ private:
  * @param handler Instance of the `Handler` class.
  * @param num_threads Number of threads to use for processing.
  * @param block_size Number of reads in each thread.
- *
- * @return `handler.process()` is called on each read.
- * It is expected that the results are stored in `handler` for retrieval by the caller.
  *
  * @section single-handler-req Handler requirements
  * The `Handler` class is expected to implement the following methods:
@@ -191,7 +190,8 @@ void process_single_end_data(byteme::Reader* input, Handler& handler, int num_th
 }
 
 /**
- * Perform a handler for each read in paired-end data.
+ * Run a handler for each read in paired-end data, by calling `handler.process()` on each read pair.
+ * It is expected that the results are stored in `handler` for retrieval by the caller.
  *
  * @tparam Handler A class that implements a handler for paired-end data.
  * @param input1 A `Reader` object containing data from the first FASTQ file in the pair.
@@ -199,9 +199,6 @@ void process_single_end_data(byteme::Reader* input, Handler& handler, int num_th
  * @param handler Instance of the `Handler` class. 
  * @param num_threads Number of threads to use for processing.
  * @param block_size Number of reads in each thread.
- *
- * @return `handler.process()` is called on each read pair.
- * It is expected that the results are stored in `handler` for retrieval by the caller.
  *
  * @section paired-handler-req Handler requirements
  * The `Handler` class is expected to implement the following methods:

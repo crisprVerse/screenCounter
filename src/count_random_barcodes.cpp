@@ -1,8 +1,7 @@
 #include "Rcpp.h"
 
-#include "kaori/handlers/RandomBarcodeSingleEnd.hpp"
-#include "kaori/process_data.hpp"
-#include "byteme/SomeFileReader.hpp"
+#include "kaori/kaori.hpp"
+#include "byteme/byteme.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -11,8 +10,12 @@
 
 template<size_t N, class Reader>
 void count_random_barcodes_(Rcpp::List& output, int& total_nreads, Reader& reader, const std::string& constant, int strand, int mismatches, bool use_first, int nthreads) {
-    kaori::RandomBarcodeSingleEnd<N> handler(constant.c_str(), constant.size(), strand, mismatches);
-    handler.set_first(use_first);
+    typename kaori::RandomBarcodeSingleEnd<N>::Options options;
+    options.strand = to_strand(strand);
+    options.max_mismatches = mismatches;
+    options.use_first = use_first;
+
+    kaori::RandomBarcodeSingleEnd<N> handler(constant.c_str(), constant.size(), options);
     kaori::process_single_end_data(&reader, handler, nthreads);
 
     const auto& counts = handler.get_counts();

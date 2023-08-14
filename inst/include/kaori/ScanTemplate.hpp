@@ -18,7 +18,7 @@ namespace kaori {
  *
  * When searching for barcodes, **kaori** first searches for a "template sequence" in the read sequence.
  * The template sequence contains constant regions interspersed with one or more variable regions.
- * The template is realized into a target sequence by replacing each variable region with one sequence from the corresponding pool of barcodes.
+ * The template is realized into the full barcoding element by replacing each variable region with one sequence from the corresponding pool of barcodes.
  *
  * This class will scan read sequence to find a location that matches the constant regions of the template, give or take any number of substitutions.
  * Multiple locations on the read may match the template, provided `next()` is called repeatedly.
@@ -26,7 +26,7 @@ namespace kaori {
  * The maximum size of this encoding is determined at compile-time by the `max_length` template parameter.
  *
  * Once a match is found, the sequence of the read at each variable region can be matched against a pool of known barcode sequences.
- * See the `VariableLibrary` class for details.
+ * See the `BarcodePool` class for details.
  *
  * @tparam max_size Maximum length of the template sequence.
  */
@@ -48,11 +48,10 @@ public:
      * Variable regions should be marked with `-`.
      * @param template_length Length of the array pointed to by `template_seq`.
      * This should be less than or equal to `max_size`.
-     * @param search_forward Should the search be performed on the forward strand of the read sequence?
-     * @param search_reverse Should the search be performed on the reverse strand of the read sequence?
+     * @param strand Strand(s) of the read sequence to search.
      */
-    ScanTemplate(const char* template_seq, size_t template_length, bool search_forward, bool search_reverse) : 
-        length(template_length), forward(search_forward), reverse(search_reverse)
+    ScanTemplate(const char* template_seq, size_t template_length, SearchStrand strand) :
+        length(template_length), forward(search_forward(strand)), reverse(search_reverse(strand))
     {
         if (length > max_size) {
             throw std::runtime_error("maximum template size should be " + std::to_string(max_size) + " bp");
@@ -62,11 +61,11 @@ public:
             for (size_t i = 0; i < length; ++i) {
                 char b = template_seq[i];
                 if (b != '-') {
-                    add_base(forward_ref, b);
-                    add_mask(forward_mask);
+                    add_base_to_hash(forward_ref, b);
+                    add_mask_to_hash(forward_mask);
                 } else {
-                    shift(forward_ref);
-                    shift(forward_mask);
+                    shift_hash(forward_ref);
+                    shift_hash(forward_mask);
                     add_variable_base(forward_variables, i);
                 }
             }
@@ -84,11 +83,11 @@ public:
             for (size_t i = 0; i < length; ++i) {
                 char b = template_seq[length - i - 1];
                 if (b != '-') {
-                    add_base(reverse_ref, reverse_complement(b));
-                    add_mask(reverse_mask);
+                    add_base_to_hash(reverse_ref, complement_base(b));
+                    add_mask_to_hash(reverse_mask);
                 } else {
-                    shift(reverse_ref);
-                    shift(reverse_mask);
+                    shift_hash(reverse_ref);
+                    shift_hash(reverse_mask);
                     add_variable_base(reverse_variables, i);
                 }
             }
@@ -155,14 +154,14 @@ public:
             for (size_t i = 0; i < length - 1; ++i) {
                 char base = read_seq[i];
 
-                if (is_good(base)) {
-                    add_base(out.state, base);
+                if (is_standard_base(base)) {
+                    add_base_to_hash(out.state, base);
                     if (!out.bad.empty()) {
-                        shift(out.ambiguous);
+                        shift_hash(out.ambiguous);
                     }
                 } else {
-                    add_other(out.state);
-                    add_other(out.ambiguous);
+                    add_other_to_hash(out.state);
+                    add_other_to_hash(out.ambiguous);
                     out.bad.push_back(i);
                 }
             }
@@ -179,8 +178,7 @@ public:
      * this can be repeatedly called until `match.finished` is `true`.
      *
      * @param state A `State` object produced by `initialize()`.
-     *
-     * @return `state` is updated with the details of the current match at a particular position on the read sequence.
+     * On return, `state` is updated with the details of the current match at a particular position on the read sequence.
      */
     void next(State& state) const {
         if (!state.bad.empty() && state.bad.front() == state.position) {
@@ -190,20 +188,20 @@ public:
                 // us to skip its shifting if there are no more ambiguous
                 // bases. We do it here because we won't get an opportunity to
                 // do it later; as 'bad' is empty, the shift below is skipped.
-                shift(state.ambiguous); 
+                shift_hash(state.ambiguous); 
             }
         }
 
         size_t right = state.position + length;
         char base = state.seq[right];
-        if (is_good(base)) {
-            add_base(state.state, base); // no need to trim off the end, the mask will handle that.
+        if (is_standard_base(base)) {
+            add_base_to_hash(state.state, base); // no need to trim off the end, the mask will handle that.
             if (!state.bad.empty()) {
-                shift(state.ambiguous);
+                shift_hash(state.ambiguous);
             }
         } else {
-            add_other(state.state);
-            add_other(state.ambiguous);
+            add_other_to_hash(state.state);
+            add_other_to_hash(state.ambiguous);
             state.bad.push_back(right);
         }
 
@@ -223,8 +221,8 @@ private:
     int mismatches;
     bool forward, reverse;
 
-    static void add_mask(std::bitset<N>& current) {
-        shift(current);
+    static void add_mask_to_hash(std::bitset<N>& current) {
+        shift_hash(current);
         current.set(0);
         current.set(1);
         current.set(2);

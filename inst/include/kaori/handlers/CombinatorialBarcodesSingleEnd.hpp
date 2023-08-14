@@ -19,7 +19,7 @@ namespace kaori {
 /**
  * @brief Handler for single-end combinatorial barcodes.
  *
- * In this design, the target sequence is created from a template with multiple variable regions.
+ * In this design, the barcoding element is created from a template with multiple variable regions.
  * Each region contains a barcode from a different pool of options, where combinations are assembled randomly by library construction.
  * The idea is to use the large number of combinations to provide many unique identifiers, e.g., for cell-tracing applications.
  * This handler will capture the frequencies of each barcode combination. 
@@ -31,19 +31,45 @@ template<size_t max_size, size_t num_variable>
 class CombinatorialBarcodesSingleEnd {
 public:
     /**
+     * @brief Optional parameters for `CombinatorialBarcodeSingleEnd`.
+     */
+    struct Options {
+        /**
+         * Maximum number of mismatches allowed across the barcoding element.
+         */
+        int max_mismatches = 0;
+
+        /** @param Whether to search only for the first match.
+         * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
+         */
+        bool use_first = true;
+
+        /**
+         * Strand(s) of the read sequence to search for the barcoding element.
+         */
+        SearchStrand strand = SearchStrand::FORWARD;
+
+        /**
+         * How duplicated barcode sequences should be handled.
+         */
+        DuplicateAction duplicates = DuplicateAction::ERROR;
+    };
+
+public:
+    /**
      * @param[in] template_seq Template sequence for the first barcode.
      * This should contain exactly `num_variable` variable regions.
      * @param template_length Length of the template.
      * This should be less than or equal to `max_size`.
-     * @param strand Strand to use when searching the read sequence - forward (0), reverse (1) or both (2).
      * @param barcode_pools Array containing the known barcode sequences for each of the variable regions, in the order of their appearance in the template sequence.
-     * @param max_mismatches Maximum number of mismatches across the entire target sequence.
+     * @param options Optional parameters.
      */
-    CombinatorialBarcodesSingleEnd(const char* template_seq, size_t template_length, int strand, const std::array<BarcodePool, num_variable>& barcode_pools, int max_mismatches = 0) : 
-        forward(strand != 1),
-        reverse(strand != 0),
-        max_mm(max_mismatches),
-        constant_matcher(template_seq, template_length, forward, reverse)
+    CombinatorialBarcodesSingleEnd(const char* template_seq, size_t template_length, const std::array<BarcodePool, num_variable>& barcode_pools, const Options& options) :
+        forward(search_forward(options.strand)),
+        reverse(search_reverse(options.strand)),
+        max_mm(options.max_mismatches),
+        use_first(options.use_first),
+        constant_matcher(template_seq, template_length, options.strand)
     {
         const auto& regions = constant_matcher.variable_regions();
         if (regions.size() != num_variable) { 
@@ -63,15 +89,21 @@ public:
             num_options[i] = barcode_pools[i].pool.size();
         }
 
+        SimpleBarcodeSearch::Options bopt;
+        bopt.max_mismatches = options.max_mismatches;
+        bopt.duplicates = options.duplicates;
+
         if (forward) {
+            bopt.reverse = false;
             for (size_t i = 0; i < num_variable; ++i) {
-                forward_lib[i] = SimpleBarcodeSearch(barcode_pools[i], max_mm);
+                forward_lib[i] = SimpleBarcodeSearch(barcode_pools[i], bopt);
             }
         }
 
         if (reverse) {
+            bopt.reverse = true;
             for (size_t i = 0; i < num_variable; ++i) {
-                reverse_lib[i] = SimpleBarcodeSearch(barcode_pools[num_variable - i - 1], max_mm, true);
+                reverse_lib[i] = SimpleBarcodeSearch(barcode_pools[num_variable - i - 1], bopt);
             }
         }
     }
@@ -255,7 +287,7 @@ public:
 
 public:
     /**
-     * @return Sort the combinations for easier frequency counting.
+     * Sort the combinations for easier frequency counting.
      */
     void sort() {
         sort_combinations(combinations, num_options);
@@ -277,8 +309,8 @@ public:
 private:
     bool forward;
     bool reverse;
-    bool use_first = true;
     int max_mm;
+    bool use_first;
     size_t nregions;
 
     ScanTemplate<max_size> constant_matcher;

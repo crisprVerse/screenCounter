@@ -1,8 +1,7 @@
 #include "Rcpp.h"
 
-#include "kaori/handlers/CombinatorialBarcodesPairedEnd.hpp"
-#include "kaori/process_data.hpp"
-#include "byteme/SomeFileReader.hpp"
+#include "kaori/kaori.hpp"
+#include "byteme/byteme.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -14,25 +13,32 @@ Rcpp::List count_combo_barcodes_paired_(
     Reader& reader1, 
     std::string constant1, 
     bool reverse1,
-    const kaori::BarcodePool& options1, 
+    const kaori::BarcodePool& pool1, 
     int mismatches1,
 
     Reader& reader2, 
     std::string constant2, 
     bool reverse2,
-    const kaori::BarcodePool& options2, 
+    const kaori::BarcodePool& pool2, 
     int mismatches2,
 
     bool randomized,
     bool use_first, 
     int nthreads) 
 {
+    typename kaori::CombinatorialBarcodesPairedEnd<N>::Options options;
+    options.strand1 = to_strand(reverse1);
+    options.max_mismatches1 = mismatches1;
+    options.strand2 = to_strand(reverse2);
+    options.max_mismatches2 = mismatches2;
+    options.random = randomized;
+    options.use_first = use_first;
+
     kaori::CombinatorialBarcodesPairedEnd<N> handler(
-        constant1.c_str(), constant1.size(), reverse1, options1, mismatches1,
-        constant2.c_str(), constant2.size(), reverse2, options2, mismatches2,
-        randomized
+        constant1.c_str(), constant1.size(), pool1, 
+        constant2.c_str(), constant2.size(), pool2,
+        options
     );
-    handler.set_first(use_first);
     kaori::process_paired_end_data(&reader1, &reader2, handler, nthreads);
     handler.sort();
 
@@ -49,23 +55,23 @@ Rcpp::List count_combo_barcodes_paired(
     std::string constant1, 
     bool reverse1,
     int mismatches1,
-    Rcpp::CharacterVector options1,
+    Rcpp::CharacterVector pool1,
         
     std::string path2, 
     std::string constant2, 
     bool reverse2,
     int mismatches2,
-    Rcpp::CharacterVector options2,
+    Rcpp::CharacterVector pool2,
 
     bool randomized,
     bool use_first, 
     int nthreads)
 {
     byteme::SomeFileReader reader1(path1.c_str());
-    auto ptrs1 = format_pointers(options1);
+    auto ptrs1 = format_pointers(pool1);
 
     byteme::SomeFileReader reader2(path2.c_str());
-    auto ptrs2 = format_pointers(options2);
+    auto ptrs2 = format_pointers(pool2);
 
     // Support up to 256 bp constant regions.
     size_t len = std::min(constant1.size(), constant2.size());

@@ -18,7 +18,7 @@ namespace kaori {
 /**
  * @brief Handler for paired-end combinatorial barcodes.
  *
- * In this design, each read contains a target sequence created from a template with a single variable region.
+ * In this design, each read contains a barcoding element created from a template with a single variable region.
  * For one read, the barcode is drawn from one pool of options, while the other read contains a barcode from another pool.
  * Combinations are assembled randomly by library construction, where the large number of combinations provide many unique identifiers for cell-tracing applications.
  * This handler will capture the frequencies of each barcode combination. 
@@ -26,51 +26,96 @@ namespace kaori {
  * @tparam max_size Maximum length of the template sequences on both reads.
  */
 template<size_t max_size>
-class CombinatorialBarcodesPairedEnd { 
+class CombinatorialBarcodesPairedEnd {
+public:
+    struct Options {
+        /**
+         * Whether to search only for the first match.
+         * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
+         */
+        bool use_first = true;
+
+        /** 
+         * Maximum number of mismatches allowed across the first barcoding element.
+         */
+        int max_mismatches1 = 0;
+
+        /**
+         * Strand(s) of the read sequence to search for the first barcoding element.
+         */
+        SearchStrand strand1 = SearchStrand::FORWARD;
+
+        /** 
+         * Maximum number of mismatches allowed across the second barcoding element.
+         */
+        int max_mismatches2 = 0;
+
+        /**
+         * Strand(s) of the read sequence to search for the second barcoding element.
+         */
+        SearchStrand strand2 = SearchStrand::FORWARD;
+
+        /** 
+         * How duplicated barcode sequences should be handled.
+         */
+        DuplicateAction duplicates = DuplicateAction::ERROR;
+
+        /**
+         * Whether the reads are randomized with respect to the first/second barcoding elements.
+         * If `false`, the first read is searched for the first barcoding element only, and the second read is searched for the second barcoding element only.
+         * If `true`, an additional search will be performed in the opposite orientation.
+         */
+        bool random = false;
+    };
+
 public:
     /**
      * @param[in] template_seq1 Pointer to a character array containing the first template sequence. 
      * This should contain exactly one variable region.
      * @param template_length1 Length of the first template.
      * This should be less than or equal to `max_size`.
-     * @param reverse1 Whether to search the reverse strand of the read for the first template.
      * @param barcode_pool1 Pool of known barcode sequences for the variable region in the first template.
-     * @param max_mismatches1 Maximum number of mismatches across the target sequence corresponding to the first template.
      * @param[in] template_seq2 Pointer to a character array containing the second template sequence. 
      * This should contain exactly one variable region.
      * @param template_length2 Length of the second template.
      * This should be less than or equal to `max_size`.
-     * @param reverse2 Whether to search the reverse strand of the read for the second template.
      * @param barcode_pool2 Pool of known barcode sequences for the variable region in the second template.
-     * @param max_mismatches2 Maximum number of mismatches across the target sequence corresponding to the second template.
-     * @param random Whether the reads are randomized with respect to the first/second target sequences.
-     * If `false`, the first read is searched for the first template only, and the second read is searched for the second template only.
-     * If `true`, an additional search will be performed in the opposite orientation.
-     * @param duplicates Whether to allow duplicates in `barcode_pool1` and `barcode_pool2`, see `MismatchTrie` for details.
+     * @param options Optional parameters.
      */
     CombinatorialBarcodesPairedEnd(
-        const char* template_seq1, size_t template_length1, bool reverse1, const BarcodePool& barcode_pool1, int max_mismatches1, 
-        const char* template_seq2, size_t template_length2, bool reverse2, const BarcodePool& barcode_pool2, int max_mismatches2,
-        bool random = false,
-        bool duplicates = false
+        const char* template_seq1, size_t template_length1, const BarcodePool& barcode_pool1,
+        const char* template_seq2, size_t template_length2, const BarcodePool& barcode_pool2,
+        const Options& options
     ) :
-        matcher1(template_seq1, template_length1, !reverse1, reverse1, barcode_pool1, max_mismatches1, duplicates),
-        matcher2(template_seq2, template_length2, !reverse2, reverse2, barcode_pool2, max_mismatches2, duplicates),
-        randomized(random)
+        matcher1(
+            template_seq1, 
+            template_length1, 
+            barcode_pool1,
+            [&]{
+                typename SimpleSingleMatch<max_size>::Options opt;
+                opt.strand = options.strand1;
+                opt.max_mismatches = options.max_mismatches1;
+                opt.duplicates = options.duplicates;
+                return opt;
+            }()
+        ),
+        matcher2(
+            template_seq2, 
+            template_length2, 
+            barcode_pool2, 
+            [&]{
+                typename SimpleSingleMatch<max_size>::Options opt;
+                opt.strand = options.strand2;
+                opt.max_mismatches = options.max_mismatches2;
+                opt.duplicates = options.duplicates;
+                return opt;
+            }()
+        ),
+        randomized(options.random),
+        use_first(options.use_first)
     {
         num_options[0] = barcode_pool1.size();
         num_options[1] = barcode_pool2.size();
-    }
-
-    /**
-     * @param t Whether to search only for the first match to the target sequence in each read.
-     * If `false`, the handler will search for the best match (i.e., fewest mismatches) instead.
-     *
-     * @return A reference to this `CombinatorialBarcodesPairedEnd` instance.
-     */
-    CombinatorialBarcodesPairedEnd& set_first(bool t = true) {
-        use_first = t;
-        return *this;
     }
 
 public:
@@ -201,7 +246,7 @@ public:
 
 public:
     /**
-     * @return Sort the combinations for easier frequency counting.
+     * Sort the combinations for easier frequency counting.
      * Combinations are sorted by the first index, and then the second index.
      */
     void sort() {

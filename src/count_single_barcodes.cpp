@@ -1,8 +1,7 @@
 #include "Rcpp.h"
 
-#include "kaori/handlers/SingleBarcodeSingleEnd.hpp"
-#include "kaori/process_data.hpp"
-#include "byteme/SomeFileReader.hpp"
+#include "kaori/kaori.hpp"
+#include "byteme/byteme.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -10,9 +9,13 @@
 #include "utils.h"
 
 template<size_t N, class Reader>
-void count_single_barcodes_(Rcpp::IntegerVector& output, int& total_nreads, Reader& reader, std::string constant, int strand, const kaori::BarcodePool& options, int mismatches, bool use_first, int nthreads) {
-    kaori::SingleBarcodeSingleEnd<N> handler(constant.c_str(), constant.size(), strand, options, mismatches);
-    handler.set_first(use_first);
+void count_single_barcodes_(Rcpp::IntegerVector& output, int& total_nreads, Reader& reader, std::string constant, int strand, const kaori::BarcodePool& pool, int mismatches, bool use_first, int nthreads) {
+    typename kaori::SingleBarcodeSingleEnd<N>::Options options;
+    options.strand = to_strand(strand);
+    options.max_mismatches = mismatches;
+    options.use_first = use_first;
+
+    kaori::SingleBarcodeSingleEnd<N> handler(constant.c_str(), constant.size(), pool, options);
     kaori::process_single_end_data(&reader, handler, nthreads);
 
     const auto& counts = handler.get_counts();
@@ -23,11 +26,11 @@ void count_single_barcodes_(Rcpp::IntegerVector& output, int& total_nreads, Read
 }
 
 //[[Rcpp::export(rng=false)]]
-Rcpp::List count_single_barcodes(std::string path, std::string constant, int strand, Rcpp::CharacterVector options, int mismatches, bool use_first, int nthreads) {
+Rcpp::List count_single_barcodes(std::string path, std::string constant, int strand, Rcpp::CharacterVector pool, int mismatches, bool use_first, int nthreads) {
     byteme::SomeFileReader reader(path.c_str());
-    auto ptrs = format_pointers(options);
+    auto ptrs = format_pointers(pool);
 
-    Rcpp::IntegerVector output_counts(options.size());
+    Rcpp::IntegerVector output_counts(pool.size());
     int output_totals;
 
     // Support up to 256 bp constant regions.
