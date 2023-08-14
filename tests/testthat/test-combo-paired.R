@@ -23,7 +23,7 @@ CHECK_OUTPUT <- function(out, ref1, ref2, count, N) {
     expect_identical(metadata(out)$npairs, as.integer(N))
 }
 
-barcode.fmt1 <- "ACGT%sACGT"
+barcode.fmt1 <- "ACGT%sTGCA"
 template.fmt1 <- sub("%s", strrep("-", 10), barcode.fmt1)
 barcode.fmt2 <- "AAAA%sTTTT"
 template.fmt2 <- sub("%s", strrep("-", 15), barcode.fmt2)

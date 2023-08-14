@@ -5,7 +5,7 @@ library(Biostrings)
 POOL1 <- vapply(rep(10, 20), GENERATE_RANDOM_SEQ, FUN.VALUE="")
 POOL2 <- vapply(rep(8, 10), GENERATE_RANDOM_SEQ, FUN.VALUE="") 
 
-barcode.fmt <- "ACGT%sACGT%sACGT"
+barcode.fmt <- "ACGT%sAAAA%sTGCA"
 template <- sprintf(barcode.fmt, strrep("N", nchar(POOL1[1])), strrep("N", nchar(POOL2[1])))
 
 STICKER <- function(barcodes, fname, out, ..., strandFUN=identity) {

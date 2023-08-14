@@ -5,7 +5,7 @@ library(Biostrings)
 nbarcodes <- 20
 POOL <- vapply(rep(10, nbarcodes), GENERATE_RANDOM_SEQ, FUN.VALUE="")
 
-barcode.fmt <- "ACGT%sACGT"
+barcode.fmt <- "ACGT%sTGCA"
 template <- sprintf(barcode.fmt, strrep("N", nchar(POOL[1])))
 
 STICKER <- function(barcodes, fname, out, ..., strandFUN=identity) {
@@ -54,11 +54,11 @@ test_that("countSingleBarcodes works as expected in basic mode", {
 
 test_that("countSingleBarcodes works as expected with substitutions", {
     barcodes <- c(
-        "ACGTGGGGGGGGGGACGT",
-        "ACGTGGGGCGGGGGACGT",
-        "ACGTGGGGCCGGGGACGT", # not matched, two substitutions.
-        "ACGTGGGGGGGGGGATGT", 
-        "CCGTGGGGGGGGGGACGT"  
+        "ACGTGGGGGGGGGGTGCA",
+        "ACGTGGGGCGGGGGTGCA",
+        "ACGTGGGGCCGGGGTGCA", # not matched, two substitutions.
+        "ACGTGGGGGGGGGGTTCA", 
+        "CCGTGGGGGGGGGGTGCA"  
     )
     names(barcodes) <- seq_along(barcodes)
 
@@ -73,10 +73,10 @@ test_that("countSingleBarcodes works as expected with substitutions", {
 
     # Handles conflicts correctly.
     barcodes <- c(
-        "ACGTCCCCCCCCCCACGT", 
-        "ACGTCCCCCCCCCAACGT",
-        "ACGTCCCCCCCCCGACGT", # ambiguous and removed.
-        "ACGTCCCCCCCCCTACGT"  # ambiguous and removed.
+        "ACGTCCCCCCCCCCTGCA", 
+        "ACGTCCCCCCCCCATGCA",
+        "ACGTCCCCCCCCCGTGCA", # ambiguous and removed.
+        "ACGTCCCCCCCCCTTGCA"  # ambiguous and removed.
     )
     names(barcodes) <- seq_along(barcodes)
 

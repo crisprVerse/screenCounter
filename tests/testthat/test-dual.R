@@ -8,7 +8,7 @@ POOL1 <- vapply(rep(10, nbarcodes1), GENERATE_RANDOM_SEQ, FUN.VALUE="")
 nbarcodes2 <- 50
 POOL2 <- vapply(rep(15, nbarcodes2), GENERATE_RANDOM_SEQ, FUN.VALUE="")
 
-barcode.fmt1 <- "ACGT%sACGT"
+barcode.fmt1 <- "ACGT%sTGCA"
 template1 <- sprintf(barcode.fmt1, strrep("N", nchar(POOL1[1])))
 barcode.fmt2 <- "AGGA%sAGGA"
 template2 <- sprintf(barcode.fmt2, strrep("N", nchar(POOL2[1])))
@@ -45,10 +45,10 @@ test_that("dual counting gives the same results as the single counter", {
 
 test_that("dual counting works as expected for edits", {
     barcodes <- c(
-        "ACGTGGGGGGGGGGACGT",
-        "ACGTGGGGCGGGGGACGT",
-        "ACGTGGGGGGGGGACGT",
-        "ACGTGGGGGGGGGGGACGT"  
+        "ACGTGGGGGGGGGGTGCA",
+        "ACGTGGGGCGGGGGTGCA",
+        "ACGTGGGGGGGGGTGCA",
+        "ACGTGGGGGGGGGGGTGCA"  
     )
     names(barcodes) <- seq_along(barcodes)
 
@@ -69,10 +69,10 @@ test_that("dual counting works as expected for edits", {
 
     # Works with vectors.
     barcodes <- c(
-        "ACGTGGGGCGGGGGACGT",
-        "ACGTGGGGGGGGGGACGT",
-        "ACGTGGGGGGGGGGGACGT",
-        "ACGTGGGGGGGGGACGT"
+        "ACGTGGGGCGGGGGTGCA",
+        "ACGTGGGGGGGGGGTGCA",
+        "ACGTGGGGGGGGGGGTGCA",
+        "ACGTGGGGGGGGGTGCA"
     )
     names(barcodes) <- seq_along(barcodes)
 
