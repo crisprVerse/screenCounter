@@ -122,3 +122,28 @@ test_that("matrixOfSingleBarcodes works as expected with names", {
     expect_identical(colnames(mat), basename(tmp))
     expect_identical(rownames(mat), POOL)
 })
+
+test_that("countSingleBarcodes works as expected with IUPAC codes", {
+    choices <- c("AAAAABAAAA", "CCCCCDCCCC", "GGGGGHGGGG", "TTTTTVTTTT")
+    pool <- c(
+        "AAAAACAAAA", 
+        "AAAAAGAAAA", 
+        "AAAAAAAAAA", # doesn't match
+        "CCCCCACCCC", 
+        "CCCCAACCCC", # mismatch in the wrong place.
+        "GGGGGTGGGG", 
+        "TTTTTGTTTT"
+    )
+    barcodes <- sprintf(barcode.fmt, pool)
+    names(barcodes) <- seq_along(barcodes)
+
+    tmp <- tempfile(fileext=".fastq")
+    writeXStringSet(DNAStringSet(barcodes), filepath=tmp, format="fastq")
+
+    mat <- countSingleBarcodes(tmp, choices, template=template, strand="original")
+    expect_identical(mat$counts, c(2L, 1L, 1L, 1L))
+
+    mat <- countSingleBarcodes(tmp, choices, template=template, strand="original", substitutions=1L)
+    expect_identical(mat$counts, c(3L, 2L, 1L, 1L))
+})
+
