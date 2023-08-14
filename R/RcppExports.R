@@ -21,3 +21,7 @@ count_single_barcodes <- function(path, constant, strand, pool, mismatches, use_
     .Call('_screenCounter_count_single_barcodes', PACKAGE = 'screenCounter', path, constant, strand, pool, mismatches, use_first, nthreads)
 }
 
+match_barcodes <- function(sequences, choices, substitutions, reverse) {
+    .Call('_screenCounter_match_barcodes', PACKAGE = 'screenCounter', sequences, choices, substitutions, reverse)
+}
+
