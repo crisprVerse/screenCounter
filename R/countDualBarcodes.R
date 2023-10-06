@@ -150,7 +150,10 @@ countDualBarcodes <- function(
         return(choices)
 
     } else {
-        combined <- .attach_invalid_counts(choices, valid.counts=output[[1]], invalid.combos=output[[2]][[1]], invalid.counts=output[[2]][[2]])
+        others <- .create_invalid_df(choices, invalid.combos=output[[2]][[1]], invalid.counts=output[[2]][[2]])
+        choices$counts <- output[[1]]
+        choices$valid <- !logical(nrow(choices))
+        combined <- rbind(choices, others)
         metadata(combined) <- list(npairs = output[[3]], barcode1.only = output[[4]], barcode2.only = output[[5]], invalid.pair = sum(others$counts))
         return(combined)
     }
@@ -178,10 +181,8 @@ countDualBarcodes <- function(
     strand
 }
 
-.attach_invalid_counts <- function(choices, valid.counts, invalid.combos, invalid.counts) {
-    choices$counts <- valid.counts
-    choices$valid <- !logical(nrow(choices))
-
+#' @importFrom S4Vectors DataFrame
+.create_invalid_df <- function(choices, invalid.combos, invalid.counts) {
     others <- DataFrame(
         X1 = choices[invalid.combos[1,] + 1L,1], 
         X2 = choices[invalid.combos[2,] + 1L,2]
@@ -193,7 +194,7 @@ countDualBarcodes <- function(
     if (!is.null(rownames(choices))) {
         rownames(others) <- character(nrow(others))
     }
-    rbind(choices, others)
+    others
 }
 
 #' @export
@@ -228,7 +229,7 @@ matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, include
         for (i in seq_along(out)) {
             current <- out[[i]]
             df <- DataFrame(counts=current$counts)
-            df$combinations <- current[,seq_len(ncol(current) - 1L)]
+            df$combinations <- current[,1:2] # TODO: generalize for >=2 barcodes in a combination.
             tmp[[i]] <- df
         }
 

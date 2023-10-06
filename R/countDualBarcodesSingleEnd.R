@@ -112,7 +112,10 @@ countDualBarcodesSingleEnd <- function(
         return(choices)
 
     } else {
-        combined <- .attach_invalid_counts(choices, valid.counts=output[[1]], invalid.combos=output[[2]][[1]], invalid.counts=output[[2]][[2]])
+        others <- .create_invalid_df(choices, invalid.combos=output[[2]][[1]], invalid.counts=output[[2]][[2]])
+        choices$counts <- output[[1]]
+        choices$valid <- !logical(nrow(choices))
+        combined <- rbind(choices, others)
         metadata(combined) <- list(nreads = output[[3]], invalid.reads = sum(others$counts))
         return(combined)
     }
