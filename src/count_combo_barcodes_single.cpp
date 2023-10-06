@@ -28,7 +28,10 @@ Rcpp::List count_combo_barcodes_single_(
     kaori::process_single_end_data(&reader, handler, nthreads);
     handler.sort();
 
-    auto output = count_combinations(handler.get_combinations(), 1);
+    auto counted = count_combinations(handler.get_combinations());
+    Rcpp::List output(3);
+    output[0] = std::move(counted.first);
+    output[1] = std::move(counted.second);
     output[2] = Rcpp::IntegerVector::create(handler.get_total());
     return output;
 }

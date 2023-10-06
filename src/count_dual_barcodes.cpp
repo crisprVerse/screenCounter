@@ -83,9 +83,11 @@ Rcpp::List count_dual_barcodes_diagnostics_(
     handler.sort();
 
     const auto& counts = handler.get_counts();
+    auto others = count_combinations(handler.get_combinations());
+
     return Rcpp::List::create(
         Rcpp::IntegerVector(counts.begin(), counts.end()),
-        count_combinations(handler.get_combinations(), 3),
+        Rcpp::List::create(std::move(others.first), std::move(others.second)),
         Rcpp::IntegerVector::create(handler.get_total()),
         Rcpp::IntegerVector::create(handler.get_barcode1_only()),
         Rcpp::IntegerVector::create(handler.get_barcode2_only())

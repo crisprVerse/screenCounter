@@ -12,7 +12,7 @@ kaori::SearchStrand to_strand(bool);
 kaori::SearchStrand to_strand(int);
 
 template<size_t V>
-Rcpp::List count_combinations(const std::vector<std::array<int, V> >& available, int extras) {
+std::pair<Rcpp::IntegerMatrix, Rcpp::IntegerVector> count_combinations(const std::vector<std::array<int, V> >& available) {
     std::vector<size_t> boundaries;
     if (available.size() > 0) {
         boundaries.push_back(0);
@@ -41,10 +41,7 @@ Rcpp::List count_combinations(const std::vector<std::array<int, V> >& available,
         freq[count - 1] = available.size() - boundaries[count - 1];
     }
 
-    Rcpp::List output(extras + 2);
-    output[0] = indices;
-    output[1] = freq;
-    return output;
+    return std::make_pair(std::move(indices), std::move(freq));
 }
 
 #endif
