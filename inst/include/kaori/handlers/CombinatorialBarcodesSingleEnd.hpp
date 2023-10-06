@@ -63,8 +63,12 @@ public:
      * This should be less than or equal to `max_size`.
      * @param barcode_pools Array containing the known barcode sequences for each of the variable regions, in the order of their appearance in the template sequence.
      * @param options Optional parameters.
+     *
+     * @tparam BarcodePoolContainer Some iterable container of `BarcodePool` instances,
+     * usually either a `std::vector` or a `std::array`.
      */
-    CombinatorialBarcodesSingleEnd(const char* template_seq, size_t template_length, const std::array<BarcodePool, num_variable>& barcode_pools, const Options& options) :
+    template<class BarcodePoolContainer>
+    CombinatorialBarcodesSingleEnd(const char* template_seq, size_t template_length, const BarcodePoolContainer& barcode_pools, const Options& options) :
         forward(search_forward(options.strand)),
         reverse(search_reverse(options.strand)),
         max_mm(options.max_mismatches),
@@ -75,6 +79,10 @@ public:
         if (regions.size() != num_variable) { 
             throw std::runtime_error("expected " + std::to_string(num_variable) + " variable regions in the constant template");
         }
+        if (barcode_pools.size() != num_variable) { 
+            throw std::runtime_error("length of 'barcode_pools' should be equal to the number of variable regions");
+        }
+
         for (size_t i = 0; i < num_variable; ++i) {
             size_t rlen = regions[i].second - regions[i].first;
             size_t vlen = barcode_pools[i].length;
@@ -128,6 +136,7 @@ public:
         int total = 0;
 
         std::array<int, num_variable> temp;
+        std::string buffer;
 
         // Default constructors should be called in this case, so it should be fine.
         std::array<typename SimpleBarcodeSearch::State, num_variable> forward_details, reverse_details;
@@ -144,17 +153,19 @@ private:
         int obs_mismatches, 
         const std::array<SimpleBarcodeSearch, num_variable>& libs, 
         std::array<typename SimpleBarcodeSearch::State, num_variable>& states, 
-        std::array<int, num_variable>& temp) 
-    const {
+        std::array<int, num_variable>& temp,
+        std::string& buffer
+    ) const {
         const auto& regions = constant_matcher.template variable_regions<reverse>();
 
         for (size_t r = 0; r < num_variable; ++r) {
             auto range = regions[r];
             auto start = seq + position;
-            std::string current(start + range.first, start + range.second);
+            buffer.clear(); // clear and insert preserves buffer's existing heap allocation.
+            buffer.insert(buffer.end(), start + range.first, start + range.second);
 
             auto& curstate = states[r];
-            libs[r].search(current, curstate, max_mm - obs_mismatches);
+            libs[r].search(buffer, curstate, max_mm - obs_mismatches);
             if (curstate.index < 0) {
                 return std::make_pair(false, 0);
             }
@@ -175,11 +186,11 @@ private:
     }
 
     std::pair<bool, int> forward_match(const char* seq, const typename ScanTemplate<max_size>::State& deets, State& state) const {
-        return find_match<false>(seq, deets.position, deets.forward_mismatches, forward_lib, state.forward_details, state.temp);
+        return find_match<false>(seq, deets.position, deets.forward_mismatches, forward_lib, state.forward_details, state.temp, state.buffer);
     }
 
     std::pair<bool, int> reverse_match(const char* seq, const typename ScanTemplate<max_size>::State& deets, State& state) const {
-        return find_match<true>(seq, deets.position, deets.reverse_mismatches, reverse_lib, state.reverse_details, state.temp);
+        return find_match<true>(seq, deets.position, deets.reverse_mismatches, reverse_lib, state.reverse_details, state.temp, state.buffer);
     }
 
 private:
@@ -211,7 +222,7 @@ private:
         int best_mismatches = max_mm + 1;
         std::array<int, num_variable> best_id;
 
-        auto update = [&](std::pair<int, int> match) -> void {
+        auto update = [&](std::pair<bool, int> match) -> void {
             if (match.first && match.second <= best_mismatches) {
                 if (match.second == best_mismatches) {
                     if (best_id != state.temp) { // ambiguous.

@@ -1,12 +1,12 @@
-#ifndef KAORI_DUAL_BARCODES_WITH_DIAGNOSTICS_HPP
-#define KAORI_DUAL_BARCODES_WITH_DIAGNOSTICS_HPP
+#ifndef KAORI_DUAL_BARCODES_PAIRED_END_WITH_DIAGNOSTICS_HPP
+#define KAORI_DUAL_BARCODES_PAIRED_END_WITH_DIAGNOSTICS_HPP
 
-#include "DualBarcodes.hpp"
+#include "DualBarcodesPairedEnd.hpp"
 #include "CombinatorialBarcodesPairedEnd.hpp"
 #include "../utils.hpp"
 
 /**
- * @file DualBarcodesWithDiagnostics.hpp
+ * @file DualBarcodesPairedEndWithDiagnostics.hpp
  *
  * @brief Process dual barcodes with extra diagnostics.
  */
@@ -16,14 +16,14 @@ namespace kaori {
 /**
  * @brief Handler for dual barcodes with extra diagnostics.
  *
- * This provides the same information as `DualBarcodes` but also captures the frequency of the invalid combinations.
+ * This provides the same information as `DualBarcodesPairedEnd` but also captures the frequency of the invalid combinations.
  * These frequences can be helpful for diagnosing problems with library construction.
  * The handler also counts the number of reads where only one barcode construct matches to a read.
  *
  * @tparam max_size Maximum length of the template sequences on both reads.
  */
 template<size_t max_size>
-class DualBarcodesWithDiagnostics { 
+class DualBarcodesPairedEndWithDiagnostics { 
 public:
     /**
      * @param[in] template_seq1 Pointer to a character array containing the first template sequence. 
@@ -41,10 +41,10 @@ public:
      * `barcode_pool1` and `barcode_pool2` are expected to have the same number of barcodes (possibly duplicated).
      * Corresponding values across the two pools define a particular combination of dual barcodes. 
      */
-    DualBarcodesWithDiagnostics(
+    DualBarcodesPairedEndWithDiagnostics(
         const char* template_seq1, size_t template_length1, const BarcodePool& barcode_pool1,
         const char* template_seq2, size_t template_length2, const BarcodePool& barcode_pool2, 
-        const typename DualBarcodes<max_size>::Options& options
+        const typename DualBarcodesPairedEnd<max_size>::Options& options
     ) :
         dual_handler(template_seq1, template_length1, barcode_pool1, template_seq2, template_length2, barcode_pool2, options),
 
@@ -73,7 +73,7 @@ public:
     {}
 
 private:
-    DualBarcodes<max_size> dual_handler;
+    DualBarcodesPairedEnd<max_size> dual_handler;
     CombinatorialBarcodesPairedEnd<max_size> combo_handler;
 
 public:
@@ -82,12 +82,12 @@ public:
      */
     struct State {
         State() {}
-        State(typename DualBarcodes<max_size>::State ds, typename CombinatorialBarcodesPairedEnd<max_size>::State cs) : dual_state(std::move(ds)), combo_state(std::move(cs)) {}
+        State(typename DualBarcodesPairedEnd<max_size>::State ds, typename CombinatorialBarcodesPairedEnd<max_size>::State cs) : dual_state(std::move(ds)), combo_state(std::move(cs)) {}
 
         /**
          * @cond
          */
-        typename DualBarcodes<max_size>::State dual_state;
+        typename DualBarcodesPairedEnd<max_size>::State dual_state;
         typename CombinatorialBarcodesPairedEnd<max_size>::State combo_state;
         /**
          * @endcond
@@ -169,6 +169,16 @@ public:
         return combo_handler.get_barcode2_only();
     }
 };
+
+/**
+ * @cond
+ */
+// Soft-deprecated back-compatible aliases.
+template<size_t max_size>
+using DualBarcodesWithDiagnostics = DualBarcodesPairedEndWithDiagnostics<max_size>;
+/**
+ * @endcond
+ */
 
 }
 

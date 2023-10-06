@@ -29,7 +29,7 @@ matrixOfDualBarcodes(
 )
 }
 \arguments{
-\item{fastq}{Character vector of length 2, containin paths to two FASTQ files with paired-end data.}
+\item{fastq}{Character vector of length 2, containing paths to two FASTQ files with paired-end data.}
 
 \item{choices}{A \linkS4class{DataFrame} with two character columns specifying valid combinations of variable regions.
 The first column contains sequences for barcode 1 while the second column contains sequences for barcode 2.}
@@ -68,32 +68,28 @@ If not, the opposite orientation is also searched.}
 \item{BPPARAM}{A \linkS4class{BiocParallelParam} object specifying how parallelization is to be performed across files.}
 }
 \value{
-By default, \code{countDualBarcodes} will return \code{choices} with an additional \code{counts} column
-containing an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode combination.
-The metadata contains:
-\itemize{
-\item \code{npairs}, the total number of read pairs processed by the function.
-\item \code{barcode1.only}, the number of read pairs that only match to barcode 1.
-Only provided when \code{invalid.pair=TRUE}.
-\item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
-Only provided when \code{invalid.pair=TRUE}.
-\item \code{invalid.pair}, the number of read pairs with matches for each barcode 
-but do not form a valid combination in \code{choices}.
-Only provided when \code{invalid.pair=TRUE}.
-}
+By default, \code{countDualBarcodes} will return \code{choices} with an additional \code{counts} column.
+This is an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode combination.
+The metadata contains \code{npairs}, the total number of read pairs processed by the function.
 
 \code{matrixOfDualBarcodes} will return a \linkS4class{SummarizedExperiment} object containing:
 \itemize{
 \item An integer matrix named \code{"counts"}, where each column is the output of \code{countDualBarcodes} for each file in \code{files}.
 \item Row metadata containing a character vector \code{choices}, the sequences of the variable region of the two barcodes for each row.
-\item Column metadata containing a character vector \code{files}, the path to each file;
+\item Column metadata containing the character vectors \code{paths1} and \code{paths2}, storign the path to each pair of FASTQ files;
 integer vectors corresponding to the metadata described above for \code{countDualBarcodes};
 and \code{nmapped}, containing the number of read pairs assigned to a barcode combination in the output count matrix.
 }
 If \code{withDimnames=TRUE}, row names are set to \code{choices} while column names are \code{basename(files)}.
 
 If \code{include.invalid=TRUE}, each row contains all observed combinations in addition to those in \code{choices}.
-The DataFrame (or \code{\link{rowData}} of the SummarizedExperiment) contains an additional \code{valid} field specifying if a combination is valid, i.e., present in \code{choices}.
+The DataFrame (or \code{\link{rowData}} of the SummarizedExperiment) gains a \code{valid} field specifying if a combination is valid, i.e., present in \code{choices},
+The metadata also gains the following fields:
+\itemize{
+\item \code{invalid.pair}, the number of read pairs with matches for each barcode but do not form a valid combination.
+\item \code{barcode1.only}, the number of read pairs that only match to barcode 1.
+\item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
+}
 }
 \description{
 Count the frequency of dual barcodes in a dataset for a paired-end sequencing screen.

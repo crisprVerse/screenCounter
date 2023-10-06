@@ -27,7 +27,7 @@ matrixOfPairedComboBarcodes(
 )
 }
 \arguments{
-\item{fastq}{Character vector of length 2, containin paths to two FASTQ files with paired-end data.}
+\item{fastq}{Character vector of length 2, containing paths to two FASTQ files with paired-end data.}
 
 \item{choices}{A \linkS4class{List} of two character vectors.
 The first vector should contain the potential sequences for the variable region in the first template,
