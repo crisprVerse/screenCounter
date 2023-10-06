@@ -311,36 +311,34 @@ private:
         auto deets1 = constant1.initialize(against1.first, against1.second - against1.first);
         auto deets2 = constant2.initialize(against2.first, against2.second - against2.first);
 
-        state.second_matches.clear();
-        int chosen = -1;
-        int best_mismatches = max_mm1 + max_mm2 + 1;
-
-        auto checker = [&](size_t idx2) -> void {
-            const auto& current2 = state.second_matches[idx2];
-            state.combined = state.first_match.first;
-            state.combined += current2.first; // separate line is deliberate.
-            varlib.search(state.combined, state.details, std::array<int, 2>{ max_mm1 - state.first_match.second, max_mm2 - current2.second });
-
-            int cur_mismatches = state.details.mismatches;
-            if (cur_mismatches < best_mismatches) {
-                chosen = state.details.index;
-                best_mismatches = cur_mismatches;
-            } else if (cur_mismatches == best_mismatches && chosen != state.details.index) { // ambiguous.
-                chosen = -1;
-            }
-        };
-
         // Getting all hits on the second read, and then looping over that
         // vector for each hit of the first read. We have to do all pairwise
         // comparisons anyway to find the best hit.
-        while (inner_process(search_reverse2, constant2, max_mm2, against2.first, deets2, state.second_matches)) {
-            checker(state.second_matches.size() - 1);
-        }
+        state.second_matches.clear();
+        while (inner_process(search_reverse2, constant2, max_mm2, against2.first, deets2, state.second_matches)) {}
+
+        int chosen = -1;
+        int best_mismatches = max_mm1 + max_mm2 + 1;
+        size_t num_second_matches = state.second_matches.size();
 
         if (!state.second_matches.empty()) {
             while (inner_process(search_reverse1, constant1, max_mm1, against1.first, deets1, state.first_match)) {
-                for (size_t i = 0; i < state.second_matches.size(); ++i) {
-                    checker(i);
+                for (size_t i = 0; i < num_second_matches; ++i) {
+                    const auto& current2 = state.second_matches[i];
+
+                    state.combined = state.first_match.first;
+                    state.combined += current2.first; // separate line is deliberate.
+                    varlib.search(state.combined, state.details, std::array<int, 2>{ max_mm1 - state.first_match.second, max_mm2 - current2.second });
+
+                    if (state.details.index >= 0) {
+                        int cur_mismatches = state.details.mismatches + state.first_match.second + current2.second;
+                        if (cur_mismatches < best_mismatches) {
+                            chosen = state.details.index;
+                            best_mismatches = cur_mismatches;
+                        } else if (cur_mismatches == best_mismatches && chosen != state.details.index) { // ambiguous.
+                            chosen = -1;
+                        }
+                    }
                 }
             }
         }

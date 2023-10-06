@@ -105,7 +105,7 @@ test_that("dual counting reports invalid pairs correctly", {
     expect_identical(as.data.frame(raw), as.data.frame(output[output$valid,1:3]))
 
     everything <- countComboBarcodes(tmp, choices=List(POOL1, POOL2), template=template)
-    m <- match(everything$combinations, DataFrame(first=output[,1], second=output[,2]))
+    m <- BiocGenerics::match(everything$combinations, DataFrame(first=output[,1], second=output[,2]))
     expect_identical(nrow(everything), nrow(output))
     expect_false(anyNA(m))
     expect_false(anyDuplicated(m) > 0)

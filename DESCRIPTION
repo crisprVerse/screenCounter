@@ -15,6 +15,7 @@ Imports:
     zlibbioc,
     BiocParallel
 Suggests: 
+    BiocGenerics,
     Biostrings,
     BiocStyle,
     knitr,
