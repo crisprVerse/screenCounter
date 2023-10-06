@@ -36,11 +36,14 @@ Rcpp::List count_dual_barcodes_single_end_(
     } else {
         kaori::DualBarcodesSingleEndWithDiagnostics<N, 2> handler(constant.c_str(), constant.size(), pools, options);
         kaori::process_single_end_data(&reader, handler, nthreads);
-        handler.sort();
+
         const auto& counts = handler.get_counts();
+        handler.sort();
+        auto combos = count_combinations(handler.get_combinations());
+
         return Rcpp::List::create(
             Rcpp::IntegerVector(counts.begin(), counts.end()),
-            count_combinations(handler.get_combinations(), 3),
+            Rcpp::List::create(std::move(combos.first), std::move(combos.second)),
             Rcpp::IntegerVector::create(handler.get_total())
         );
     }
