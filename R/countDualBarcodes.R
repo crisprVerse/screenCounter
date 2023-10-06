@@ -2,7 +2,7 @@
 #' 
 #' Count the frequency of dual barcodes in a dataset for a paired-end sequencing screen.
 #'
-#' @param fastq Character vector of length 2, containin paths to two FASTQ files with paired-end data.
+#' @param fastq Character vector of length 2, containing paths to two FASTQ files with paired-end data.
 #' @param choices A \linkS4class{DataFrame} with two character columns specifying valid combinations of variable regions.
 #' The first column contains sequences for barcode 1 while the second column contains sequences for barcode 2.
 #' @param flank5 Character vector of length 2 containing the constant sequence on the 5' flank of the variable region for barcodes 1 and 2, respectively.
@@ -51,32 +51,28 @@
 #' If there are multiple matches with the same number of mismatches, the read is discarded to avoid problems with ambiguity.
 #'
 #' @return 
-#' By default, \code{countDualBarcodes} will return \code{choices} with an additional \code{counts} column
-#' containing an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode combination.
-#' The metadata contains:
-#' \itemize{
-#' \item \code{npairs}, the total number of read pairs processed by the function.
-#' \item \code{barcode1.only}, the number of read pairs that only match to barcode 1.
-#' Only provided when \code{invalid.pair=TRUE}.
-#' \item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
-#' Only provided when \code{invalid.pair=TRUE}.
-#' \item \code{invalid.pair}, the number of read pairs with matches for each barcode 
-#' but do not form a valid combination in \code{choices}.
-#' Only provided when \code{invalid.pair=TRUE}.
-#' }
+#' By default, \code{countDualBarcodes} will return \code{choices} with an additional \code{counts} column.
+#' This is an integer vector of length equal to \code{nrow(choices)} containing the frequency of each barcode combination.
+#' The metadata contains \code{npairs}, the total number of read pairs processed by the function.
 #' 
 #' \code{matrixOfDualBarcodes} will return a \linkS4class{SummarizedExperiment} object containing:
 #' \itemize{
 #' \item An integer matrix named \code{"counts"}, where each column is the output of \code{countDualBarcodes} for each file in \code{files}.
 #' \item Row metadata containing a character vector \code{choices}, the sequences of the variable region of the two barcodes for each row.
-#' \item Column metadata containing a character vector \code{files}, the path to each file;
+#' \item Column metadata containing the character vectors \code{paths1} and \code{paths2}, storign the path to each pair of FASTQ files;
 #' integer vectors corresponding to the metadata described above for \code{countDualBarcodes};
 #' and \code{nmapped}, containing the number of read pairs assigned to a barcode combination in the output count matrix.
 #' }
 #' If \code{withDimnames=TRUE}, row names are set to \code{choices} while column names are \code{basename(files)}.
 #'
 #' If \code{include.invalid=TRUE}, each row contains all observed combinations in addition to those in \code{choices}.
-#' The DataFrame (or \code{\link{rowData}} of the SummarizedExperiment) contains an additional \code{valid} field specifying if a combination is valid, i.e., present in \code{choices}.
+#' The DataFrame (or \code{\link{rowData}} of the SummarizedExperiment) gains a \code{valid} field specifying if a combination is valid, i.e., present in \code{choices},
+#' The metadata also gains the following fields:
+#' \itemize{
+#' \item \code{invalid.pair}, the number of read pairs with matches for each barcode but do not form a valid combination.
+#' \item \code{barcode1.only}, the number of read pairs that only match to barcode 1.
+#' \item \code{barcode2.only}, the number of read pairs that only match to barcode 2.
+#' }
 #'
 #' @author Aaron Lun
 #' @examples
@@ -154,20 +150,10 @@ countDualBarcodes <- function(
         return(choices)
 
     } else {
+        others <- .create_invalid_df(choices, invalid.combos=output[[2]][[1]], invalid.counts=output[[2]][[2]])
         choices$counts <- output[[1]]
         choices$valid <- !logical(nrow(choices))
-
-        other.dex <- output[[2]][[1]] + 1L
-        others <- DataFrame(X1 = choices[other.dex[1,],1], X2 = choices[other.dex[2,],2])
-        colnames(others) <- colnames(choices)[1:2]
-        others$counts <- output[[2]][[2]]
-        others$valid <- logical(nrow(others))
-
-        if (!is.null(rownames(choices))) {
-            rownames(others) <- character(nrow(others))
-        }
         combined <- rbind(choices, others)
-
         metadata(combined) <- list(npairs = output[[3]], barcode1.only = output[[4]], barcode2.only = output[[5]], invalid.pair = sum(others$counts))
         return(combined)
     }
@@ -195,20 +181,55 @@ countDualBarcodes <- function(
     strand
 }
 
-#' @rdname countDualBarcodes
+#' @importFrom S4Vectors DataFrame
+.create_invalid_df <- function(choices, invalid.combos, invalid.counts) {
+    others <- DataFrame(
+        X1 = choices[invalid.combos[1,] + 1L,1], 
+        X2 = choices[invalid.combos[2,] + 1L,2]
+    )
+    colnames(others) <- colnames(choices)[1:2]
+    others$counts <- invalid.counts
+    others$valid <- logical(nrow(others))
+
+    if (!is.null(rownames(choices))) {
+        rownames(others) <- character(nrow(others))
+    }
+    others
+}
+
 #' @export
+#' @rdname countDualBarcodes
+#' @importFrom S4Vectors DataFrame
+#' @importFrom SummarizedExperiment colData colData<-
 #' @importFrom BiocParallel bplapply SerialParam
-#' @importFrom SummarizedExperiment SummarizedExperiment
-#' @importFrom S4Vectors DataFrame metadata %in%
 matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, include.invalid=FALSE, BPPARAM=SerialParam()) {
     out <- bplapply(files, FUN=countDualBarcodes, choices=choices, ..., include.invalid=include.invalid, BPPARAM=BPPARAM)
+    se <- .post_process_dual_barcode_matrix(out, choices, include.invalid)
 
+    colData(se) <- cbind(
+        DataFrame(
+            paths1=vapply(files, "[", i=1, ""), 
+            paths2=vapply(files, "[", i=2, "")
+        ),
+        colData(se)
+    )
+
+    if (withDimnames) {
+        colnames(se) <- basename(se$paths1)
+    }
+    se 
+
+}
+
+#' @importFrom SummarizedExperiment SummarizedExperiment
+#' @importFrom S4Vectors DataFrame metadata %in% metadata
+.post_process_dual_barcode_matrix <- function(out, choices, include.invalid) {
     if (include.invalid) {
         tmp <- out
         for (i in seq_along(out)) {
             current <- out[[i]]
             df <- DataFrame(counts=current$counts)
-            df$combinations <- current[,1:2]
+            df$combinations <- current[,1:2] # TODO: generalize for >=2 barcodes in a combination.
             tmp[[i]] <- df
         }
 
@@ -229,12 +250,5 @@ matrixOfDualBarcodes <- function(files, choices, ..., withDimnames=TRUE, include
         output[[f]] <- vapply(out, function(x) metadata(x)[[f]], FUN.VALUE=0L)
     }
 
-    se <- SummarizedExperiment(list(counts=mat), rowData=choices,
-        colData=DataFrame(paths1=vapply(files, "[", i=1, ""), 
-            paths2=vapply(files, "[", i=2, ""), output))
-
-    if (withDimnames) {
-        colnames(se) <- basename(se$paths1)
-    }
-    se 
+    SummarizedExperiment(list(counts=mat), rowData=choices, colData=output)
 }

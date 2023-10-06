@@ -6,7 +6,7 @@
 #include "../utils.hpp"
 
 /**
- * @file DualBarcodes.hpp
+ * @file DualBarcodesPairedEnd.hpp
  *
  * @brief Process dual barcodes.
  */
@@ -24,10 +24,10 @@ namespace kaori {
  * @tparam max_size Maximum length of the template sequences on both reads.
  */
 template<size_t max_size>
-class DualBarcodes { 
+class DualBarcodesPairedEnd { 
 public:
     /**
-     * @brief Optional parameters for `SingleBarcodeSingleEnd`.
+     * @brief Optional parameters for `DualBarcodesPairedEnd`.
      */
     struct Options {
         /** 
@@ -89,7 +89,7 @@ public:
      * Corresponding values across the two pools define a particular combination of dual barcodes. 
      * Duplication of sequences within each pool is allowed; only pairs of the same barcodes are considered to be duplicates with respect to `Options::duplicates`.
      */
-    DualBarcodes(
+    DualBarcodesPairedEnd(
         const char* template_seq1, size_t template_length1, const BarcodePool& barcode_pool1, 
         const char* template_seq2, size_t template_length2, const BarcodePool& barcode_pool2,
         const Options& options
@@ -187,7 +187,9 @@ public:
         std::vector<int> counts;
         int total = 0;
 
-        std::vector<std::pair<std::string, int> > buffer2;
+        std::pair<std::string, int> first_match;
+        std::vector<std::pair<std::string, int> > second_matches;
+        std::string combined;
 
         // Default constructors should be called in this case, so it should be fine.
         typename SegmentedBarcodeSearch<2>::State details;
@@ -211,14 +213,15 @@ public:
      */
 
 private:
-    static void emit_output(std::pair<std::string, int>& output, const char* start, const char* end, int mm) {
-        output.first = std::string(start, end);
-        output.second = mm;
+    static void fill_store(std::pair<std::string, int>& first_match, const char* start, const char* end, int mm) {
+        first_match.first.clear();
+        first_match.first.insert(first_match.first.end(), start, end);
+        first_match.second = mm;
         return;
     }
 
-    static void emit_output(std::vector<std::pair<std::string, int> >& output, const char* start, const char* end, int mm) {
-        output.emplace_back(std::string(start, end), mm);
+    static void fill_store(std::vector<std::pair<std::string, int> >& second_matches, const char* start, const char* end, int mm) {
+        second_matches.emplace_back(std::string(start, end), mm);
         return;
     }
 
@@ -229,7 +232,7 @@ private:
         int max_mm,
         const char* against,
         typename ScanTemplate<max_size>::State& deets,
-        Store& output)
+        Store& store)
     {
         while (!deets.finished) {
             constant.next(deets);
@@ -237,14 +240,14 @@ private:
                 if (deets.reverse_mismatches <= max_mm) {
                     const auto& reg = constant.template variable_regions<true>()[0];
                     auto start = against + deets.position;
-                    emit_output(output, start + reg.first, start + reg.second, deets.reverse_mismatches);
+                    fill_store(store, start + reg.first, start + reg.second, deets.reverse_mismatches);
                     return true;
                 }
             } else {
                 if (deets.forward_mismatches <= max_mm) {
                     const auto& reg = constant.variable_regions()[0];
                     auto start = against + deets.position;
-                    emit_output(output, start + reg.first, start + reg.second, deets.forward_mismatches);
+                    fill_store(store, start + reg.first, start + reg.second, deets.forward_mismatches);
                     return true;
                 }
             }
@@ -254,15 +257,15 @@ private:
 
     bool process_first(State& state, const std::pair<const char*, const char*>& against1, const std::pair<const char*, const char*>& against2) const {
         auto deets1 = constant1.initialize(against1.first, against1.second - against1.first);
-        std::pair<std::string, int> match1;
-
         auto deets2 = constant2.initialize(against2.first, against2.second - against2.first);
-        state.buffer2.clear();
+
+        state.second_matches.clear();
 
         auto checker = [&](size_t idx2) -> bool {
-            const auto& current2 = state.buffer2[idx2];
-            auto combined = match1.first + current2.first;
-            varlib.search(combined, state.details, std::array<int, 2>{ max_mm1 - match1.second, max_mm2 - current2.second });
+            const auto& current2 = state.second_matches[idx2];
+            state.combined = state.first_match.first;
+            state.combined += current2.first; // on a separate line to avoid creating a std::string intermediate.
+            varlib.search(state.combined, state.details, std::array<int, 2>{ max_mm1 - state.first_match.second, max_mm2 - current2.second });
 
             if (state.details.index >= 0) {
                 ++state.counts[state.details.index];
@@ -272,22 +275,31 @@ private:
             }
         };
 
-        // Looping over all hits of the second for each hit of the first.
-        while (inner_process(search_reverse1, constant1, max_mm1, against1.first, deets1, match1)) {
-            if (deets2.finished) {
-                for (size_t i = 0; i < state.buffer2.size(); ++i) {
+        // Looping over all hits of the second for each hit of the first read.
+        // This is done in a slightly convoluted way; we only search for
+        // all hits of the second read _after_ we find the first hit of the
+        // first read, so as to avoid a wasted search on the second read
+        // if we never found a hit on the first read.
+        while (inner_process(search_reverse1, constant1, max_mm1, against1.first, deets1, state.first_match)) {
+            if (!deets2.finished) {
+                // Alright, populating the second match buffer. We also
+                // return immediately if any of them form a valid
+                // combination with the first hit of the first read.
+                while (inner_process(search_reverse2, constant2, max_mm2, against2.first, deets2, state.second_matches)) {
+                    if (checker(state.second_matches.size() - 1)) {
+                        return true;
+                    }
+                }
+                if (state.second_matches.empty()) {
+                    break;
+                }
+            } else {
+                // And then this part does all the pairwise comparisons with
+                // every hit in the first read.
+                for (size_t i = 0; i < state.second_matches.size(); ++i) {
                     if (checker(i)) {
                         return true;
                     }
-                }
-            } else {
-                while (inner_process(search_reverse2, constant2, max_mm2, against2.first, deets2, state.buffer2)) {
-                    if (checker(state.buffer2.size() - 1)) {
-                        return true;
-                    }
-                }
-                if (state.buffer2.empty()) {
-                    break;
                 }
             }
         }
@@ -297,39 +309,36 @@ private:
 
     std::pair<int, int> process_best(State& state, const std::pair<const char*, const char*>& against1, const std::pair<const char*, const char*>& against2) const {
         auto deets1 = constant1.initialize(against1.first, against1.second - against1.first);
-        std::pair<std::string, int> match1;
-
         auto deets2 = constant2.initialize(against2.first, against2.second - against2.first);
-        state.buffer2.clear();
+
+        // Getting all hits on the second read, and then looping over that
+        // vector for each hit of the first read. We have to do all pairwise
+        // comparisons anyway to find the best hit.
+        state.second_matches.clear();
+        while (inner_process(search_reverse2, constant2, max_mm2, against2.first, deets2, state.second_matches)) {}
 
         int chosen = -1;
         int best_mismatches = max_mm1 + max_mm2 + 1;
+        size_t num_second_matches = state.second_matches.size();
 
-        auto checker = [&](size_t idx2) -> void {
-            const auto& current2 = state.buffer2[idx2];
-            auto combined = match1.first + current2.first;
-            varlib.search(combined, state.details, std::array<int, 2>{ max_mm1 - match1.second, max_mm2 - current2.second });
+        if (!state.second_matches.empty()) {
+            while (inner_process(search_reverse1, constant1, max_mm1, against1.first, deets1, state.first_match)) {
+                for (size_t i = 0; i < num_second_matches; ++i) {
+                    const auto& current2 = state.second_matches[i];
 
-            int cur_mismatches = state.details.mismatches;
-            if (cur_mismatches < best_mismatches) {
-                chosen = state.details.index;
-                best_mismatches = cur_mismatches;
-            } else if (cur_mismatches == best_mismatches && chosen != state.details.index) { // ambiguous.
-                chosen = -1;
-            }
-        };
+                    state.combined = state.first_match.first;
+                    state.combined += current2.first; // separate line is deliberate.
+                    varlib.search(state.combined, state.details, std::array<int, 2>{ max_mm1 - state.first_match.second, max_mm2 - current2.second });
 
-        while (inner_process(search_reverse1, constant1, max_mm1, against1.first, deets1, match1)) {
-            if (deets2.finished) {
-                for (size_t i = 0; i < state.buffer2.size(); ++i) {
-                    checker(i);
-                }
-            } else {
-                while (inner_process(search_reverse2, constant2, max_mm2, against2.first, deets2, state.buffer2)) {
-                    checker(state.buffer2.size() - 1);
-                }
-                if (state.buffer2.empty()) {
-                    break;
+                    if (state.details.index >= 0) {
+                        int cur_mismatches = state.details.mismatches + state.first_match.second + current2.second;
+                        if (cur_mismatches < best_mismatches) {
+                            chosen = state.details.index;
+                            best_mismatches = cur_mismatches;
+                        } else if (cur_mismatches == best_mismatches && chosen != state.details.index) { // ambiguous.
+                            chosen = -1;
+                        }
+                    }
                 }
             }
         }
@@ -404,6 +413,16 @@ public:
         return total;
     }
 };
+
+/**
+ * @cond
+ */
+// Soft-deprecated back-compatible aliases.
+template<size_t max_size>
+using DualBarcodes = DualBarcodesPairedEnd<max_size>;
+/**
+ * @endcond
+ */
 
 }
 

@@ -10,7 +10,7 @@ then
 else
     (cd source-kaori && git checkout master && git pull)
 fi
-(cd source-kaori && git checkout v1.0.0)
+(cd source-kaori && git checkout v1.1.0)
 
 rm -rf kaori
 mkdir -p kaori

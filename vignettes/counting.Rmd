@@ -157,11 +157,11 @@ CAGCTANNNNNNNNNNCACG
 
 # READ 2:
 CACGGTTNNNNNNNNNNCAGC
-------^^^^^^^^^^-----
-      variable
+-------^^^^^^^^^^----
+       variable
 ```
 
-To demonstrate, let's mock up another FASTQ file of single-end read data.
+To demonstrate, let's mock up some FASTQ files of paired-end read data.
 Again, for simplicity, we will assume that each read sequence contains only the barcode.
 
 ```{r}
@@ -238,6 +238,78 @@ By default, we assume that the read sequence in the first FASTQ file contains th
 and the second FASTQ file contains the second barcode.
 If the arrangement is randomized, we can set `randomized=TRUE` to search the first FASTQ file for the second barcode and vice versa.
 Note that this will filter out read pairs that match different valid combinations in both arrangements.
+
+# Counting dual barcodes (single-end)
+
+A variation of the dual barcode design involves both variable regions being on a single read.
+
+```
+# Example of a dual barcode:
+
+CAGCTANNNNNNNNNNCACGCACGGTTNNNNNNNNNNCAGC
+------^^^^^^^^^^-----------^^^^^^^^^^----
+      variable             variable
+```
+
+To demonstrate, let's mock up another FASTQ file of single-end read data.
+Again, for simplicity, we will assume that each read sequence contains only the barcode.
+
+```{r}
+# Creating an example dual barcode sequencing experiment.
+known.pool1 <- c("AGAGAGAGA", "CTCTCTCTC",
+    "GTGTGTGTG", "CACACACAC")
+known.pool2 <- c("ATATATATA", "CGCGCGCGC",
+    "GAGAGAGAG", "CTCTCTCTC")
+
+# Mocking up the barcode sequences.
+N <- 1000
+read <- sprintf("CAGCTACGTACG%sCCAGCTCGATCG%sACACGAGGGTAT",
+   sample(known.pool1, N, replace=TRUE),
+   sample(known.pool2, N, replace=TRUE))
+names(read) <- seq_len(N)
+
+# Writing them to FASTQ files.
+tmp <- tempfile(fileext=".fastq")
+writeXStringSet(DNAStringSet(read), filepath=tmp, format="fastq")
+```
+
+Let us imagine that only a subset of the barcode combinations are actually valid:
+
+```{r}
+choices <- expand.grid(known.pool1, known.pool2)
+choices <- DataFrame(barcode1=choices[,1], barcode2=choices[,2])
+choices <- choices[sample(nrow(choices), nrow(choices)*0.9),]
+```
+
+We quantify single-end dual barcodes across files using the `matrixOfDualBarcodesSingleEnd()` function.
+Many of the options available for single barcode matching in `matrixOfSingleBarcodes()` are also available here
+and can be specificed separately for each barcode.
+
+```{r}
+out <- matrixOfDualBarcodesSingleEnd(tmp, choices=choices,
+    template="CAGCTACGTACGNNNNNNNNNCCAGCTCGATCGNNNNNNNNNACACGAGGGTAT")
+out
+```
+
+This function yields a `SummarizedExperiment` object containing a matrix of frequencies 
+of each valid barcode combination (row) in each file (column).
+
+```{r}
+assay(out)
+```
+
+Further diagnostics about the mapping are provided in the `colData`:
+
+```{r}
+colData(out)
+```
+
+The identities of the variable regions corresponding to each row are specified in the `rowData`, 
+which contains the variable sequences in `barcode1` and `barcode1` that define each barcode combination.
+
+```{r}
+rowData(out)
+```
 
 # Counting random barcodes
 
