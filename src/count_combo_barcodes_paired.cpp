@@ -74,7 +74,7 @@ Rcpp::List count_combo_barcodes_paired(
     auto ptrs2 = format_pointers(pool2);
 
     // Support up to 256 bp constant regions.
-    size_t len = std::min(constant1.size(), constant2.size());
+    size_t len = std::max(constant1.size(), constant2.size());
     Rcpp::List output;
     if (len <= 32) {
         output = count_combo_barcodes_paired_<32>(reader1, constant1, reverse1, ptrs1, mismatches1, reader2, constant2, reverse2, ptrs2, mismatches2, randomized, use_first, nthreads);

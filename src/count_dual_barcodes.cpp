@@ -117,7 +117,7 @@ Rcpp::List count_dual_barcodes(
     byteme::SomeFileReader reader2(path2.c_str());
     auto ptrs2 = format_pointers(pool2);
 
-    size_t len = std::min(constant1.size(), constant2.size());
+    size_t len = std::max(constant1.size(), constant2.size());
     Rcpp::List output;
 
     if (!diagnostics) {
