@@ -29,13 +29,7 @@ public:
     FastqReader(byteme::Reader* p) : pb(p) {
         sequence.reserve(200);
         name.reserve(200);
-
         okay = pb.valid();
-        if (okay) {
-            if (pb.get() != '@') {
-                throw std::runtime_error("first line containing FASTQ name should start with '@'");
-            }
-        }
     }
 
     /**
@@ -55,7 +49,12 @@ public:
 
         // Processing the name. This should be on a single line, hopefully.
         name.clear();
-        char val = advance_and_check();
+        char val = pb.get();
+        if (val != '@') {
+            throw std::runtime_error("read name should start with '@' (starting line " + std::to_string(init_line + 1) + ")");
+        }
+
+        val = advance_and_check();
         while (!std::isspace(val)) {
             name.push_back(val);
             val = advance_and_check();
@@ -84,25 +83,28 @@ public:
         } 
         ++line_count;
 
-        // Processing the qualities. Extraction is allowed to fail if we're at the
-        // end of the file.
-        size_t qual_length = 0;
+        // Processing the qualities. Extraction is allowed to fail if we're at
+        // the end of the file. Note that we can't check for '@' as a
+        // delimitor, as this can be a valid score, so instead we check at each
+        // newline whether we've reached the specified length, and quit if so.
+        size_t qual_length = 0, seq_length = sequence.size();
         okay = false;
+
         while (pb.advance()) {
             val = pb.get();
-            if (val == '@') {
-                okay = true;
-                break;
-            }
             if (val != '\n') {
                 ++qual_length;
+            } else if (qual_length >= seq_length) {
+                okay = pb.advance(); // sneak past the newline.
+                break;
             }
         }
-        ++line_count;
 
-        if (qual_length != sequence.size()) {
+        if (qual_length != seq_length) {
             throw std::runtime_error("non-equal lengths for quality and sequence strings (starting line " + std::to_string(init_line + 1) + ")");
         }
+
+        ++line_count;
 
         return true;
     }
