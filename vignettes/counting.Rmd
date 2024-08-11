@@ -325,11 +325,11 @@ randomized <- lapply(1:N, function(i) {
     paste(sample(c("A", "C", "G", "T"), 8, replace=TRUE), collapse="")
 })
 barcodes <- sprintf("CCCAGT%sGGGATAC", randomized)
-names(reads) <- sprintf("READ_%i", seq_along(reads))
+names(barcodes) <- sprintf("READ_%i", seq_along(barcodes))
 
 # Writing to a FASTQ file.
 single.fq <- tempfile(fileext=".fastq")
-writeXStringSet(DNAStringSet(reads), file=single.fq, format="fastq")
+writeXStringSet(DNAStringSet(barcodes), file=single.fq, format="fastq")
 ```
 
 For this design, we can count the frequency of each observed barcode using the `matrixOfRandomBarcodes()` function.
@@ -340,7 +340,7 @@ library(screenCounter)
 out <- matrixOfRandomBarcodes(single.fq,
     template="CCCAGTNNNNNNNNGGGATAC")
 out
-assay(out)
+head(assay(out))
 ```
 
 # Further options
