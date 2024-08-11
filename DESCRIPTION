@@ -1,5 +1,5 @@
 Package: screenCounter
-Version: 1.3.0
+Version: 1.5.0
 Date: 2023-10-20
 Title: Counting Reads in High-Throughput Sequencing Screens
 Description: Provides functions for counting reads from high-throughput
