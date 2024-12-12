@@ -1,6 +1,6 @@
 Package: screenCounter
-Version: 1.7.0
-Date: 2024-08-10
+Version: 1.7.1
+Date: 2024-12-11
 Title: Counting Reads in High-Throughput Sequencing Screens
 Description: Provides functions for counting reads from high-throughput
     sequencing screen data (e.g., CRISPR, shRNA) to quantify barcode 
@@ -12,7 +12,6 @@ Depends:
     SummarizedExperiment
 Imports: 
     Rcpp,
-    zlibbioc,
     BiocParallel
 Suggests: 
     BiocGenerics,
