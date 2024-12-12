@@ -27,7 +27,8 @@ VignetteBuilder: knitr
 SystemRequirements: C++17, GNU make
 BugReports: https://github.com/crisprVerse/screenCounter/issues
 URL: https://github.com/crisprVerse/screenCounter
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
+Encoding: UTF-8
 biocViews:
     CRISPR,
     Alignment,
